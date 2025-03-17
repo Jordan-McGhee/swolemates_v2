@@ -1,0 +1,17 @@
+# Node.js dependencies
+node_modules/
+frontend/node_modules/
+backend/functions/node_modules/
+
+# Ignore environment variables
+.env
+frontend/.env
+backend/functions/.env
+
+# Build and cache files
+frontend/build/
+backend/functions/lib/
+
+# Firebase-related files
+backend/functions/.firebase/
+firebase-debug.log
