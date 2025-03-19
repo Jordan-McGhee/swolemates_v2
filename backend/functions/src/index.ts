@@ -1,7 +1,7 @@
 import * as functions from "firebase-functions";
-import * as express from "express";
+import express from "express";
 import * as bodyParser from "body-parser";
-import * as cors from "cors";
+import cors from "cors";
 import * as dotenv from "dotenv";
 import { Pool } from "pg"
 dotenv.config();
