@@ -12,7 +12,7 @@ export const generateToken = (user_id: string) => {
 
 // helper function to check if username exists in the database
 export const checkIfUsernameExists = async (username: string) => {
-    const query = "SELECT id FROM users WHERE username = $1";
+    const query = "SELECT user_id FROM users WHERE username = $1";
     const result: QueryResult = await pool.query(query, [username]);
     return result.rows.length > 0;
 };

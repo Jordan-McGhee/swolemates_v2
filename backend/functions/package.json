@@ -7,7 +7,8 @@
     "shell": "npm run build && firebase functions:shell",
     "start": "npm run shell",
     "deploy": "firebase deploy --only functions",
-    "logs": "firebase functions:log"
+    "logs": "firebase functions:log",
+    "watch": "nodemon --exec 'firebase emulators:start --only functions'"
   },
   "engines": {
     "node": "20"
@@ -26,6 +27,7 @@
     "firebase-functions": "^6.0.1",
     "firebase-tools": "^13.34.0",
     "jsonwebtoken": "^9.0.2",
+    "nodemon": "^3.1.9",
     "pg": "^8.14.1"
   },
   "devDependencies": {

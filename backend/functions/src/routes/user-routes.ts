@@ -4,7 +4,7 @@ import * as userControllers from "../controllers/user-controllers"
 
 const router = express.Router()
 
-// /users
+// /user
 
 // all users
 router.get("/", userControllers.getAllUsers)
@@ -17,8 +17,8 @@ router.post(
     "/signup",
     [
         check("email").normalizeEmail().isEmail().withMessage("Please use a valid email"),
-        check("password").isLength({ min: 8 }).withMessage("Password must be at least 8 characters long"),
         check("username").isLength({ min: 4 }).withMessage("Username must be at least 4 characters long"),
+        check("password").isLength({ min: 8 }).withMessage("Password must be at least 8 characters long")
     ],
     userControllers.signUp
 )
@@ -37,8 +37,8 @@ router.patch("/:user_id/changePassword",
 // check username
 router.post("/checkUsername", userControllers.checkUsernameAvailability)
 
-// update profile
-router.patch("/:user_id", userControllers.updateProfile)
+// update bio
+router.patch("/:user_id/updateBio", userControllers.updateBio)
 
 // delete account
 router.delete("/:user_id", userControllers.deleteAccount)

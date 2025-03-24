@@ -15,3 +15,4 @@
 
 <!-- USER -->
     - Add profile picture option (includes route/controller to update it) and figure out where to store images
+    - Update Password: Make user type in current password and add checks for that first
