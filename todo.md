@@ -25,3 +25,6 @@
 <!-- POST -->
     - Update getSinglePost to pull all likes and comments on that post DONE
     -
+
+<!-- WORKOUTS/EXERCISES -->
+    - Verify that edit workout is functioning properly
