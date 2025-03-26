@@ -15,20 +15,27 @@ export const getAllUserPosts = async (req: Request, res: Response, next: NextFun
         return res.status(400).json({ message: "Invalid user ID." });
     }
 
-    // Update query to order posts by created_at in descending order
-    const getAllUserPostsQuery = `SELECT * FROM posts WHERE user_id = $1 ORDER BY created_at DESC`;
-
     try {
-        const allUserPostsResponse: QueryResult = await pool.query(getAllUserPostsQuery, [user_id]);
+        // Check if user exists
+        const checkUserQuery = "SELECT * FROM users WHERE user_id = $1";
+        const checkUserRes: QueryResult = await pool.query(checkUserQuery, [user_id]);
+
+        if (checkUserRes.rows.length === 0) {
+            return res.status(404).json({ message: `User #${user_id} not found.` });
+        }
+
+        // Fetch user's posts
+        const getAllUserPostsQuery = "SELECT * FROM posts WHERE user_id = $1 ORDER BY created_at DESC";
+        const allUserPostsRes: QueryResult = await pool.query(getAllUserPostsQuery, [user_id]);
 
         return res.status(200).json({
             message: `Retrieved all posts from user #${user_id}`,
-            posts: allUserPostsResponse.rows,
+            posts: allUserPostsRes.rows,
             user_id: user_id
         });
     } catch (error) {
         console.error(`Error retrieving posts from user #${user_id}:`, error);
-        return res.status(500).json({ message: `Error retrieving posts from user #${user_id}: ${error}` });
+        return res.status(500).json({ message: `Error retrieving posts from user #${user_id}. Please try again later.` });
     }
 };
 
@@ -268,7 +275,7 @@ export const editCommentOnPost = async (req: Request, res: Response, next: NextF
     if (!post_id || isNaN(Number(post_id))) {
         return res.status(400).json({ message: "Invalid post ID." });
     }
-    
+
     if (!comment_id || isNaN(Number(comment_id))) {
         return res.status(400).json({ message: "Invalid comment ID." });
     }
@@ -388,6 +395,14 @@ export const likePost = async (req: Request, res: Response, next: NextFunction) 
     }
 
     try {
+        // Check if post exists
+        const checkPostQuery = `SELECT * FROM posts WHERE post_id = $1`;
+        const checkPostRes: QueryResult = await pool.query(checkPostQuery, [post_id]);
+
+        if (checkPostRes.rows.length === 0) {
+            return res.status(404).json({ message: `Post #${post_id} not found.` });
+        }
+
         // Check if the user already liked the post
         const checkLikeQuery = `SELECT * FROM likes WHERE user_id = $1 AND post_id = $2`;
         const checkLikeResponse: QueryResult = await pool.query(checkLikeQuery, [user_id, post_id]);
@@ -427,6 +442,14 @@ export const unlikePost = async (req: Request, res: Response, next: NextFunction
     }
 
     try {
+        // Check if post exists
+        const checkPostQuery = `SELECT * FROM posts WHERE post_id = $1`;
+        const checkPostRes: QueryResult = await pool.query(checkPostQuery, [post_id]);
+
+        if (checkPostRes.rows.length === 0) {
+            return res.status(404).json({ message: `Post #${post_id} not found.` });
+        }
+
         // Check if the user has liked the post
         const checkLikeQuery = `SELECT * FROM likes WHERE user_id = $1 AND post_id = $2`;
         const checkLikeResponse: QueryResult = await pool.query(checkLikeQuery, [user_id, post_id]);

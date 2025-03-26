@@ -42,7 +42,7 @@ app.use((req, res, next) => {
 const postRoutes = require("./routes/post-routes")
 // const searchRoutes = require("./routes/search-routes")
 const userRoutes = require("./routes/user-routes")
-// const workoutRoutes = require("./routes/workout-routes")
+const workoutRoutes = require("./routes/workout-routes")
 
 // route handlers
 // app.use("/comment", commentRoutes)
@@ -55,7 +55,7 @@ const userRoutes = require("./routes/user-routes")
 app.use("/post", postRoutes)
 // app.use("/search", searchRoutes)
 app.use("/user", userRoutes)
-// app.use("/workout", workoutRoutes)
+app.use("/workout", workoutRoutes)
 
 // Error handling middleware
 app.use((error: { message: string; code: number }, req: express.Request, res: express.Response, next: express.NextFunction) => {

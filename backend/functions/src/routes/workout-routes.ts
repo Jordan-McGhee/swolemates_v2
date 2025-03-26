@@ -5,11 +5,11 @@ const router = express.Router()
 
 // /workout
 
-// get single workout
-router.get("/:workout_id", workoutControllers.getSingleWorkout)
-
 // get workouts by user
 router.get("/user/:user_id", workoutControllers.getWorkoutsByUser)
+
+// get single workout
+router.get("/:workout_id", workoutControllers.getSingleWorkout)
 
 // create workout
 router.post("/", workoutControllers.createWorkout)
@@ -26,7 +26,7 @@ router.post("/:workout_id/comment", workoutControllers.commentOnWorkout)
 router.patch("/:workout_id/comment/:comment_id", workoutControllers.editCommentOnWorkout)
 
 // delete comment on workout
-router.delete("/:workout_id/comment/:comment_id", workoutControllers.getSingleWorkout)
+router.delete("/:workout_id/comment/:comment_id", workoutControllers.deleteCommentOnWorkout)
 
 // LIKES
 
