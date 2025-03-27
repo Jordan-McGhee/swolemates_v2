@@ -25,7 +25,7 @@ export const getWorkoutsByUser = async (req: Request, res: Response, next: NextF
         }
 
         // Fetch user's workouts
-        const getWorkoutsByUserQuery = "SELECT * FROM workouts WHERE user_id = $1 ORDER BY created_at DESC";
+        const getWorkoutsByUserQuery = "SELECT * FROM workout_with_exercises WHERE user_id = $1 ORDER BY workout_created_at DESC";
         const getWorkoutsByUserRes: QueryResult = await pool.query(getWorkoutsByUserQuery, [user_id]);
 
         return res.status(200).json({
@@ -50,7 +50,7 @@ export const getSingleWorkout = async (req: Request, res: Response, next: NextFu
     }
 
     // Query for the post
-    const getSingleWorkoutQuery = `SELECT * FROM workouts WHERE workout_id = $1`;
+    const getSingleWorkoutQuery = `SELECT * FROM workout_with_exercises WHERE workout_id = $1`;
 
     // Query for likes - pulls username, profile pic and id for each user
     const getLikesQuery = `
@@ -622,7 +622,7 @@ export const deleteWorkout = async (req: Request, res: Response, next: NextFunct
     const client = await pool.connect();
 
     try {
-        // Begin transaction to delete related data before removing the workout
+        // Begin transaction to update posts and delete related data before removing the workout
         await client.query("BEGIN");
 
         // Check if the workout exists and belongs to the user
@@ -639,6 +639,9 @@ export const deleteWorkout = async (req: Request, res: Response, next: NextFunct
             return res.status(403).json({ message: "You are not authorized to delete this workout." });
         }
 
+        // Update posts that reference this workout_id, setting workout_id to NULL
+        await client.query(`UPDATE posts SET workout_id = NULL WHERE workout_id = $1`, [workout_id]);
+
         // Delete related likes/comments and workout/exercise connections
         await client.query(`DELETE FROM likes WHERE workout_id = $1`, [workout_id]);
         await client.query(`DELETE FROM comments WHERE workout_id = $1`, [workout_id]);
@@ -651,7 +654,7 @@ export const deleteWorkout = async (req: Request, res: Response, next: NextFunct
         // Commit transaction
         await client.query("COMMIT");
 
-        return res.status(200).json({ message: "Workout deleted successfully.", deletedWorkout: deleteWorkoutResponse.rows[0] });
+        return res.status(200).json({ message: "Workout deleted successfully. All related posts updated.", deletedWorkout: deleteWorkoutResponse.rows[0] });
 
     } catch (error) {
         await client.query("ROLLBACK");
@@ -661,3 +664,4 @@ export const deleteWorkout = async (req: Request, res: Response, next: NextFunct
         client.release();
     }
 };
+

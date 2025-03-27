@@ -39,7 +39,6 @@ export const getAllUserPosts = async (req: Request, res: Response, next: NextFun
     }
 };
 
-
 // get single post
 export const getSinglePost = async (req: Request, res: Response, next: NextFunction) => {
     const { post_id } = req.params;
@@ -52,7 +51,7 @@ export const getSinglePost = async (req: Request, res: Response, next: NextFunct
     // Query for the post
     const getSinglePostQuery = `SELECT * FROM posts WHERE post_id = $1`;
 
-    // Query for likes - pulls username, profile pic and id for each user
+    // Query for likes - pulls username, profile pic, and id for each user
     const getLikesQuery = `
         SELECT users.user_id, users.username, users.profile_pic 
         FROM likes
@@ -66,11 +65,16 @@ export const getSinglePost = async (req: Request, res: Response, next: NextFunct
         FROM comments
         JOIN users ON comments.user_id = users.user_id
         WHERE comments.post_id = $1
-        ORDER BY comments.created_at ASC
+        ORDER BY comments.created_at ASC;
+    `;
+
+    // Query for workout (if it exists) using the workout_with_exercises view
+    const getWorkoutQuery = `
+        SELECT * FROM workout_with_exercises WHERE workout_id = $1;
     `;
 
     try {
-        // Get the post (this must succeed)
+        // Get the post
         const postResponse: QueryResult = await pool.query(getSinglePostQuery, [post_id]);
 
         // Check if post exists
@@ -79,9 +83,9 @@ export const getSinglePost = async (req: Request, res: Response, next: NextFunct
         }
 
         const post = postResponse.rows[0];
-
-        // empty arrays for likes and comments
-        let likes = []; let comments = [];
+        let likes = [];
+        let comments = [];
+        let workout = null;
 
         // Try to get likes and comments from db, but don't fail everything if it breaks
         try {
@@ -98,12 +102,26 @@ export const getSinglePost = async (req: Request, res: Response, next: NextFunct
             console.error(`Error fetching comments for post #${post_id}:`, error);
         }
 
+        // If the post is linked to a workout, fetch the workout details
+        if (post.workout_id) {
+            try {
+                const workoutResponse: QueryResult = await pool.query(getWorkoutQuery, [post.workout_id]);
+
+                if (workoutResponse.rows.length > 0) {
+                    workout = workoutResponse.rows[0];
+                }
+            } catch (error) {
+                console.error(`Error fetching workout for post #${post_id}:`, error);
+            }
+        }
+
         return res.status(200).json({
             message: "Got post!",
             post,
             post_user_id: post.user_id,
             likes,
-            comments
+            comments,
+            workout
         });
 
     } catch (error) {
@@ -111,6 +129,7 @@ export const getSinglePost = async (req: Request, res: Response, next: NextFunct
         return res.status(500).json({ message: `Error retrieving post #${post_id}. Please try again later.` });
     }
 };
+
 
 
 
@@ -127,13 +146,28 @@ export const createPost = async (req: Request, res: Response, next: NextFunction
         return res.status(400).json({ message: "Content cannot be empty." });
     }
 
-    const createPostQuery = `
-        INSERT INTO posts (user_id, content, image_url, workout_id, created_at, updated_at)
-        VALUES ($1, $2, $3, $4, NOW(), NOW())
-        RETURNING *;
-    `;
-
     try {
+        // If workout_id is provided, check if it exists
+        if (workout_id) {
+            if (isNaN(Number(workout_id))) {
+                return res.status(400).json({ message: "Invalid workout ID." });
+            }
+
+            const checkWorkoutQuery = "SELECT * FROM workout_with_exercises WHERE workout_id = $1";
+            const checkWorkoutRes: QueryResult = await pool.query(checkWorkoutQuery, [workout_id]);
+
+            if (checkWorkoutRes.rows.length === 0) {
+                return res.status(404).json({ message: `Workout #${workout_id} not found.` });
+            }
+        }
+
+        // Insert post
+        const createPostQuery = `
+            INSERT INTO posts (user_id, content, image_url, workout_id, created_at, updated_at)
+            VALUES ($1, $2, $3, $4, NOW(), NOW())
+            RETURNING *;
+        `;
+
         const postResponse: QueryResult = await pool.query(createPostQuery, [
             user_id,
             content,
@@ -142,12 +176,12 @@ export const createPost = async (req: Request, res: Response, next: NextFunction
         ]);
 
         return res.status(201).json({ message: "Post created.", post: postResponse.rows[0] });
+
     } catch (error) {
         console.error("Error creating post:", error);
-        return res.status(500).json({ message: `Error creating post. ${error}` });
+        return res.status(500).json({ message: "Error creating post. Please try again later." });
     }
 };
-
 
 
 // edit post
@@ -174,13 +208,14 @@ export const editPost = async (req: Request, res: Response, next: NextFunction) 
     try {
         const checkPostResponse: QueryResult = await pool.query(checkPostQuery, [post_id]);
 
-        // Check if query returns a single post
+        // Check if query returns a post
         if (checkPostResponse.rows.length === 0) {
             return res.status(404).json({ message: "Post not found." });
         }
 
-        // grab post creator's id
+        // Grab post creator's ID and current workout_id
         const postOwnerId = checkPostResponse.rows[0].user_id;
+        const currentWorkoutId = checkPostResponse.rows[0].workout_id;
 
         // Validate user_id and check ownership (must match user_id from the post in order to edit)
         if (!user_id || isNaN(Number(user_id))) {
@@ -189,6 +224,20 @@ export const editPost = async (req: Request, res: Response, next: NextFunction) 
 
         if (postOwnerId !== Number(user_id)) {
             return res.status(403).json({ message: "You don't have permission to edit this post." });
+        }
+
+        // If workout_id has changed, check if the new workout_id exists in the database
+        if (workout_id !== currentWorkoutId) {
+
+            // check if workout was removed from post
+            if (workout_id) {
+                const checkWorkoutQuery = `SELECT * FROM workouts WHERE workout_id = $1`;
+                const checkWorkoutResponse: QueryResult = await pool.query(checkWorkoutQuery, [workout_id]);
+
+                if (checkWorkoutResponse.rows.length === 0) {
+                    return res.status(400).json({ message: "Invalid workout ID. Workout does not exist." });
+                }
+            }
         }
 
         // Update query
@@ -212,6 +261,7 @@ export const editPost = async (req: Request, res: Response, next: NextFunction) 
         return res.status(500).json({ message: `Error updating post #${post_id}: ${error}` });
     }
 };
+
 
 
 

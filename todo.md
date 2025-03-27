@@ -3,6 +3,13 @@
 <!-- - new firebase project name for better looking url? DONE -->
 - Supabase or Firebase authentication for users
 
+# DATABASE
+- Views to make:
+    - getAllUserPosts - view tying posts to workouts?
+    - likes/comments on posts
+    - likes/comments on workouts
+    <!-- - workout with exercies DONE -->
+
 # FRONTEND
 <!-- GENERAL -->
 ### NPM RUN BUILD AND DEPLOY TO FIREBASE
