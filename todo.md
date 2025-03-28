@@ -42,3 +42,10 @@
     - Update getAllUserWorkouts
 <!-- - to check that user is in db before querying for workouts DONE -->
         - to pull like and comment counts
+
+<!-- NOTIFICATIONS -->
+    - Verify that changeNotificationReadStatus works once frontend is built
+
+<!-- FRIEND REQUESTS -->
+    - TEST ALL ROUTES AND ENSURE THEY WORK PROPERLY
+    - ALSO TEST getUserFriends in userControllers

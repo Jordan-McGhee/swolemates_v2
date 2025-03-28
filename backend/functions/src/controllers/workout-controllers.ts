@@ -1,7 +1,7 @@
 import { pool } from "../index"
 import { Request, Response, NextFunction } from "express"
 import { QueryResult } from "pg";
-// import { generateToken, checkIfUsernameExists, isEmailFormat } from "../util/util";
+import { createNotification, getUserInfo } from "../util/util";
 
 // blank function
 // export const fnName = async (req: Request, res: Response, next: NextFunction) => {}
@@ -351,10 +351,7 @@ export const editWorkout = async (req: Request, res: Response, next: NextFunctio
 
 // comment on workout
 export const commentOnWorkout = async (req: Request, res: Response, next: NextFunction) => {
-    // Grab workout ID from params
     const { workout_id } = req.params;
-
-    // Grab user ID and comment content from body
     const { user_id, content } = req.body;
 
     // Validations
@@ -370,35 +367,75 @@ export const commentOnWorkout = async (req: Request, res: Response, next: NextFu
         return res.status(400).json({ message: "Comment content cannot be empty." });
     }
 
-    try {
-        // Check if post exists
-        const checkWorkoutQuery = "SELECT workout_id FROM workouts WHERE workout_id = $1";
-        const checkWorkoutResponse: QueryResult = await pool.query(checkWorkoutQuery, [workout_id]);
 
-        if (checkWorkoutResponse.rows.length === 0) {
-            return res.status(404).json({ message: `Workout #${workout_id} not found. Cannot add comment.` });
+    // Start a transaction by getting a client
+    const client = await pool.connect();
+
+    try {
+
+        // Begin transaction
+        await client.query('BEGIN');
+
+        // Check if workout exists and get the owner of the workout
+        const checkWorkoutQuery = `
+            SELECT workout_id, user_id 
+            FROM workouts 
+            WHERE workout_id = $1
+        `;
+        const checkWorkoutRes: QueryResult = await client.query(checkWorkoutQuery, [workout_id]);
+
+        if (checkWorkoutRes.rows.length === 0) {
+            await client.query('ROLLBACK');  // Rollback transaction if workout is not found
+            return res.status(404).json({ message: `Workout #${workout_id} not found.` });
         }
 
-        // Insert comment
-        const addCommentQuery = `
-                INSERT INTO comments (workout_id, user_id, content, created_at, updated_at) 
-                VALUES ($1, $2, $3, NOW(), NOW()) 
-                RETURNING *;
-            `;
+        const workout = checkWorkoutRes.rows[0];
 
-        const addCommentResponse: QueryResult = await pool.query(addCommentQuery, [workout_id, user_id, content.trim()]);
+        // Get the user who owns the workout
+        const workoutOwnerId = workout.user_id;
+
+        // Insert comment into comments table
+        const addCommentQuery = `
+            INSERT INTO comments (workout_id, user_id, content, created_at, updated_at) 
+            VALUES ($1, $2, $3, NOW(), NOW()) 
+            RETURNING *;
+        `;
+        const addCommentRes: QueryResult = await client.query(addCommentQuery, [workout_id, user_id, content.trim()]);
+
+        // Create a notification for the workout owner if the commenter is not the owner
+        if (workoutOwnerId !== user_id) {
+            const commenterDetails: any = await getUserInfo(user_id, client);  // Fetch user details using client
+            const notificationMessage = `${commenterDetails.username} commented on your workout.`;
+            await createNotification({
+                sender_id: user_id,
+                sender_username: commenterDetails.username,
+                sender_profile_pic: commenterDetails.profile_pic,
+                receiver_id: workoutOwnerId,
+                type: 'comment',
+                message: notificationMessage,
+                reference_type: 'workout',
+                reference_id: Number(workout_id),
+                client,  // Pass client to ensure notification is also part of the transaction
+            });
+        }
+
+        await client.query('COMMIT');  // Commit the transaction if everything is successful
 
         return res.status(201).json({
             message: "Comment added successfully!",
             workout_id,
-            comment: addCommentResponse.rows[0]
+            comment: addCommentRes.rows[0]
         });
-
     } catch (error) {
+        await client.query('ROLLBACK');  // Rollback transaction if an error occurs
         console.error(`Error commenting on workout #${workout_id}:`, error);
         return res.status(500).json({ message: `Error commenting on workout #${workout_id}. Please try again later.` });
+    } finally {
+        client.release();  // Release the client back to the pool
     }
-}
+};
+
+
 
 // edit comment on workout
 export const editCommentOnWorkout = async (req: Request, res: Response, next: NextFunction) => {
@@ -527,20 +564,42 @@ export const likeWorkout = async (req: Request, res: Response, next: NextFunctio
         return res.status(400).json({ message: "Invalid user ID." });
     }
 
+    // Start a transaction by getting a client
+    const client = await pool.connect();
+
     try {
-        // Check if workout exists
-        const checkWorkoutQuery = `SELECT * FROM workouts WHERE workout_id = $1`;
-        const checkWorkoutRes: QueryResult = await pool.query(checkWorkoutQuery, [workout_id]);
+
+        // Begin transaction
+        await client.query('BEGIN');
+
+        // Check if workout exists and get the owner of the workout
+        const checkWorkoutQuery = `
+            SELECT workout_id, user_id 
+            FROM workouts 
+            WHERE workout_id = $1
+        `;
+        const checkWorkoutRes: QueryResult = await client.query(checkWorkoutQuery, [workout_id]);
 
         if (checkWorkoutRes.rows.length === 0) {
+
+            // Rollback transaction if workout is not found
+            await client.query('ROLLBACK');
             return res.status(404).json({ message: `Workout #${workout_id} not found.` });
         }
 
+        const workout = checkWorkoutRes.rows[0];
+
+        // Get the user who owns the workout
+        const workoutOwnerId = workout.user_id;
+
         // Check if the user already liked the workout
         const checkLikeQuery = `SELECT * FROM likes WHERE user_id = $1 AND workout_id = $2`;
-        const checkLikeRes: QueryResult = await pool.query(checkLikeQuery, [user_id, workout_id]);
+        const checkLikeRes: QueryResult = await client.query(checkLikeQuery, [user_id, workout_id]);
 
         if (checkLikeRes.rows.length > 0) {
+
+            // Rollback transaction if already liked
+            await client.query('ROLLBACK');
             return res.status(409).json({ message: "You have already liked this workout." });
         }
 
@@ -550,14 +609,42 @@ export const likeWorkout = async (req: Request, res: Response, next: NextFunctio
             VALUES ($1, $2, NOW())
             RETURNING *;
         `;
-        const likeRes: QueryResult = await pool.query(likeQuery, [user_id, workout_id]);
+        const likeRes: QueryResult = await client.query(likeQuery, [user_id, workout_id]);
+
+        // Create a notification for the workout owner (if the user liking is not the owner)
+        if (workoutOwnerId !== user_id) {
+
+            // Fetch user details using client
+            const likerDetails: any = await getUserInfo(user_id, client);
+            const notificationMessage = `${likerDetails.username} liked your workout.`;
+            await createNotification({
+                sender_id: user_id,
+                sender_username: likerDetails.username,
+                sender_profile_pic: likerDetails.profile_pic,
+                receiver_id: workoutOwnerId,
+                type: 'like',
+                message: notificationMessage,
+                reference_type: 'workout',
+                reference_id: Number(workout_id),
+                client,  // Pass client to ensure notification is also part of the transaction
+            });
+        }
+
+        // Commit the transaction if everything is successful
+        await client.query('COMMIT');
 
         return res.status(201).json({ message: "Workout liked successfully!", like: likeRes.rows[0] });
     } catch (error) {
+        await client.query('ROLLBACK');
         console.error(`Error liking workout #${workout_id}:`, error);
         return res.status(500).json({ message: `Error liking workout #${workout_id}. Please try again later.` });
+    } finally {
+
+        // Release the client back to the pool
+        client.release();
     }
 };
+
 
 
 // unlike workout

@@ -1,7 +1,7 @@
 import { pool } from "../index"
 import { Request, Response, NextFunction } from "express"
 import { QueryResult } from "pg";
-// import { generateToken, checkIfUsernameExists, isEmailFormat } from "../util/util";
+import { createNotification, getUserInfo } from "../util/util";
 
 // blank function
 // export const fnName = async (req: Request, res: Response, next: NextFunction) => {}
@@ -267,6 +267,7 @@ export const editPost = async (req: Request, res: Response, next: NextFunction) 
 
 // comment on post
 export const commentOnPost = async (req: Request, res: Response, next: NextFunction) => {
+
     // Grab post ID from params
     const { post_id } = req.params;
 
@@ -286,14 +287,27 @@ export const commentOnPost = async (req: Request, res: Response, next: NextFunct
         return res.status(400).json({ message: "Comment content cannot be empty." });
     }
 
+    // Start a transaction to save comment and create notification
+    const client = await pool.connect();
+
     try {
+        // Begin transaction
+        await client.query('BEGIN');
+
         // Check if post exists
-        const checkPostQuery = "SELECT post_id FROM posts WHERE post_id = $1";
-        const checkPostResponse: QueryResult = await pool.query(checkPostQuery, [post_id]);
+        const checkPostQuery = "SELECT post_id, user_id FROM posts WHERE post_id = $1";
+        const checkPostResponse: QueryResult = await client.query(checkPostQuery, [post_id]);
 
         if (checkPostResponse.rows.length === 0) {
+            // Rollback transaction if post is not found
+            await client.query('ROLLBACK');
             return res.status(404).json({ message: `Post #${post_id} not found. Cannot add comment.` });
         }
+
+        const post = checkPostResponse.rows[0];
+
+        // Get the user who owns the post
+        const postOwnerId = post.user_id;
 
         // Insert comment
         const addCommentQuery = `
@@ -301,8 +315,29 @@ export const commentOnPost = async (req: Request, res: Response, next: NextFunct
             VALUES ($1, $2, $3, NOW(), NOW()) 
             RETURNING *;
         `;
+        const addCommentResponse: QueryResult = await client.query(addCommentQuery, [post_id, user_id, content.trim()]);
 
-        const addCommentResponse: QueryResult = await pool.query(addCommentQuery, [post_id, user_id, content.trim()]);
+        // Create a notification for the post owner (if the user commenting is not the owner)
+        if (postOwnerId !== user_id) {
+            // Fetch user details using client
+            const commenterDetails: any = await getUserInfo(user_id, client);
+
+            const notificationMessage = `${commenterDetails.username} commented on your post.`;
+            await createNotification({
+                sender_id: user_id,
+                sender_username: commenterDetails.username,
+                sender_profile_pic: commenterDetails.profile_pic,
+                receiver_id: postOwnerId,
+                type: 'comment',
+                message: notificationMessage,
+                reference_type: 'post',
+                reference_id: Number(post_id),
+                client
+            });
+        }
+
+        // Commit the transaction if everything is successful
+        await client.query('COMMIT');
 
         return res.status(201).json({
             message: "Comment added successfully!",
@@ -311,10 +346,16 @@ export const commentOnPost = async (req: Request, res: Response, next: NextFunct
         });
 
     } catch (error) {
+        // Rollback transaction if an error occurs
+        await client.query('ROLLBACK');
         console.error(`Error commenting on post #${post_id}:`, error);
         return res.status(500).json({ message: `Error commenting on post #${post_id}. Please try again later.` });
+    } finally {
+        // Release the client back to the pool
+        client.release();
     }
 };
+
 
 // edit comment
 export const editCommentOnPost = async (req: Request, res: Response, next: NextFunction) => {
@@ -432,7 +473,10 @@ export const deletePostComment = async (req: Request, res: Response, next: NextF
 
 // like post
 export const likePost = async (req: Request, res: Response, next: NextFunction) => {
+    // Grab post ID from params
     const { post_id } = req.params;
+
+    // Grab user ID from body
     const { user_id } = req.body;
 
     // Validations
@@ -444,20 +488,30 @@ export const likePost = async (req: Request, res: Response, next: NextFunction) 
         return res.status(400).json({ message: "Invalid user ID." });
     }
 
+    // Start a transaction by getting a client
+    const client = await pool.connect();
+
     try {
+        // Begin transaction
+        await client.query('BEGIN');
+
         // Check if post exists
         const checkPostQuery = `SELECT * FROM posts WHERE post_id = $1`;
-        const checkPostRes: QueryResult = await pool.query(checkPostQuery, [post_id]);
+        const checkPostRes: QueryResult = await client.query(checkPostQuery, [post_id]);
 
         if (checkPostRes.rows.length === 0) {
+            // Rollback transaction if post is not found
+            await client.query('ROLLBACK');
             return res.status(404).json({ message: `Post #${post_id} not found.` });
         }
 
         // Check if the user already liked the post
         const checkLikeQuery = `SELECT * FROM likes WHERE user_id = $1 AND post_id = $2`;
-        const checkLikeResponse: QueryResult = await pool.query(checkLikeQuery, [user_id, post_id]);
+        const checkLikeResponse: QueryResult = await client.query(checkLikeQuery, [user_id, post_id]);
 
         if (checkLikeResponse.rows.length > 0) {
+            // Rollback transaction if already liked
+            await client.query('ROLLBACK');
             return res.status(409).json({ message: "You have already liked this post." });
         }
 
@@ -467,14 +521,45 @@ export const likePost = async (req: Request, res: Response, next: NextFunction) 
             VALUES ($1, $2, NOW())
             RETURNING *;
         `;
-        const likeResponse: QueryResult = await pool.query(likeQuery, [user_id, post_id]);
+        const likeResponse: QueryResult = await client.query(likeQuery, [user_id, post_id]);
+
+        // Get the post owner details
+        const postOwnerId = checkPostRes.rows[0].user_id;
+
+        // Create a notification for the post owner (if the user liking is not the owner)
+        if (postOwnerId !== user_id) {
+            // Fetch user details using client
+            const likerDetails: any = await getUserInfo(user_id, client);
+            const notificationMessage = `${likerDetails.username} liked your post.`;
+            await createNotification({
+                sender_id: user_id,
+                sender_username: likerDetails.username,
+                sender_profile_pic: likerDetails.profile_pic,
+                receiver_id: postOwnerId,
+                type: 'like',
+                message: notificationMessage,
+                reference_type: 'post',
+                reference_id: Number(post_id),
+                client
+            });
+        }
+
+        // Commit the transaction if everything is successful
+        await client.query('COMMIT');
 
         return res.status(201).json({ message: "Post liked successfully!", like: likeResponse.rows[0] });
+
     } catch (error) {
+        // Rollback transaction if an error occurs
+        await client.query('ROLLBACK');
         console.error(`Error liking post #${post_id}:`, error);
         return res.status(500).json({ message: `Error liking post #${post_id}. Please try again later.` });
+    } finally {
+        // Release the client back to the pool
+        client.release();
     }
 };
+
 
 
 // unlike post

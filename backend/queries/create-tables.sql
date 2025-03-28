@@ -1,10 +1,8 @@
 -- ENUMS
 CREATE TYPE notification_type AS ENUM (
     'friend_request',
-    'post_comment',
-    'workout_comment',
-    'post_like',
-    'post_comment' 'message',
+    'comment',
+    'like',
     'group_invite',
     'post_mention'
 );
@@ -82,16 +80,31 @@ CREATE TABLE group_members (
     PRIMARY KEY (user_id, group_id)
 );
 
+CREATE TABLE friend_requests (
+    request_id SERIAL PRIMARY KEY,
+    sender_id INT NOT NULL REFERENCES users(user_id),
+    receiver_id INT NOT NULL REFERENCES users(user_id),
+    status VARCHAR(20) NOT NULL,  -- e.g., 'pending', 'accepted', 'rejected'
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+
 CREATE TABLE notifications (
     notification_id SERIAL PRIMARY KEY,
     sender_id INT NOT NULL REFERENCES users(user_id),
+    sender_username VARCHAR(255) NOT NULL,
+    sender_profile_pic TEXT,
     receiver_id INT NOT NULL REFERENCES users(user_id),
+    receiver_username VARCHAR(255) NOT NULL,
+    receiver_profile_pic TEXT,
     type notification_type,
     message TEXT,
     reference_type REFERENCE_TYPE NOT NULL,
     reference_id INT,
+    is_read BOOLEAN DEFAULT FALSE,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    read BOOLEAN DEFAULT FALSE
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
 CREATE TABLE comments (

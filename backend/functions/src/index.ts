@@ -32,26 +32,22 @@ app.use((req, res, next) => {
 });
 
 // import routes
-// const commentRoutes = require("./routes/comment-routes")
-// const exerciseRoutes = require("./routes/exercise-routes")
-// const friendRoutes = require("./routes/friend-routes")
+
+const friendRoutes = require("./routes/friend-routes")
 // const groupRoutes = require("./routes/group-routes")
 // const inviteRoutes = require("./routes/invite-routes")
-// const likeRoutes = require("./routes/like-routes")
-// const notificationRoutes = require("./routes/notification-routes")
+const notificationRoutes = require("./routes/notification-routes")
 const postRoutes = require("./routes/post-routes")
 // const searchRoutes = require("./routes/search-routes")
 const userRoutes = require("./routes/user-routes")
 const workoutRoutes = require("./routes/workout-routes")
 
 // route handlers
-// app.use("/comment", commentRoutes)
-// app.use("/exercise", exerciseRoutes)
-// app.use("/friend", friendRoutes)
+
+app.use("/friend", friendRoutes)
 // app.use("/group", groupRoutes)
 // app.use("/invite", inviteRoutes)
-// app.use("/like", likeRoutes)
-// app.use("/notification", notificationRoutes)
+app.use("/notification", notificationRoutes)
 app.use("/post", postRoutes)
 // app.use("/search", searchRoutes)
 app.use("/user", userRoutes)

@@ -12,6 +12,9 @@ router.get("/", userControllers.getAllUsers)
 // get user
 router.get("/:user_id", userControllers.getSingleUser)
 
+// get user's friends
+router.get("/:user_id/friends", userControllers.getUserFriends)
+
 // sign up
 router.post(
     "/signup",

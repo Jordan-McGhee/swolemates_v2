@@ -8,7 +8,6 @@ import { generateToken, checkIfUsernameExists, isEmailFormat } from "../util/uti
 // blank function
 // export const fnName = async (req: Request, res: Response, next: NextFunction) => {}
 
-
 // Get all users
 export const getAllUsers = async (req: Request, res: Response, next: NextFunction) => {
     const userQuery: string = "SELECT * FROM users";
@@ -36,6 +35,52 @@ export const getSingleUser = async (req: Request, res: Response, next: NextFunct
     } catch (error) {
         console.error("Error getting user:", error);
         return res.status(500).json({ message: `Error getting user: ${error}` });
+    }
+};
+
+// Get user's friends
+export const getUserFriends = async (req: Request, res: Response, next: NextFunction) => {
+    const { user_id } = req.params;
+
+    try {
+        // Query to get the accepted friend requests for the user
+        const query = `
+            SELECT 
+                CASE 
+                    WHEN f.sender_id = $1 THEN f.receiver_id 
+                    ELSE f.sender_id 
+                END AS friend_id
+            FROM 
+                friend_requests f
+            WHERE 
+                (f.sender_id = $1 OR f.receiver_id = $1)
+                AND f.status = 'Accepted';
+        `;
+
+        // Run the query with the user_id
+        const result: QueryResult = await pool.query(query, [user_id]);
+
+        if (result.rows.length === 0) {
+            return res.status(404).json({ message: 'No friends found.' });
+        }
+
+        // Extract the friend_ids from the query result
+        const friendIds = result.rows.map(row => row.friend_id);
+
+        // Now, get the user information for each friend
+        const userQuery = `
+            SELECT user_id, username, profile_pic
+            FROM users
+            WHERE user_id = ANY($1);
+        `;
+
+        // Get friends' details using the friend_ids
+        const userResult: QueryResult = await pool.query(userQuery, [friendIds]);
+
+        return res.status(200).json(userResult.rows);
+    } catch (error) {
+        console.error('Error fetching user friends:', error);
+        return res.status(500).json({ message: 'Error fetching user friends. Please try again later.' });
     }
 };
 
