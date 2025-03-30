@@ -20,7 +20,7 @@ router.post("/:receiver_id", friendControllers.createFriendRequest)
 // accept friend request
 router.put("/accept/:friend_request_id", friendControllers.acceptFriendRequest)
 
-// deny friend reequrequestest
+// deny friend request
 router.put("/deny/:friend_request_id", friendControllers.denyFriendRequest)
 
 // cancel friend request

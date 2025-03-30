@@ -11,7 +11,7 @@ export const getAllUserFriendRequests = async (req: Request, res: Response, next
         const query = "SELECT * FROM friend_requests WHERE sender_id = $1 OR receiver_id = $1";
         const response: QueryResult = await pool.query(query, [user_id]);
 
-        return res.status(200).json(response.rows);
+        return res.status(200).json({ message: `Got all friend requests for #${user_id}.`, friend_requests: response.rows});
     } catch (error) {
         console.error('Error getting friend requests:', error);
         return res.status(500).json({ message: 'Error getting friend requests. Please try again later.' });
@@ -26,7 +26,7 @@ export const getAllUserSentRequests = async (req: Request, res: Response, next: 
         const query = "SELECT * FROM friend_requests WHERE sender_id = $1 AND status = 'Pending'";
         const response: QueryResult = await pool.query(query, [user_id]);
 
-        return res.status(200).json(response.rows);
+        return res.status(200).json({ message: `Got all sent friend requests for #${user_id}.`, friend_requests: response.rows});
     } catch (error) {
         console.error('Error getting sent friend requests:', error);
         return res.status(500).json({ message: 'Error getting sent friend requests. Please try again later.' });
@@ -41,7 +41,7 @@ export const getAllUserReceivedRequests = async (req: Request, res: Response, ne
         const query = "SELECT * FROM friend_requests WHERE receiver_id = $1 AND status = 'Pending'";
         const response: QueryResult = await pool.query(query, [user_id]);
 
-        return res.status(200).json(response.rows);
+        return res.status(200).json({ message: `Got all rceived friend requests for #${user_id}.`, friend_requests: response.rows});
     } catch (error) {
         console.error('Error getting received friend requests:', error);
         return res.status(500).json({ message: 'Error getting received friend requests. Please try again later.' });
@@ -60,11 +60,7 @@ export const createFriendRequest = async (req: Request, res: Response, next: Nex
 
     try {
         // Check if the receiver exists and get their info
-        const receiverInfo: QueryResult = await pool.query("SELECT * FROM users WHERE user_id = $1", [receiver_id]);
-
-        if (receiverInfo.rows.length === 0) {
-            return res.status(404).json({ message: `User with user ID ${receiver_id} not found.` });
-        }
+        const receiverInfo: any = await getUserInfo(Number(receiver_id))
 
         const receiverUsername = receiverInfo.rows[0].username;
         const receiverProfilePic = receiverInfo.rows[0].profile_pic;
@@ -102,7 +98,7 @@ export const createFriendRequest = async (req: Request, res: Response, next: Nex
             reference_id: newRequest.rows[0].friend_request_id,
         });
 
-        return res.status(201).json({ message: "Friend request sent successfully.", request: newRequest.rows[0] });
+        return res.status(201).json({ message: "Friend request sent successfully.", createdRequest: newRequest.rows[0] });
     } catch (error) {
         console.error('Error sending friend request:', error);
         return res.status(500).json({ message: 'Error sending friend request. Please try again later.' });
