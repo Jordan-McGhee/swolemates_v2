@@ -47,5 +47,5 @@
     - Verify that changeNotificationReadStatus works once frontend is built
 
 <!-- FRIEND REQUESTS -->
-    - TEST ALL ROUTES AND ENSURE THEY WORK PROPERLY
-    - ALSO TEST getUserFriends in userControllers
+<!-- - TEST ALL ROUTES AND ENSURE THEY WORK PROPERLY DONE -->
+<!-- - ALSO TEST getUserFriends in userControllers DONE -->

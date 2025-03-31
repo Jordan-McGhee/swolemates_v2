@@ -56,8 +56,8 @@ export const createNotification = async ({
     sender_username,
     sender_profile_pic,
     receiver_id,
-    receiver_username,
-    receiver_profile_pic,
+    receiver_username = null,  // Default to null if undefined
+    receiver_profile_pic = null, // Default to null if undefined
     type,
     message,
     reference_type,
@@ -68,8 +68,8 @@ export const createNotification = async ({
     sender_username: string;
     sender_profile_pic: string;
     receiver_id: number;
-    receiver_username?: string;
-    receiver_profile_pic?: string;
+    receiver_username?: string | null;
+    receiver_profile_pic?: string | null;
     type: string;
     message: string;
     reference_type: string;
@@ -78,46 +78,31 @@ export const createNotification = async ({
 }): Promise<Object> => {
     const notificationQuery = `
         INSERT INTO notifications 
-        (sender_id, sender_username, sender_profile_pic, receiver_id, type, message, reference_type, reference_id, created_at, updated_at)
-        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, NOW(), NOW())
+        (sender_id, sender_username, sender_profile_pic, receiver_id, receiver_username, receiver_profile_pic, type, message, reference_type, reference_id, created_at, updated_at)
+        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, NOW(), NOW())
         RETURNING *;
     `;
 
-    let notificationRes: QueryResult;
+    const values = [
+        sender_id,
+        sender_username,
+        sender_profile_pic,
+        receiver_id,
+        receiver_username,
+        receiver_profile_pic,
+        type,
+        message,
+        reference_type,
+        reference_id
+    ];
 
-    if (client) {
-        // If a client (transaction) is provided, use it
-        notificationRes = await client.query(notificationQuery, [
-            sender_id,
-            sender_username,
-            sender_profile_pic,
-            receiver_id,
-            receiver_username,
-            receiver_profile_pic,
-            type,
-            message,
-            reference_type,
-            reference_id,
-        ]);
-    } else {
-        // Otherwise, use the pool (standard query)
-        notificationRes = await pool.query(notificationQuery, [
-            sender_id,
-            sender_username,
-            sender_profile_pic,
-            receiver_id,
-            receiver_username,
-            receiver_profile_pic,
-            type,
-            message,
-            reference_type,
-            reference_id,
-        ]);
-    }
+    const notificationRes: QueryResult = client
+        ? await client.query(notificationQuery, values)
+        : await pool.query(notificationQuery, values);
 
-    // Return the created notification
     return notificationRes.rows[0];
 };
+
 
 /**
  * Retrieves the username for a given user_id, supports transactions.
