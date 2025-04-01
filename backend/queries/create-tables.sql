@@ -11,7 +11,8 @@ CREATE TYPE reference_type AS ENUM (
     'post',
     'workout',
     'friend_request',
-    'comment'
+    'comment',
+    'group'
 );
 
 -- TABLES
@@ -68,6 +69,7 @@ CREATE TABLE groups (
     creator_id INT REFERENCES users(user_id),
     name VARCHAR(255),
     description TEXT,
+    is_private BOOLEAN DEFAULT FALSE,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
@@ -76,8 +78,18 @@ CREATE TABLE group_members (
     user_id INT REFERENCES users(user_id),
     group_id INT REFERENCES groups(group_id),
     is_admin BOOLEAN DEFAULT FALSE,
+    is_mod BOOLEAN DEFAULT FALSE,
     joined_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     PRIMARY KEY (user_id, group_id)
+);
+
+CREATE TABLE group_join_requests (
+    request_id SERIAL PRIMARY KEY,
+    user_id INT REFERENCES users(user_id),
+    group_id INT REFERENCES groups(group_id),
+    status VARCHAR(15), -- 'pending', 'accepted', 'rejected'
+    requested_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
 CREATE TABLE friend_requests (

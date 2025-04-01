@@ -49,3 +49,6 @@
 <!-- FRIEND REQUESTS -->
 <!-- - TEST ALL ROUTES AND ENSURE THEY WORK PROPERLY DONE -->
 <!-- - ALSO TEST getUserFriends in userControllers DONE -->
+
+<!-- GROUPS -->
+    - TEST ALL ROUTES

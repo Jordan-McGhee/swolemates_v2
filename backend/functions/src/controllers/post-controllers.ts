@@ -25,7 +25,7 @@ export const getAllUserPosts = async (req: Request, res: Response, next: NextFun
         }
 
         // Fetch user's posts
-        const getAllUserPostsQuery = "SELECT * FROM posts WHERE user_id = $1 ORDER BY created_at DESC";
+        const getAllUserPostsQuery = "SELECT * FROM posts WHERE user_id = $1 AND group_id = NULL ORDER BY created_at DESC";
         const allUserPostsRes: QueryResult = await pool.query(getAllUserPostsQuery, [user_id]);
 
         return res.status(200).json({
@@ -49,7 +49,7 @@ export const getSinglePost = async (req: Request, res: Response, next: NextFunct
     }
 
     // Query for the post
-    const getSinglePostQuery = `SELECT * FROM posts WHERE post_id = $1`;
+    const getSinglePostQuery = `SELECT * FROM posts WHERE post_id = $1 AND group_id = NULL`;
 
     // Query for likes - pulls username, profile pic, and id for each user
     const getLikesQuery = `

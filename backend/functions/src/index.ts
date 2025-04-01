@@ -34,22 +34,20 @@ app.use((req, res, next) => {
 // import routes
 
 const friendRoutes = require("./routes/friend-routes")
-// const groupRoutes = require("./routes/group-routes")
-// const inviteRoutes = require("./routes/invite-routes")
+const groupRoutes = require("./routes/group-routes")
 const notificationRoutes = require("./routes/notification-routes")
 const postRoutes = require("./routes/post-routes")
-// const searchRoutes = require("./routes/search-routes")
+const searchRoutes = require("./routes/search-routes")
 const userRoutes = require("./routes/user-routes")
 const workoutRoutes = require("./routes/workout-routes")
 
 // route handlers
 
 app.use("/friend", friendRoutes)
-// app.use("/group", groupRoutes)
-// app.use("/invite", inviteRoutes)
+app.use("/group", groupRoutes)
 app.use("/notification", notificationRoutes)
 app.use("/post", postRoutes)
-// app.use("/search", searchRoutes)
+app.use("/search", searchRoutes)
 app.use("/user", userRoutes)
 app.use("/workout", workoutRoutes)
 
