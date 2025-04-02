@@ -4,6 +4,7 @@ CREATE TYPE notification_type AS ENUM (
     'comment',
     'like',
     'group_invite',
+    'group_change',
     'post_mention'
 );
 

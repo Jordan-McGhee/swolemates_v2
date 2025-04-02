@@ -49,6 +49,9 @@ router.get("/:group_id/members", groupControllers.getGroupMembers);
 // join group/request to join
 router.post("/:group_id/join", groupControllers.joinGroup);
 
+// remove request to join
+router.delete("/:group_id/remove-request", groupControllers.removeJoinRequest)
+
 // user accept a group invitation
 router.post("/:group_id/invite/:request_id/accept-invite", groupControllers.userAcceptGroupInvite);
 
@@ -59,9 +62,6 @@ router.post("/:group_id/invite/:request_id/deny-invite", groupControllers.userDe
 router.delete("/:group_id/leave", groupControllers.leaveGroup);
 
 // MOD/ADMIN ACTIONS
-
-
-
 // get all pending join requests
 router.get("/:group_id/join-requests", groupControllers.getPendingJoinRequests);  
 
@@ -82,5 +82,10 @@ router.patch("/:group_id/members/:member_id/promote", groupControllers.promoteTo
 // demote a moderator to a regular member (admin only)
 router.patch("/:group_id/members/:member_id/demote", groupControllers.demoteModerator);
 
+// grant admin rights
+router.patch('/:group_id/members/:user_id/promote-admin', groupControllers.promoteToAdmin);
+
+// remove admin rights
+router.patch('/:group_id/members/:user_id/demote-admin', groupControllers.demoteAdmin);
 
 module.exports = router

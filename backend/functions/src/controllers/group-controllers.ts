@@ -9,12 +9,35 @@ import { createNotification, getUserInfo } from "../util/util";
 // GROUP
 // Create a new group
 export const createGroup = async (req: Request, res: Response, next: NextFunction) => {
-    const { user_id, name, description, is_private } = req.body;
+    const { user_id, group_name, description, is_private } = req.body;
+
+    // validate group name and description
+    if (!group_name || group_name.trim().length < 3) {
+        return res.status(400).json({ message: "Group name must be at least 3 characters long." });
+    }
+
+    if (!description || description.trim().length < 10) {
+        return res.status(400).json({ message: "Group description must be at least 10 characters long." });
+    }
 
     const client = await pool.connect();
 
     try {
         await client.query('BEGIN');
+
+        // Convert group name to lowercase for case-insensitive uniqueness check
+        const normalizedGroupName = group_name.trim().toLowerCase();
+
+        // Check if a group exists with the same (case-insensitive) name
+        const checkGroupNameQuery = `
+            SELECT group_id FROM groups WHERE LOWER(name) = LOWER($1);
+        `;
+        const checkGroupNameRes: QueryResult = await client.query(checkGroupNameQuery, [normalizedGroupName]);
+
+        if (checkGroupNameRes.rows.length > 0) {
+            await client.query('ROLLBACK');
+            return res.status(400).json({ message: "Group name is already taken." });
+        }
 
         // Insert new group
         const createGroupQuery = `
@@ -22,7 +45,7 @@ export const createGroup = async (req: Request, res: Response, next: NextFunctio
             VALUES ($1, $2, $3, $4, NOW(), NOW())
             RETURNING *;
         `;
-        const groupRes: QueryResult = await client.query(createGroupQuery, [user_id, name, description, is_private]);
+        const groupRes: QueryResult = await client.query(createGroupQuery, [user_id, group_name, description, is_private]);
         const group = groupRes.rows[0];
 
         // Insert creator into group_members as admin and moderator
@@ -89,17 +112,45 @@ export const getSingleGroup = async (req: Request, res: Response, next: NextFunc
 // Update group details (only for group admin/moderators)
 export const updateGroup = async (req: Request, res: Response, next: NextFunction) => {
     const { group_id } = req.params;
-    const { user_id, name, description } = req.body;
+    const { user_id, group_name, description } = req.body;
+
+    // validate group name and description
+    if (!group_name || group_name.trim().length < 3) {
+        return res.status(400).json({ message: "Group name must be at least 3 characters long." });
+    }
+
+    if (!description || description.trim().length < 10) {
+        return res.status(400).json({ message: "Group description must be at least 10 characters long." });
+    }
+
+    const client = await pool.connect();
 
     try {
+        await client.query('BEGIN');
+
         // Check if user is an admin or moderator
         const checkMembershipQuery = `
             SELECT is_admin, is_mod FROM group_members WHERE user_id = $1 AND group_id = $2;
         `;
-        const membershipRes: QueryResult = await pool.query(checkMembershipQuery, [user_id, group_id]);
+        const membershipRes: QueryResult = await client.query(checkMembershipQuery, [user_id, group_id]);
 
         if (membershipRes.rows.length === 0 || (!membershipRes.rows[0].is_admin && !membershipRes.rows[0].is_mod)) {
+            await client.query('ROLLBACK');
             return res.status(403).json({ message: 'You do not have permission to update this group.' });
+        }
+
+        // Convert group name to lowercase for case-insensitive uniqueness check
+        const normalizedGroupName = group_name.trim().toLowerCase();
+
+        // Check if another group already has this name (excluding the current group)
+        const checkGroupNameQuery = `
+            SELECT group_id FROM groups WHERE LOWER(name) = LOWER($1) AND group_id <> $2;
+        `;
+        const checkGroupNameRes: QueryResult = await client.query(checkGroupNameQuery, [normalizedGroupName, group_id]);
+
+        if (checkGroupNameRes.rows.length > 0) {
+            await client.query('ROLLBACK');
+            return res.status(400).json({ message: "Group name is already taken." });
         }
 
         // Update group details
@@ -107,18 +158,25 @@ export const updateGroup = async (req: Request, res: Response, next: NextFunctio
             UPDATE groups SET name = $1, description = $2, updated_at = NOW()
             WHERE group_id = $3 RETURNING *;
         `;
-        const updatedGroupRes: QueryResult = await pool.query(updateGroupQuery, [name, description, group_id]);
+        const updatedGroupRes: QueryResult = await client.query(updateGroupQuery, [group_name, description, group_id]);
+
+        await client.query('COMMIT');
 
         return res.status(200).json({ message: 'Group details updated successfully.', group: updatedGroupRes.rows[0] });
     } catch (error) {
+        await client.query('ROLLBACK');
         console.error('Error updating group:', error);
         return res.status(500).json({ message: 'Error updating group. Please try again later.' });
+    } finally {
+        client.release();
     }
 };
 
 // Change group privacy (only for group admin/moderators)
 export const changeGroupPrivacy = async (req: Request, res: Response, next: NextFunction) => {
     const { group_id } = req.params;
+
+    // grab user id and group's current privacy status from body
     const { user_id, is_private } = req.body;
 
     try {
@@ -137,9 +195,11 @@ export const changeGroupPrivacy = async (req: Request, res: Response, next: Next
             UPDATE groups SET is_private = $1, updated_at = NOW()
             WHERE group_id = $2 RETURNING *;
         `;
-        const updatedGroupRes: QueryResult = await pool.query(updatePrivacyQuery, [is_private, group_id]);
 
-        return res.status(200).json({ message: 'Group privacy updated successfully.', group: updatedGroupRes.rows[0] });
+        // update privacy to opposite of group's current privacy status
+        const updatedGroupRes: QueryResult = await pool.query(updatePrivacyQuery, [!is_private, group_id]);
+
+        return res.status(200).json({ message: `Group privacy updated to ${!is_private}.`, group: updatedGroupRes.rows[0] });
     } catch (error) {
         console.error('Error changing group privacy:', error);
         return res.status(500).json({ message: 'Error changing group privacy. Please try again later.' });
@@ -171,13 +231,13 @@ export const deleteGroup = async (req: Request, res: Response, next: NextFunctio
         const deleteMembershipsQuery = `DELETE FROM group_members WHERE group_id = $1;`;
         await client.query(deleteMembershipsQuery, [group_id]);
 
-        // Delete the group
-        const deleteGroupQuery = `DELETE FROM groups WHERE group_id = $1 RETURNING *;`;
-        const deletedGroupRes: QueryResult = await client.query(deleteGroupQuery, [group_id]);
-
         // delete all join requests
         const deleteGroupJoinRequestsQuery = `DELETE FROM group_join_requests WHERE group_id = $1 RETURNING *`
         await client.query(deleteGroupJoinRequestsQuery, [group_id])
+
+        // Delete the group
+        const deleteGroupQuery = `DELETE FROM groups WHERE group_id = $1 RETURNING *;`;
+        const deletedGroupRes: QueryResult = await client.query(deleteGroupQuery, [group_id]);
 
         await client.query('COMMIT');
 
@@ -323,19 +383,20 @@ export const editGroupPost = async (req: Request, res: Response, next: NextFunct
     }
 };
 
-// Delete a post in a group (post owner/admin/mods only)
+// delete a post in a group (post owner/admin/mods only)
 export const deleteGroupPost = async (req: Request, res: Response, next: NextFunction) => {
-    const { post_id } = req.params;
-    const { user_id } = req.body;
+    const { group_id, post_id } = req.params;
+
+    // user info from user deleting post
+    const { user_id, username, profile_pic, group_name } = req.body;
 
     const client = await pool.connect();
 
     try {
-        // Begin transaction to delete likes, comments, and then the entire post
         await client.query('BEGIN');
 
-        // Get post details including group_id and user_id
-        const getPostQuery = `SELECT user_id, group_id FROM posts WHERE post_id = $1;`;
+        // Get user_id from post being deleted
+        const getPostQuery = `SELECT user_id FROM posts WHERE post_id = $1;`;
         const postRes: QueryResult = await client.query(getPostQuery, [post_id]);
 
         if (postRes.rows.length === 0) {
@@ -343,18 +404,16 @@ export const deleteGroupPost = async (req: Request, res: Response, next: NextFun
             return res.status(404).json({ message: 'Post not found.' });
         }
 
-        const postOwnerId = postRes.rows[0].user_id
-        const currentGroupId = postRes.rows[0].group_id
+        const postOwnerId = postRes.rows[0].user_id;
 
         // Check if the user is the post owner, admin, or mod
-        const checkAdminModQuery = `
-        SELECT is_admin, is_mod FROM group_members WHERE user_id = $1 AND group_id = $2;
-    `;
-        const adminModRes: QueryResult = await client.query(checkAdminModQuery, [user_id, currentGroupId]);
+        const checkAdminModQuery = `SELECT is_admin, is_mod FROM group_members WHERE user_id = $1 AND group_id = $2;`;
+        const adminModRes: QueryResult = await client.query(checkAdminModQuery, [user_id, group_id]);
 
+        const isAdminOrMod = adminModRes.rows.length > 0 && (adminModRes.rows[0].is_admin || adminModRes.rows[0].is_mod);
 
-        // if user isn't post owner, or group mod/admin, they don't have permission to delete post
-        if (postOwnerId !== Number(user_id) && adminModRes.rows.length === 0 || (!adminModRes.rows[0].is_admin && !adminModRes.rows[0].is_mod)) {
+        // If user isn't post owner or group mod/admin, they don't have permission to delete the post
+        if (postOwnerId !== Number(user_id) && !isAdminOrMod) {
             await client.query('ROLLBACK');
             return res.status(403).json({ message: "You are not authorized to delete this post." });
         }
@@ -369,17 +428,30 @@ export const deleteGroupPost = async (req: Request, res: Response, next: NextFun
         const deletePostQuery = `DELETE FROM posts WHERE post_id = $1 RETURNING *;`;
         const deletePostResponse: QueryResult = await client.query(deletePostQuery, [post_id]);
 
-        // Commit the transaction
+        // If an admin or mod deletes the post, notify the post owner
+        if (isAdminOrMod && postOwnerId !== Number(user_id)) {
+            await createNotification({
+                sender_id: user_id,
+                sender_username: username,
+                sender_profile_pic: profile_pic,
+                receiver_id: postOwnerId,
+                type: 'group_change',
+                message: `Your post was removed by a group admin or moderator in ${group_name}.`,
+                reference_type: 'group',
+                reference_id: Number(group_id),
+                client
+            });
+        }
+
         await client.query('COMMIT');
 
         return res.status(200).json({ message: 'Post deleted successfully.', post: deletePostResponse.rows[0] });
     } catch (error) {
-        // Rollback the transaction if any error occurs
         await client.query('ROLLBACK');
         console.error('Error deleting post:', error);
         return res.status(500).json({ message: 'Error deleting post. Please try again later.' });
     } finally {
-        client.release()
+        client.release();
     }
 };
 
@@ -480,17 +552,18 @@ export const inviteUserToGroup = async (req: Request, res: Response, next: NextF
     }
 };
 
-// Get all members of a group
+// get all members of a group, sorted with admins first, then mods, then regular members
 export const getGroupMembers = async (req: Request, res: Response, next: NextFunction) => {
     const { group_id } = req.params;
 
     try {
-        // grab all users and their profile info from group_members table
+        // Grab all users and their profile info from the group_members table
         const query = `
             SELECT gm.user_id, gm.is_admin, gm.is_mod, gm.joined_at, u.username, u.profile_pic 
             FROM group_members gm
             JOIN users u ON gm.user_id = u.user_id
-            WHERE gm.group_id = $1;
+            WHERE gm.group_id = $1
+            ORDER BY gm.is_admin DESC, gm.is_mod DESC;
         `;
         const membersRes: QueryResult = await pool.query(query, [group_id]);
 
@@ -569,20 +642,52 @@ export const joinGroup = async (req: Request, res: Response, next: NextFunction)
     }
 };
 
+// remove requet to join
+export const removeJoinRequest = async (req: Request, res: Response, next: NextFunction) => {
+    const { group_id } = req.params;
+    const { user_id } = req.body;
+
+    try {
+        // check if join request exists in db
+        const joinRequestQuery = `SELECT * FROM group_join_requests WHERE user_id = $1 AND group_id = $2 AND status = 'pending'`
+        const joinRequestRes: QueryResult = await pool.query(joinRequestQuery, [user_id, group_id])
+
+        if (joinRequestRes.rows.length === 0) {
+            return res.status(400).json({ message: `No join request found.` })
+        }
+
+        // make sure user_id in body matches user_id in join request
+        if (joinRequestRes.rows[0].user_id !== Number(user_id)) {
+            return res.status(403).json({ message: "You aren't authorized to delete this request." })
+        }
+
+        // delete join request
+        const deleteJoinRequestQuery = `DELETE FROM group_join_requests WHERE user_id = $1 AND group_id = $2 RETURNING *;`
+        const deleteJoinRequestRes: QueryResult = await pool.query(deleteJoinRequestQuery, [user_id, group_id])
+
+        return res.status(200).json({ message: "Join request deleted successfully!", deletedRequest: deleteJoinRequestRes.rows[0] })
+    } catch (error) {
+        console.error(`Error deleting join request: ${error}`)
+        return res.status(500).json({ message: `Error deleting join request: ${error}` })
+    }
+}
+
 // user accept a group invitation
 export const userAcceptGroupInvite = async (req: Request, res: Response, next: NextFunction) => {
     const { group_id, request_id } = req.params;
+
+    // The user who is accepting the invite
     const { user_id } = req.body;
 
     const client = await pool.connect();
 
     try {
-        // Begin transaction
         await client.query('BEGIN');
 
         // Check if the join request exists and is still pending
         const checkRequestQuery = `
-            SELECT * FROM group_join_requests WHERE request_id = $1 AND group_id = $2 AND status = 'pending' AND is_invite = true;
+            SELECT user_id FROM group_join_requests 
+            WHERE request_id = $1 AND group_id = $2 AND status = 'pending' AND is_invite = true;
         `;
         const requestRes: QueryResult = await client.query(checkRequestQuery, [request_id, group_id]);
 
@@ -591,9 +696,17 @@ export const userAcceptGroupInvite = async (req: Request, res: Response, next: N
             return res.status(404).json({ message: 'Invitation not found or already processed.' });
         }
 
+        // Ensure the user accepting the invite is the intended recipient
+        if (requestRes.rows[0].user_id !== user_id) {
+            await client.query('ROLLBACK');
+            return res.status(403).json({ message: 'You are not authorized to accept this invitation.' });
+        }
+
         // Update the join request status to 'accepted'
         const updateRequestQuery = `
-            UPDATE group_join_requests SET status = 'accepted', updated_at = NOW() WHERE request_id = $1 RETURNING *;
+            UPDATE group_join_requests 
+            SET status = 'accepted', updated_at = NOW() 
+            WHERE request_id = $1 RETURNING *;
         `;
         const updateRequestRes: QueryResult = await client.query(updateRequestQuery, [request_id]);
 
@@ -604,12 +717,14 @@ export const userAcceptGroupInvite = async (req: Request, res: Response, next: N
         `;
         const addMemberRes: QueryResult = await client.query(addMemberQuery, [user_id, group_id]);
 
-        // Commit the transaction
         await client.query('COMMIT');
 
-        return res.status(200).json({ message: 'Invitation accepted successfully.', updated_request: updateRequestRes.rows[0], added_member: addMemberRes.rows[0] });
+        return res.status(200).json({
+            message: 'Invitation accepted successfully.',
+            updated_request: updateRequestRes.rows[0],
+            added_member: addMemberRes.rows[0]
+        });
     } catch (error) {
-        // Rollback the transaction if any error occurs
         await client.query('ROLLBACK');
         console.error('Error accepting group invitation:', error);
         return res.status(500).json({ message: 'Error accepting group invitation. Please try again later.' });
@@ -618,21 +733,22 @@ export const userAcceptGroupInvite = async (req: Request, res: Response, next: N
     }
 };
 
-
-
 // user deny group invitation
 export const userDenyGroupInvite = async (req: Request, res: Response, next: NextFunction) => {
     const { group_id, request_id } = req.params;
 
+    // The user denying the invite
+    const { user_id } = req.body;
+
     const client = await pool.connect();
 
     try {
-        // Begin transaction
         await client.query('BEGIN');
 
         // Check if the join request exists and is still pending
         const checkRequestQuery = `
-            SELECT * FROM group_join_requests WHERE request_id = $1 AND group_id = $2 AND status = 'pending' AND is_invite = true;
+            SELECT user_id FROM group_join_requests 
+            WHERE request_id = $1 AND group_id = $2 AND status = 'pending' AND is_invite = true;
         `;
         const requestRes: QueryResult = await client.query(checkRequestQuery, [request_id, group_id]);
 
@@ -641,18 +757,25 @@ export const userDenyGroupInvite = async (req: Request, res: Response, next: Nex
             return res.status(404).json({ message: 'Invitation not found or already processed.' });
         }
 
-        // Update the join request status to 'denied'
-        const updateRequestQuery = `
-            UPDATE group_join_requests SET status = 'denied', updated_at = NOW() WHERE request_id = $1 RETURNING *;
-        `;
-        const updateRequestRes: QueryResult = await client.query(updateRequestQuery, [request_id]);
+        // Ensure the user denying the invite is the intended recipient
+        if (requestRes.rows[0].user_id !== user_id) {
+            await client.query('ROLLBACK');
+            return res.status(403).json({ message: 'You are not authorized to deny this invitation.' });
+        }
 
-        // Commit the transaction
+        // Delete the join request
+        const deleteJoinRequestQuery = `
+            DELETE FROM group_join_requests WHERE request_id = $1 RETURNING *;
+        `;
+        const deleteJoinRequestRes: QueryResult = await client.query(deleteJoinRequestQuery, [request_id]);
+
         await client.query('COMMIT');
 
-        return res.status(200).json({ message: 'Invitation denied successfully.', updated_request: updateRequestRes.rows[0] });
+        return res.status(200).json({
+            message: 'Invitation denied successfully.',
+            deleted_request: deleteJoinRequestRes.rows[0]
+        });
     } catch (error) {
-        // Rollback the transaction if any error occurs
         await client.query('ROLLBACK');
         console.error('Error denying group invitation:', error);
         return res.status(500).json({ message: 'Error denying group invitation. Please try again later.' });
@@ -660,7 +783,6 @@ export const userDenyGroupInvite = async (req: Request, res: Response, next: Nex
         client.release();
     }
 };
-
 
 // Leave group
 export const leaveGroup = async (req: Request, res: Response, next: NextFunction) => {
@@ -688,6 +810,10 @@ export const leaveGroup = async (req: Request, res: Response, next: NextFunction
             await client.query('ROLLBACK');
             return res.status(403).json({ message: 'Admin cannot leave the group. Transfer ownership or delete the group first.' });
         }
+
+        // delete join request
+        const deleteJoinRequestQuery = `DELETE FROM group_join_requests WHERE user_id = $1 AND group_id = $2 RETURNING *;`
+        await client.query(deleteJoinRequestQuery, [user_id, group_id])
 
         // Remove the user from the group
         const leaveQuery = `DELETE FROM group_members WHERE user_id = $1 AND group_id = $2 RETURNING *;`;
@@ -869,13 +995,9 @@ export const denyJoinRequest = async (req: Request, res: Response, next: NextFun
             return res.status(500).json({ message: "Failed to fetch denied user's info." });
         }
 
-        // Update the join request status to 'denied'
-        const updateRequestQuery = `
-            UPDATE group_join_requests
-            SET status = 'denied', updated_at = NOW()
-            WHERE request_id = $1 RETURNING *;
-        `;
-        const updateRequestRes: QueryResult = await client.query(updateRequestQuery, [request_id]);
+        // delete join request
+        const deleteJoinRequestQuery = `DELETE FROM group_join_requests WHERE request_id = $1 AND group_id = $2 RETURNING *;`
+        const deleteJoinRequestRes: QueryResult = await client.query(deleteJoinRequestQuery, [request_id, group_id])
 
         // Create a notification for the user who was denied
         const notificationMessage = `${deniedUserInfo.username}, your request to join ${group_name} has been denied.`;
@@ -896,7 +1018,7 @@ export const denyJoinRequest = async (req: Request, res: Response, next: NextFun
         // Commit the transaction
         await client.query('COMMIT');
 
-        return res.status(200).json({ message: 'Join request denied successfully.', updated_request: updateRequestRes.rows[0] });
+        return res.status(200).json({ message: 'Join request denied successfully.', updated_request: deleteJoinRequestRes.rows[0] });
     } catch (error) {
         // Rollback the transaction if any error occurs
         await client.query('ROLLBACK');
@@ -956,7 +1078,7 @@ export const removeGroupMember = async (req: Request, res: Response, next: NextF
             sender_username: username,
             sender_profile_pic: profile_pic,
             receiver_id: Number(member_id),
-            type: 'group_invite',
+            type: 'group_change',
             message: notificationMessage,
             reference_type: 'group',
             reference_id: Number(group_id),
@@ -1027,7 +1149,7 @@ export const promoteToModerator = async (req: Request, res: Response, next: Next
             sender_username: username,
             sender_profile_pic: profile_pic,
             receiver_id: Number(member_id),
-            type: 'group_invite',
+            type: 'group_change',
             message: notificationMessage,
             reference_type: 'group',
             reference_id: Number(group_id),
@@ -1097,7 +1219,7 @@ export const demoteModerator = async (req: Request, res: Response, next: NextFun
             sender_username: username,
             sender_profile_pic: profile_pic,
             receiver_id: Number(member_id),
-            type: 'group_invite',
+            type: 'group_change',
             message: notificationMessage,
             reference_type: 'group',
             reference_id: Number(group_id),
@@ -1113,6 +1235,163 @@ export const demoteModerator = async (req: Request, res: Response, next: NextFun
         await client.query('ROLLBACK');
         console.error('Error demoting moderator:', error);
         return res.status(500).json({ message: 'Error demoting moderator. Please try again later.' });
+    } finally {
+        client.release();
+    }
+};
+
+// grant admin status
+export const promoteToAdmin = async (req: Request, res: Response, next: NextFunction) => {
+    const { group_id, user_id } = req.params;
+
+    // Admin's info
+    const { admin_id, username, profile_pic, group_name } = req.body;
+
+    const client = await pool.connect();
+
+    try {
+        await client.query('BEGIN');
+
+        // Check if the requester is an admin
+        const checkAdminQuery = `SELECT is_admin FROM group_members WHERE user_id = $1 AND group_id = $2;`;
+        const adminRes: QueryResult = await client.query(checkAdminQuery, [admin_id, group_id]);
+
+        if (adminRes.rows.length === 0 || !adminRes.rows[0].is_admin) {
+            await client.query('ROLLBACK');
+            return res.status(403).json({ message: 'You are not authorized to grant admin rights.' });
+        }
+
+        // Check if target user is in the group
+        const checkMemberQuery = `SELECT * FROM group_members WHERE user_id = $1 AND group_id = $2;`;
+        const memberRes: QueryResult = await client.query(checkMemberQuery, [user_id, group_id]);
+
+        if (memberRes.rows.length === 0) {
+            await client.query('ROLLBACK');
+            return res.status(404).json({ message: 'User is not a member of this group.' });
+        }
+
+        // Grant admin & mod status
+        const updateQuery = `
+            UPDATE group_members 
+            SET is_admin = TRUE, is_mod = TRUE 
+            WHERE user_id = $1 AND group_id = $2 
+            RETURNING *;
+        `;
+        const updateRes: QueryResult = await client.query(updateQuery, [user_id, group_id]);
+
+        // Fetch promoted user's info
+        let promotedUserInfo: any;
+        try {
+            promotedUserInfo = await getUserInfo(Number(user_id), client);
+        } catch (error) {
+            await client.query('ROLLBACK');
+            return res.status(500).json({ message: "Failed to fetch promoted user's info." });
+        }
+
+        // Create a notification
+        const notificationMessage = `${promotedUserInfo.username}, you have been promoted to an admin in ${group_name}.`;
+        await createNotification({
+            sender_id: admin_id,
+            sender_username: username,
+            sender_profile_pic: profile_pic,
+            receiver_id: Number(user_id),
+            receiver_username: promotedUserInfo.username,
+            receiver_profile_pic: promotedUserInfo.profile_pic ?? null,
+            type: 'group_change',
+            message: notificationMessage,
+            reference_type: 'group',
+            reference_id: Number(group_id),
+            client
+        });
+
+        await client.query('COMMIT');
+
+        return res.status(200).json({ message: 'User granted admin status successfully.', updatedMember: updateRes.rows[0] });
+    } catch (error) {
+        await client.query('ROLLBACK');
+        console.error('Error granting admin status:', error);
+        return res.status(500).json({ message: 'Error granting admin status. Please try again later.' });
+    } finally {
+        client.release();
+    }
+};
+
+
+// demote admin status
+export const demoteAdmin = async (req: Request, res: Response, next: NextFunction) => {
+    const { group_id, user_id } = req.params;
+
+    // Admin's info
+    const { admin_id, username, profile_pic, group_name } = req.body;
+
+    const client = await pool.connect();
+
+    try {
+        await client.query('BEGIN');
+
+        // Check if the requester is an admin
+        const checkAdminQuery = `SELECT is_admin FROM group_members WHERE user_id = $1 AND group_id = $2;`;
+        const adminRes: QueryResult = await client.query(checkAdminQuery, [admin_id, group_id]);
+
+        if (adminRes.rows.length === 0 || !adminRes.rows[0].is_admin) {
+            await client.query('ROLLBACK');
+            return res.status(403).json({ message: 'You are not authorized to remove admin rights.' });
+        }
+
+        // Check if target user is an admin
+        const checkMemberQuery = `SELECT is_admin FROM group_members WHERE user_id = $1 AND group_id = $2;`;
+        const memberRes: QueryResult = await client.query(checkMemberQuery, [user_id, group_id]);
+
+        if (memberRes.rows.length === 0 || !memberRes.rows[0].is_admin) {
+            await client.query('ROLLBACK');
+            return res.status(400).json({ message: 'User is not an admin.' });
+        }
+
+        // Ensure there's at least one admin left
+        const adminCountQuery = `SELECT COUNT(*) FROM group_members WHERE group_id = $1 AND is_admin = TRUE;`;
+        const adminCountRes: QueryResult = await client.query(adminCountQuery, [group_id]);
+
+        if (Number(adminCountRes.rows[0].count) <= 1) {
+            await client.query('ROLLBACK');
+            return res.status(403).json({ message: 'Cannot remove the last admin. Please promote another user before demoting yourself.' });
+        }
+
+        // Remove admin status
+        const updateQuery = `UPDATE group_members SET is_admin = FALSE WHERE user_id = $1 AND group_id = $2 RETURNING *;`;
+        const updateRes: QueryResult = await client.query(updateQuery, [user_id, group_id]);
+
+        // Fetch demoted user's info
+        let demotedUserInfo: any;
+        try {
+            demotedUserInfo = await getUserInfo(Number(user_id), client);
+        } catch (error) {
+            await client.query('ROLLBACK');
+            return res.status(500).json({ message: "Failed to fetch demoted user's info." });
+        }
+
+        // Create a notification
+        const notificationMessage = `${demotedUserInfo.username}, you have been removed as an admin in ${group_name}.`;
+        await createNotification({
+            sender_id: admin_id,
+            sender_username: username,
+            sender_profile_pic: profile_pic,
+            receiver_id: Number(user_id),
+            receiver_username: demotedUserInfo.username,
+            receiver_profile_pic: demotedUserInfo.profile_pic ?? null,
+            type: 'group_change',
+            message: notificationMessage,
+            reference_type: 'group',
+            reference_id: Number(group_id),
+            client
+        });
+
+        await client.query('COMMIT');
+
+        return res.status(200).json({ message: 'Admin rights removed successfully.', updatedMember: updateRes.rows[0] });
+    } catch (error) {
+        await client.query('ROLLBACK');
+        console.error('Error removing admin status:', error);
+        return res.status(500).json({ message: 'Error removing admin status. Please try again later.' });
     } finally {
         client.release();
     }
