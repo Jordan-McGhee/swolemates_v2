@@ -45,6 +45,7 @@
 
 <!-- NOTIFICATIONS -->
     - Verify that changeNotificationReadStatus works once frontend is built
+    - update different types of notifications?
 
 <!-- FRIEND REQUESTS -->
 <!-- - TEST ALL ROUTES AND ENSURE THEY WORK PROPERLY DONE -->
@@ -52,3 +53,8 @@
 
 <!-- GROUPS -->
     - TEST ALL ROUTES
+    - Make it where group names are unique?
+    - Revist getAllGroups and its search capabilites
+    - delete join requests after denied request or left group?
+    - ability to remove admin status?
+    - add remove request to join

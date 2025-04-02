@@ -175,6 +175,10 @@ export const deleteGroup = async (req: Request, res: Response, next: NextFunctio
         const deleteGroupQuery = `DELETE FROM groups WHERE group_id = $1 RETURNING *;`;
         const deletedGroupRes: QueryResult = await client.query(deleteGroupQuery, [group_id]);
 
+        // delete all join requests
+        const deleteGroupJoinRequestsQuery = `DELETE FROM group_join_requests WHERE group_id = $1 RETURNING *`
+        await client.query(deleteGroupJoinRequestsQuery, [group_id])
+
         await client.query('COMMIT');
 
         return res.status(200).json({ message: 'Group deleted successfully.', deletedGroup: deletedGroupRes.rows[0] });
@@ -381,6 +385,101 @@ export const deleteGroupPost = async (req: Request, res: Response, next: NextFun
 
 
 // GROUP MEMBERSHIP
+// invite a user to a group
+export const inviteUserToGroup = async (req: Request, res: Response, next: NextFunction) => {
+    const { group_id, invited_user_id } = req.params;
+
+    // The user sending the invite
+    const { user_id, username, profile_pic, group_name } = req.body;
+
+    const client = await pool.connect();
+
+    try {
+        // Begin transaction to handle the invitation process
+        await client.query('BEGIN');
+
+        // Verify that the invited user exists using getUserInfo helper
+        let invitedUserInfo: any;
+        try {
+            invitedUserInfo = await getUserInfo(Number(invited_user_id), client);
+        } catch (error) {
+            await client.query('ROLLBACK');
+            return res.status(404).json({ message: 'User does not exist.' });
+        }
+
+        // Check if the inviting user is already a member of the group
+        const checkMembershipQuery = `
+            SELECT * FROM group_members
+            WHERE user_id = $1 AND group_id = $2;
+        `;
+        const checkMembershipRes: QueryResult = await pool.query(checkMembershipQuery, [user_id, group_id]);
+
+        if (checkMembershipRes.rows.length === 0) {
+            await client.query('ROLLBACK');
+            return res.status(403).json({ message: 'You must be a member of the group to invite others.' });
+        }
+
+        // Check if the invited user is already a member of the group
+        const checkExistingMembershipQuery = `
+            SELECT * FROM group_members
+            WHERE user_id = $1 AND group_id = $2;
+        `;
+        const checkExistingMembershipRes: QueryResult = await pool.query(checkExistingMembershipQuery, [invited_user_id, group_id]);
+
+        if (checkExistingMembershipRes.rows.length > 0) {
+            await client.query('ROLLBACK');
+            return res.status(400).json({ message: 'User is already a member of the group.' });
+        }
+
+        // Check if the invited user already has a pending invitation or join request
+        const checkPendingInviteQuery = `
+            SELECT * FROM group_join_requests
+            WHERE user_id = $1 AND group_id = $2 AND status = 'pending';
+        `;
+        const checkPendingInviteRes: QueryResult = await pool.query(checkPendingInviteQuery, [invited_user_id, group_id]);
+
+        if (checkPendingInviteRes.rows.length > 0) {
+            await client.query('ROLLBACK');
+            return res.status(400).json({ message: 'User already has a pending invitation or request.' });
+        }
+
+        // Insert a new invitation in the group_join_requests table with status 'pending'
+        const inviteQuery = `
+            INSERT INTO group_join_requests (user_id, group_id, status, is_invite, requested_at, updated_at)
+            VALUES ($1, $2, 'pending', true, NOW(), NOW()) RETURNING *;
+        `;
+        const inviteRes: QueryResult = await pool.query(inviteQuery, [invited_user_id, group_id]);
+
+        // Create a notification for the invited user
+        const notificationMessage = `${invitedUserInfo.username}, you have been invited to join ${group_name}.`;
+        await createNotification({
+            sender_id: user_id,
+            sender_username: username,
+            sender_profile_pic: profile_pic,
+            receiver_id: Number(invited_user_id),
+            receiver_username: invitedUserInfo.username,
+            receiver_profile_pic: invitedUserInfo.profile_pic ?? null,
+            type: 'group_invite',
+            message: notificationMessage,
+            reference_type: 'group',
+            reference_id: Number(group_id),
+            client
+        });
+
+        // Commit the transaction
+        await client.query('COMMIT');
+
+        return res.status(200).json({ message: 'User invited successfully.', invite: inviteRes.rows[0] });
+    } catch (error) {
+        // Rollback the transaction if any error occurs
+        await client.query('ROLLBACK');
+        console.error('Error inviting user to group:', error);
+        return res.status(500).json({ message: 'Error inviting user. Please try again later.' });
+    } finally {
+        client.release();
+    }
+};
+
 // Get all members of a group
 export const getGroupMembers = async (req: Request, res: Response, next: NextFunction) => {
     const { group_id } = req.params;
@@ -606,101 +705,6 @@ export const leaveGroup = async (req: Request, res: Response, next: NextFunction
     }
 };
 
-// invite a user to a group
-export const inviteUserToGroup = async (req: Request, res: Response, next: NextFunction) => {
-    const { group_id, invited_user_id } = req.params;
-
-    // The user sending the invite
-    const { user_id, username, profile_pic, group_name } = req.body;
-
-    const client = await pool.connect();
-
-    try {
-        // Begin transaction to handle the invitation process
-        await client.query('BEGIN');
-
-        // Verify that the invited user exists using getUserInfo helper
-        let invitedUserInfo: any;
-        try {
-            invitedUserInfo = await getUserInfo(Number(invited_user_id), client);
-        } catch (error) {
-            await client.query('ROLLBACK');
-            return res.status(404).json({ message: 'User does not exist.' });
-        }
-
-        // Check if the inviting user is already a member of the group
-        const checkMembershipQuery = `
-            SELECT * FROM group_members
-            WHERE user_id = $1 AND group_id = $2;
-        `;
-        const checkMembershipRes: QueryResult = await pool.query(checkMembershipQuery, [user_id, group_id]);
-
-        if (checkMembershipRes.rows.length === 0) {
-            await client.query('ROLLBACK');
-            return res.status(403).json({ message: 'You must be a member of the group to invite others.' });
-        }
-
-        // Check if the invited user is already a member of the group
-        const checkExistingMembershipQuery = `
-            SELECT * FROM group_members
-            WHERE user_id = $1 AND group_id = $2;
-        `;
-        const checkExistingMembershipRes: QueryResult = await pool.query(checkExistingMembershipQuery, [invited_user_id, group_id]);
-
-        if (checkExistingMembershipRes.rows.length > 0) {
-            await client.query('ROLLBACK');
-            return res.status(400).json({ message: 'User is already a member of the group.' });
-        }
-
-        // Check if the invited user already has a pending invitation or join request
-        const checkPendingInviteQuery = `
-            SELECT * FROM group_join_requests
-            WHERE user_id = $1 AND group_id = $2 AND status = 'pending';
-        `;
-        const checkPendingInviteRes: QueryResult = await pool.query(checkPendingInviteQuery, [invited_user_id, group_id]);
-
-        if (checkPendingInviteRes.rows.length > 0) {
-            await client.query('ROLLBACK');
-            return res.status(400).json({ message: 'User already has a pending invitation or request.' });
-        }
-
-        // Insert a new invitation in the group_join_requests table with status 'pending'
-        const inviteQuery = `
-            INSERT INTO group_join_requests (user_id, group_id, status, is_invite, requested_at, updated_at)
-            VALUES ($1, $2, 'pending', true, NOW(), NOW()) RETURNING *;
-        `;
-        const inviteRes: QueryResult = await pool.query(inviteQuery, [invited_user_id, group_id]);
-
-        // Create a notification for the invited user
-        const notificationMessage = `${invitedUserInfo.username}, you have been invited to join ${group_name}.`;
-        await createNotification({
-            sender_id: user_id,
-            sender_username: username,
-            sender_profile_pic: profile_pic,
-            receiver_id: Number(invited_user_id),
-            receiver_username: invitedUserInfo.username,
-            receiver_profile_pic: invitedUserInfo.profile_pic ?? null,
-            type: 'group_invite',
-            message: notificationMessage,
-            reference_type: 'group',
-            reference_id: Number(group_id),
-            client
-        });
-
-        // Commit the transaction
-        await client.query('COMMIT');
-
-        return res.status(200).json({ message: 'User invited successfully.', invite: inviteRes.rows[0] });
-    } catch (error) {
-        // Rollback the transaction if any error occurs
-        await client.query('ROLLBACK');
-        console.error('Error inviting user to group:', error);
-        return res.status(500).json({ message: 'Error inviting user. Please try again later.' });
-    } finally {
-        client.release();
-    }
-};
-
 // get all pending join requests (admin/mods only)
 export const getPendingJoinRequests = async (req: Request, res: Response, next: NextFunction) => {
     const { group_id } = req.params;
@@ -719,7 +723,7 @@ export const getPendingJoinRequests = async (req: Request, res: Response, next: 
 
         // Get all pending join requests
         const getJoinRequestsQuery = `
-            SELECT * FROM group_join_requests WHERE group_id = $1 AND status = 'pending' AND is_invite = true;
+            SELECT * FROM group_join_requests WHERE group_id = $1 AND status = 'pending' AND is_invite = false;
         `;
         const joinRequestsRes: QueryResult = await pool.query(getJoinRequestsQuery, [group_id]);
 
@@ -732,7 +736,7 @@ export const getPendingJoinRequests = async (req: Request, res: Response, next: 
 
 
 // accept join request (admin/mods only)
-export const acceptGroupInvite = async (req: Request, res: Response, next: NextFunction) => {
+export const acceptJoinRequest = async (req: Request, res: Response, next: NextFunction) => {
     const { group_id, request_id } = req.params;
 
     // admin/mod info
@@ -757,7 +761,7 @@ export const acceptGroupInvite = async (req: Request, res: Response, next: NextF
 
         // Check if the join request exists and is pending
         const checkRequestQuery = `
-            SELECT * FROM group_join_requests WHERE request_id = $1 AND group_id = $2 AND status = 'pending' AND is_invite = true;
+            SELECT * FROM group_join_requests WHERE request_id = $1 AND group_id = $2 AND status = 'pending' AND is_invite = false;
         `;
         const requestRes: QueryResult = await client.query(checkRequestQuery, [request_id, group_id]);
 
@@ -791,7 +795,7 @@ export const acceptGroupInvite = async (req: Request, res: Response, next: NextF
         await client.query(addMemberQuery, [requestRes.rows[0].user_id, group_id]);
 
         // Create a notification for the user who was added
-        const notificationMessage = `${username}, your request to join ${group_name} has been accepted!`;
+        const notificationMessage = `${joiningUserInfo.username}, your request to join ${group_name} has been accepted!`;
         await createNotification({
             sender_id: user_id,
             sender_username: username,
@@ -822,7 +826,7 @@ export const acceptGroupInvite = async (req: Request, res: Response, next: NextF
 
 
 // deny join request (admin/mods only)
-export const denyGroupInvite = async (req: Request, res: Response, next: NextFunction) => {
+export const denyJoinRequest = async (req: Request, res: Response, next: NextFunction) => {
     const { group_id, request_id } = req.params;
 
     // admin/mod info
@@ -847,7 +851,7 @@ export const denyGroupInvite = async (req: Request, res: Response, next: NextFun
 
         // Check if the join request exists and is pending
         const checkRequestQuery = `
-            SELECT * FROM group_join_requests WHERE request_id = $1 AND group_id = $2 AND status = 'pending' AND is_invite = true;
+            SELECT * FROM group_join_requests WHERE request_id = $1 AND group_id = $2 AND status = 'pending' AND is_invite = false;
         `;
         const requestRes: QueryResult = await client.query(checkRequestQuery, [request_id, group_id]);
 
@@ -874,7 +878,7 @@ export const denyGroupInvite = async (req: Request, res: Response, next: NextFun
         const updateRequestRes: QueryResult = await client.query(updateRequestQuery, [request_id]);
 
         // Create a notification for the user who was denied
-        const notificationMessage = `${username}, your request to join ${group_name} has been denied.`;
+        const notificationMessage = `${deniedUserInfo.username}, your request to join ${group_name} has been denied.`;
         await createNotification({
             sender_id: user_id,
             sender_username: username,
@@ -882,7 +886,7 @@ export const denyGroupInvite = async (req: Request, res: Response, next: NextFun
             receiver_id: requestRes.rows[0].user_id,
             receiver_username: deniedUserInfo.username,
             receiver_profile_pic: deniedUserInfo.profile_pic ?? null,
-            type: 'group_join_denied',
+            type: 'group_invite',
             message: notificationMessage,
             reference_type: 'group',
             reference_id: Number(group_id),
@@ -946,13 +950,13 @@ export const removeGroupMember = async (req: Request, res: Response, next: NextF
         const removedMemberRes: QueryResult = await client.query(removeMemberQuery, [member_id, group_id]);
 
         // Create a notification for the user who was removed
-        const notificationMessage = `${username}, you have been removed from ${group_name}.`;
+        const notificationMessage = `${username} removed you from ${group_name}.`;
         await createNotification({
             sender_id: user_id,
             sender_username: username,
             sender_profile_pic: profile_pic,
             receiver_id: Number(member_id),
-            type: 'group_member_removed',
+            type: 'group_invite',
             message: notificationMessage,
             reference_type: 'group',
             reference_id: Number(group_id),
@@ -1017,13 +1021,13 @@ export const promoteToModerator = async (req: Request, res: Response, next: Next
         const promoteRes: QueryResult = await client.query(promoteQuery, [member_id, group_id]);
 
         // Create a notification for the user who was promoted
-        const notificationMessage = `${username}, you have been promoted to a moderator in ${group_name}.`;
+        const notificationMessage = `${username} has been promoted to a moderator in ${group_name}!`;
         await createNotification({
             sender_id: user_id,
             sender_username: username,
             sender_profile_pic: profile_pic,
             receiver_id: Number(member_id),
-            type: 'group_promoted_to_mod',
+            type: 'group_invite',
             message: notificationMessage,
             reference_type: 'group',
             reference_id: Number(group_id),
@@ -1087,13 +1091,13 @@ export const demoteModerator = async (req: Request, res: Response, next: NextFun
         const demoteRes: QueryResult = await client.query(demoteQuery, [member_id, group_id]);
 
         // Create a notification for the user who was demoted
-        const notificationMessage = `${username}, you have been demoted from moderator to a regular member in ${group_name}.`;
+        const notificationMessage = `${username} has demoted you from a moderator to a regular member in ${group_name}.`;
         await createNotification({
             sender_id: user_id,
             sender_username: username,
             sender_profile_pic: profile_pic,
             receiver_id: Number(member_id),
-            type: 'group_demoted_to_member',
+            type: 'group_invite',
             message: notificationMessage,
             reference_type: 'group',
             reference_id: Number(group_id),

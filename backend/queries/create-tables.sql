@@ -108,7 +108,7 @@ CREATE TABLE notifications (
     sender_username VARCHAR(255) NOT NULL,
     sender_profile_pic TEXT,
     receiver_id INT NOT NULL REFERENCES users(user_id),
-    receiver_username VARCHAR(255) NOT NULL,
+    receiver_username VARCHAR(255),
     receiver_profile_pic TEXT,
     type notification_type,
     message TEXT,
