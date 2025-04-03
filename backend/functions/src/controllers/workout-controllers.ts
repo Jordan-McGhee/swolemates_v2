@@ -25,7 +25,7 @@ export const getWorkoutsByUser = async (req: Request, res: Response, next: NextF
         }
 
         // Fetch user's workouts
-        const getWorkoutsByUserQuery = "SELECT * FROM workout_with_exercises WHERE user_id = $1 ORDER BY workout_created_at DESC";
+        const getWorkoutsByUserQuery = "SELECT * FROM workouts_with_likes_comments WHERE user_id = $1 ORDER BY workout_created_at DESC";
         const getWorkoutsByUserRes: QueryResult = await pool.query(getWorkoutsByUserQuery, [user_id]);
 
         return res.status(200).json({
@@ -50,24 +50,7 @@ export const getSingleWorkout = async (req: Request, res: Response, next: NextFu
     }
 
     // Query for the post
-    const getSingleWorkoutQuery = `SELECT * FROM workout_with_exercises WHERE workout_id = $1`;
-
-    // Query for likes - pulls username, profile pic and id for each user
-    const getLikesQuery = `
-            SELECT users.user_id, users.username, users.profile_pic 
-            FROM likes
-            INNER JOIN users ON likes.user_id = users.user_id
-            WHERE likes.workout_id = $1;
-        `;
-
-    // Query for comments - pulls username, profile pic, and comment info
-    const getCommentsQuery = `
-            SELECT comments.comment_id, users.username, users.profile_pic, comments.content, comments.created_at, comments.updated_at
-            FROM comments
-            JOIN users ON comments.user_id = users.user_id
-            WHERE comments.workout_id = $1
-            ORDER BY comments.created_at ASC
-        `;
+    const getSingleWorkoutQuery = `SELECT * FROM workouts_with_likes_comments WHERE workout_id = $1`;
 
     try {
         // get the workout (this must succeed)
@@ -80,30 +63,12 @@ export const getSingleWorkout = async (req: Request, res: Response, next: NextFu
 
         const workout = workoutResponse.rows[0]
 
-        // empty array for likes and comments
-        let likes = []; let comments = [];
-
-        // Try to get likes and comments from db, but don't fail everything if it breaks
-        try {
-            const likesResponse: QueryResult = await pool.query(getLikesQuery, [workout_id]);
-            likes = likesResponse.rows;
-        } catch (error) {
-            console.error(`Error fetching likes for workout #${workout_id}:`, error);
-        }
-
-        try {
-            const commentsResponse: QueryResult = await pool.query(getCommentsQuery, [workout_id]);
-            comments = commentsResponse.rows;
-        } catch (error) {
-            console.error(`Error fetching comments for workout #${workout_id}:`, error);
-        }
-
         return res.status(200).json({
             message: "Got workout!",
             workout,
             workout_user_id: workout.user_id,
-            likes,
-            comments
+            likes: workout.likes,
+            comments: workout.comments
         });
 
     } catch (error) {

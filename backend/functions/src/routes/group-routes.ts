@@ -77,15 +77,15 @@ router.delete("/:group_id/members/:member_id", groupControllers.removeGroupMembe
 
 // MANAGE MODERATORS
 // promote a member to moderator (admin only)
-router.patch("/:group_id/members/:member_id/promote", groupControllers.promoteToModerator);
+router.patch("/:group_id/members/:member_id/promote", groupControllers.promoteToModerator); 
 
 // demote a moderator to a regular member (admin only)
-router.patch("/:group_id/members/:member_id/demote", groupControllers.demoteModerator);
+router.patch("/:group_id/members/:member_id/demote", groupControllers.demoteModerator); 
 
 // grant admin rights
-router.patch('/:group_id/members/:user_id/promote-admin', groupControllers.promoteToAdmin);
+router.patch('/:group_id/members/:user_id/promote-admin', groupControllers.promoteToAdmin); 
 
 // remove admin rights
-router.patch('/:group_id/members/:user_id/demote-admin', groupControllers.demoteAdmin);
+router.patch('/:group_id/members/:user_id/demote-admin', groupControllers.demoteAdmin); 
 
 module.exports = router

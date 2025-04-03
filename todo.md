@@ -58,3 +58,9 @@
 <!-- - delete join requests after denied request or left group? DONE -->
 <!-- - ability to remove admin status? DONE -->
 <!-- - add remove request to join DONE -->
+
+TESTING
+- Group tests: Test manage moderators routes
+- Post tests: getAllUsers, getSingle
+- Friend tests: getAllFriends, getAllSent/ReceivedRequsts
+- Workout tests: getWorkoutsByUser, getSingleWorkout, 

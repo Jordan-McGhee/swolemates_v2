@@ -8,7 +8,7 @@ export const getAllUserFriendRequests = async (req: Request, res: Response, next
     const { user_id } = req.params;
 
     try {
-        const query = "SELECT * FROM friend_requests WHERE sender_id = $1 OR receiver_id = $1";
+        const query = "SELECT * FROM friend_requests_view WHERE sender_id = $1 OR receiver_id = $1";
         const response: QueryResult = await pool.query(query, [user_id]);
 
         return res.status(200).json({ message: `Got all friend requests for #${user_id}.`, friend_requests: response.rows });
@@ -23,7 +23,7 @@ export const getAllUserSentRequests = async (req: Request, res: Response, next: 
     const { user_id } = req.params;
 
     try {
-        const query = "SELECT * FROM friend_requests WHERE sender_id = $1 AND status = 'Pending'";
+        const query = "SELECT * FROM friend_requests_view WHERE sender_id = $1 AND status = 'Pending'";
         const response: QueryResult = await pool.query(query, [user_id]);
 
         return res.status(200).json({ message: `Got all sent friend requests for #${user_id}.`, friend_requests: response.rows });
@@ -38,7 +38,7 @@ export const getAllUserReceivedRequests = async (req: Request, res: Response, ne
     const { user_id } = req.params;
 
     try {
-        const query = "SELECT * FROM friend_requests WHERE receiver_id = $1 AND status = 'Pending'";
+        const query = "SELECT * FROM friend_requests_view WHERE receiver_id = $1 AND status = 'Pending'";
         const response: QueryResult = await pool.query(query, [user_id]);
 
         return res.status(200).json({ message: `Got all rceived friend requests for #${user_id}.`, friend_requests: response.rows });
@@ -118,9 +118,6 @@ export const createFriendRequest = async (req: Request, res: Response, next: Nex
         client.release();
     }
 };
-
-
-
 
 // Accept a friend request
 export const acceptFriendRequest = async (req: Request, res: Response, next: NextFunction) => {

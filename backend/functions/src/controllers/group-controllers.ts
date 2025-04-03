@@ -258,7 +258,7 @@ export const getGroupPosts = async (req: Request, res: Response, next: NextFunct
 
     try {
         const getPostsQuery = `
-            SELECT * FROM posts WHERE group_id = $1 ORDER BY created_at DESC;
+            SELECT * FROM post_with_likes_comments WHERE group_id = $1 ORDER BY created_at DESC;
         `;
         const postsRes: QueryResult = await pool.query(getPostsQuery, [group_id]);
 
@@ -407,7 +407,7 @@ export const deleteGroupPost = async (req: Request, res: Response, next: NextFun
         const postOwnerId = postRes.rows[0].user_id;
 
         // Check if the user is the post owner, admin, or mod
-        const checkAdminModQuery = `SELECT is_admin, is_mod FROM group_members WHERE user_id = $1 AND group_id = $2;`;
+        const checkAdminModQuery = `SELECT is_admin, is_mod FROM group_members_view WHERE user_id = $1 AND group_id = $2;`;
         const adminModRes: QueryResult = await client.query(checkAdminModQuery, [user_id, group_id]);
 
         const isAdminOrMod = adminModRes.rows.length > 0 && (adminModRes.rows[0].is_admin || adminModRes.rows[0].is_mod);
@@ -461,42 +461,35 @@ export const deleteGroupPost = async (req: Request, res: Response, next: NextFun
 export const inviteUserToGroup = async (req: Request, res: Response, next: NextFunction) => {
     const { group_id, invited_user_id } = req.params;
 
-    // The user sending the invite
-    const { user_id, username, profile_pic, group_name } = req.body;
+    // inviter's user_id
+    const { user_id } = req.body;
 
     const client = await pool.connect();
 
     try {
-        // Begin transaction to handle the invitation process
+        // Begin transaction
         await client.query('BEGIN');
 
-        // Verify that the invited user exists using getUserInfo helper
-        let invitedUserInfo: any;
-        try {
-            invitedUserInfo = await getUserInfo(Number(invited_user_id), client);
-        } catch (error) {
-            await client.query('ROLLBACK');
-            return res.status(404).json({ message: 'User does not exist.' });
-        }
-
-        // Check if the inviting user is already a member of the group
-        const checkMembershipQuery = `
-            SELECT * FROM group_members
+        // Fetch inviter's details and verify membership using group_members_view
+        const getInviterQuery = `
+            SELECT user_id, username, profile_pic, group_name 
+            FROM group_members_view
             WHERE user_id = $1 AND group_id = $2;
         `;
-        const checkMembershipRes: QueryResult = await pool.query(checkMembershipQuery, [user_id, group_id]);
+        const inviterRes: QueryResult = await client.query(getInviterQuery, [user_id, group_id]);
 
-        if (checkMembershipRes.rows.length === 0) {
+        if (inviterRes.rows.length === 0) {
             await client.query('ROLLBACK');
             return res.status(403).json({ message: 'You must be a member of the group to invite others.' });
         }
 
+        const inviter = inviterRes.rows[0];
+
         // Check if the invited user is already a member of the group
         const checkExistingMembershipQuery = `
-            SELECT * FROM group_members
-            WHERE user_id = $1 AND group_id = $2;
-        `;
-        const checkExistingMembershipRes: QueryResult = await pool.query(checkExistingMembershipQuery, [invited_user_id, group_id]);
+                SELECT * FROM group_members_view WHERE user_id = $1 AND group_id = $2;
+            `;
+        const checkExistingMembershipRes: QueryResult = await client.query(checkExistingMembershipQuery, [invited_user_id, group_id]);
 
         if (checkExistingMembershipRes.rows.length > 0) {
             await client.query('ROLLBACK');
@@ -505,32 +498,44 @@ export const inviteUserToGroup = async (req: Request, res: Response, next: NextF
 
         // Check if the invited user already has a pending invitation or join request
         const checkPendingInviteQuery = `
-            SELECT * FROM group_join_requests
-            WHERE user_id = $1 AND group_id = $2 AND status = 'pending';
-        `;
-        const checkPendingInviteRes: QueryResult = await pool.query(checkPendingInviteQuery, [invited_user_id, group_id]);
+                SELECT * FROM group_join_requests WHERE user_id = $1 AND group_id = $2 AND status = 'pending';
+            `;
+        const checkPendingInviteRes: QueryResult = await client.query(checkPendingInviteQuery, [invited_user_id, group_id]);
 
         if (checkPendingInviteRes.rows.length > 0) {
             await client.query('ROLLBACK');
             return res.status(400).json({ message: 'User already has a pending invitation or request.' });
         }
 
-        // Insert a new invitation in the group_join_requests table with status 'pending'
+        // Fetch invited user's details
+        const getInvitedUserQuery = `
+            SELECT user_id, username, profile_pic FROM users WHERE user_id = $1;
+        `;
+        const invitedUserRes: QueryResult = await client.query(getInvitedUserQuery, [invited_user_id]);
+
+        if (invitedUserRes.rows.length === 0) {
+            await client.query('ROLLBACK');
+            return res.status(404).json({ message: 'User does not exist.' });
+        }
+
+        const invitedUser = invitedUserRes.rows[0];
+
+        // Insert a new invitation into group_join_requests
         const inviteQuery = `
             INSERT INTO group_join_requests (user_id, group_id, status, is_invite, requested_at, updated_at)
             VALUES ($1, $2, 'pending', true, NOW(), NOW()) RETURNING *;
         `;
-        const inviteRes: QueryResult = await pool.query(inviteQuery, [invited_user_id, group_id]);
+        const inviteRes: QueryResult = await client.query(inviteQuery, [invited_user_id, group_id]);
 
         // Create a notification for the invited user
-        const notificationMessage = `${invitedUserInfo.username}, you have been invited to join ${group_name}.`;
+        const notificationMessage = `${invitedUser.username}, you have been invited to join ${inviter.group_name}.`;
         await createNotification({
-            sender_id: user_id,
-            sender_username: username,
-            sender_profile_pic: profile_pic,
-            receiver_id: Number(invited_user_id),
-            receiver_username: invitedUserInfo.username,
-            receiver_profile_pic: invitedUserInfo.profile_pic ?? null,
+            sender_id: inviter.user_id,
+            sender_username: inviter.username,
+            sender_profile_pic: inviter.profile_pic,
+            receiver_id: invitedUser.user_id,
+            receiver_username: invitedUser.username,
+            receiver_profile_pic: invitedUser.profile_pic ?? null,
             type: 'group_invite',
             message: notificationMessage,
             reference_type: 'group',
@@ -538,12 +543,11 @@ export const inviteUserToGroup = async (req: Request, res: Response, next: NextF
             client
         });
 
-        // Commit the transaction
+        // Commit transaction
         await client.query('COMMIT');
 
         return res.status(200).json({ message: 'User invited successfully.', invite: inviteRes.rows[0] });
     } catch (error) {
-        // Rollback the transaction if any error occurs
         await client.query('ROLLBACK');
         console.error('Error inviting user to group:', error);
         return res.status(500).json({ message: 'Error inviting user. Please try again later.' });
@@ -552,18 +556,17 @@ export const inviteUserToGroup = async (req: Request, res: Response, next: NextF
     }
 };
 
+
 // get all members of a group, sorted with admins first, then mods, then regular members
 export const getGroupMembers = async (req: Request, res: Response, next: NextFunction) => {
     const { group_id } = req.params;
 
     try {
-        // Grab all users and their profile info from the group_members table
+        // Fetch group members from the view
         const query = `
-            SELECT gm.user_id, gm.is_admin, gm.is_mod, gm.joined_at, u.username, u.profile_pic 
-            FROM group_members gm
-            JOIN users u ON gm.user_id = u.user_id
-            WHERE gm.group_id = $1
-            ORDER BY gm.is_admin DESC, gm.is_mod DESC;
+            SELECT user_id, username, profile_pic, is_admin, is_mod, joined_at
+            FROM group_members_view
+            WHERE group_id = $1;
         `;
         const membersRes: QueryResult = await pool.query(query, [group_id]);
 
@@ -849,7 +852,7 @@ export const getPendingJoinRequests = async (req: Request, res: Response, next: 
 
         // Get all pending join requests
         const getJoinRequestsQuery = `
-            SELECT * FROM group_join_requests WHERE group_id = $1 AND status = 'pending' AND is_invite = false;
+            SELECT * FROM group_pending_requests_view WHERE group_id = $1 AND status = 'pending' AND is_invite = false;
         `;
         const joinRequestsRes: QueryResult = await pool.query(getJoinRequestsQuery, [group_id]);
 
@@ -866,7 +869,7 @@ export const acceptJoinRequest = async (req: Request, res: Response, next: NextF
     const { group_id, request_id } = req.params;
 
     // admin/mod info
-    const { user_id, username, profile_pic, group_name } = req.body;
+    const { user_id } = req.body;
 
     const client = await pool.connect();
 
@@ -876,7 +879,7 @@ export const acceptJoinRequest = async (req: Request, res: Response, next: NextF
 
         // Check if the accepting user is an admin or mod of the group
         const checkPermissionsQuery = `
-            SELECT is_admin, is_mod FROM group_members WHERE user_id = $1 AND group_id = $2;
+            SELECT * FROM group_members_view WHERE user_id = $1 AND group_id = $2;
         `;
         const permissionsRes: QueryResult = await client.query(checkPermissionsQuery, [user_id, group_id]);
 
@@ -921,11 +924,11 @@ export const acceptJoinRequest = async (req: Request, res: Response, next: NextF
         await client.query(addMemberQuery, [requestRes.rows[0].user_id, group_id]);
 
         // Create a notification for the user who was added
-        const notificationMessage = `${joiningUserInfo.username}, your request to join ${group_name} has been accepted!`;
+        const notificationMessage = `${joiningUserInfo.username}, your request to join ${permissionsRes.rows[0].group_name} has been accepted!`;
         await createNotification({
             sender_id: user_id,
-            sender_username: username,
-            sender_profile_pic: profile_pic,
+            sender_username: permissionsRes.rows[0].username,
+            sender_profile_pic: permissionsRes.rows[0].profile_pic,
             receiver_id: requestRes.rows[0].user_id,
             receiver_username: joiningUserInfo.username,
             receiver_profile_pic: joiningUserInfo.profile_pic ?? null,
@@ -956,7 +959,7 @@ export const denyJoinRequest = async (req: Request, res: Response, next: NextFun
     const { group_id, request_id } = req.params;
 
     // admin/mod info
-    const { user_id, username, profile_pic, group_name } = req.body;
+    const { user_id } = req.body;
 
     const client = await pool.connect();
 
@@ -966,7 +969,7 @@ export const denyJoinRequest = async (req: Request, res: Response, next: NextFun
 
         // Check if the denying user is an admin or mod of the group
         const checkPermissionsQuery = `
-            SELECT is_admin, is_mod FROM group_members WHERE user_id = $1 AND group_id = $2;
+            SELECT * FROM group_members_view WHERE user_id = $1 AND group_id = $2;
         `;
         const permissionsRes: QueryResult = await client.query(checkPermissionsQuery, [user_id, group_id]);
 
@@ -1000,11 +1003,11 @@ export const denyJoinRequest = async (req: Request, res: Response, next: NextFun
         const deleteJoinRequestRes: QueryResult = await client.query(deleteJoinRequestQuery, [request_id, group_id])
 
         // Create a notification for the user who was denied
-        const notificationMessage = `${deniedUserInfo.username}, your request to join ${group_name} has been denied.`;
+        const notificationMessage = `${deniedUserInfo.username}, your request to join ${permissionsRes.rows[0].group_name} has been denied.`;
         await createNotification({
             sender_id: user_id,
-            sender_username: username,
-            sender_profile_pic: profile_pic,
+            sender_username: permissionsRes.rows[0].username,
+            sender_profile_pic: permissionsRes.rows[0].profile_pic,
             receiver_id: requestRes.rows[0].user_id,
             receiver_username: deniedUserInfo.username,
             receiver_profile_pic: deniedUserInfo.profile_pic ?? null,
@@ -1035,7 +1038,7 @@ export const removeGroupMember = async (req: Request, res: Response, next: NextF
     const { group_id, member_id } = req.params;
 
     // admin/mod info
-    const { user_id, username, profile_pic, group_name } = req.body;
+    const { user_id } = req.body;
 
     const client = await pool.connect();
 
@@ -1045,7 +1048,7 @@ export const removeGroupMember = async (req: Request, res: Response, next: NextF
 
         // Check if the requesting user is an admin or mod of the group
         const checkPermissionsQuery = `
-            SELECT is_admin, is_mod FROM group_members WHERE user_id = $1 AND group_id = $2;
+            SELECT * FROM group_members_view WHERE user_id = $1 AND group_id = $2;
         `;
         const permissionsRes: QueryResult = await client.query(checkPermissionsQuery, [user_id, group_id]);
 
@@ -1065,6 +1068,15 @@ export const removeGroupMember = async (req: Request, res: Response, next: NextF
             return res.status(404).json({ message: 'Member not found in the group.' });
         }
 
+        // delete join request
+        const deleteJoinRequestQuery = `DELETE FROM group_join_requests WHERE user_id = $1 AND group_id = $2 RETURNING *;`
+        const deleteJoinRequestRes: QueryResult = await client.query(deleteJoinRequestQuery, [member_id, group_id])
+        
+        if (deleteJoinRequestRes.rows.length === 0) {
+            await client.query('ROLLBACK');
+            return res.status(404).json({ message: 'Join request not found.' });
+        }
+
         // Remove the user from the group_members table
         const removeMemberQuery = `
             DELETE FROM group_members WHERE user_id = $1 AND group_id = $2 RETURNING *;
@@ -1072,11 +1084,11 @@ export const removeGroupMember = async (req: Request, res: Response, next: NextF
         const removedMemberRes: QueryResult = await client.query(removeMemberQuery, [member_id, group_id]);
 
         // Create a notification for the user who was removed
-        const notificationMessage = `${username} removed you from ${group_name}.`;
+        const notificationMessage = `${permissionsRes.rows[0].username} removed you from ${permissionsRes.rows[0].group_name}.`;
         await createNotification({
             sender_id: user_id,
-            sender_username: username,
-            sender_profile_pic: profile_pic,
+            sender_username: permissionsRes.rows[0].username,
+            sender_profile_pic: permissionsRes.rows[0].profile_pic,
             receiver_id: Number(member_id),
             type: 'group_change',
             message: notificationMessage,
@@ -1106,7 +1118,7 @@ export const promoteToModerator = async (req: Request, res: Response, next: Next
     const { group_id, member_id } = req.params;
 
     // admin info
-    const { user_id, username, profile_pic, group_name } = req.body;
+    const { user_id } = req.body;
 
     const client = await pool.connect();
 
@@ -1116,7 +1128,7 @@ export const promoteToModerator = async (req: Request, res: Response, next: Next
 
         // Check if the requesting user is an admin
         const checkPermissionsQuery = `
-            SELECT is_admin FROM group_members WHERE user_id = $1 AND group_id = $2;
+            SELECT * FROM group_members_view WHERE user_id = $1 AND group_id = $2;
         `;
         const permissionsRes: QueryResult = await client.query(checkPermissionsQuery, [user_id, group_id]);
 
@@ -1143,11 +1155,11 @@ export const promoteToModerator = async (req: Request, res: Response, next: Next
         const promoteRes: QueryResult = await client.query(promoteQuery, [member_id, group_id]);
 
         // Create a notification for the user who was promoted
-        const notificationMessage = `${username} has been promoted to a moderator in ${group_name}!`;
+        const notificationMessage = `${permissionsRes.rows[0].username} has been promoted you to a moderator in ${permissionsRes.rows[0].group_name}!`;
         await createNotification({
             sender_id: user_id,
-            sender_username: username,
-            sender_profile_pic: profile_pic,
+            sender_username: permissionsRes.rows[0].username,
+            sender_profile_pic: permissionsRes.rows[0].profile_pic,
             receiver_id: Number(member_id),
             type: 'group_change',
             message: notificationMessage,
@@ -1176,7 +1188,7 @@ export const demoteModerator = async (req: Request, res: Response, next: NextFun
     const { group_id, member_id } = req.params;
 
     // admin info
-    const { user_id, username, profile_pic, group_name } = req.body;
+    const { user_id } = req.body;
 
     const client = await pool.connect();
 
@@ -1186,7 +1198,7 @@ export const demoteModerator = async (req: Request, res: Response, next: NextFun
 
         // Check if the requesting user is an admin
         const checkPermissionsQuery = `
-            SELECT is_admin FROM group_members WHERE user_id = $1 AND group_id = $2;
+            SELECT * FROM group_members_view WHERE user_id = $1 AND group_id = $2;
         `;
         const permissionsRes: QueryResult = await client.query(checkPermissionsQuery, [user_id, group_id]);
 
@@ -1213,11 +1225,11 @@ export const demoteModerator = async (req: Request, res: Response, next: NextFun
         const demoteRes: QueryResult = await client.query(demoteQuery, [member_id, group_id]);
 
         // Create a notification for the user who was demoted
-        const notificationMessage = `${username} has demoted you from a moderator to a regular member in ${group_name}.`;
+        const notificationMessage = `${permissionsRes.rows[0].username} has demoted you from a moderator to a regular member in ${permissionsRes.rows[0].group_name}.`;
         await createNotification({
             sender_id: user_id,
-            sender_username: username,
-            sender_profile_pic: profile_pic,
+            sender_username: permissionsRes.rows[0].username,
+            sender_profile_pic: permissionsRes.rows[0].profile_pic,
             receiver_id: Number(member_id),
             type: 'group_change',
             message: notificationMessage,
@@ -1245,7 +1257,7 @@ export const promoteToAdmin = async (req: Request, res: Response, next: NextFunc
     const { group_id, user_id } = req.params;
 
     // Admin's info
-    const { admin_id, username, profile_pic, group_name } = req.body;
+    const { admin_id } = req.body;
 
     const client = await pool.connect();
 
@@ -1253,7 +1265,7 @@ export const promoteToAdmin = async (req: Request, res: Response, next: NextFunc
         await client.query('BEGIN');
 
         // Check if the requester is an admin
-        const checkAdminQuery = `SELECT is_admin FROM group_members WHERE user_id = $1 AND group_id = $2;`;
+        const checkAdminQuery = `SELECT * FROM group_members_view WHERE user_id = $1 AND group_id = $2;`;
         const adminRes: QueryResult = await client.query(checkAdminQuery, [admin_id, group_id]);
 
         if (adminRes.rows.length === 0 || !adminRes.rows[0].is_admin) {
@@ -1289,11 +1301,11 @@ export const promoteToAdmin = async (req: Request, res: Response, next: NextFunc
         }
 
         // Create a notification
-        const notificationMessage = `${promotedUserInfo.username}, you have been promoted to an admin in ${group_name}.`;
+        const notificationMessage = `${promotedUserInfo.username}, you have been promoted to an admin in ${adminRes.rows[0].group_name}.`;
         await createNotification({
             sender_id: admin_id,
-            sender_username: username,
-            sender_profile_pic: profile_pic,
+            sender_username: adminRes.rows[0].username,
+            sender_profile_pic: adminRes.rows[0].profile_pic,
             receiver_id: Number(user_id),
             receiver_username: promotedUserInfo.username,
             receiver_profile_pic: promotedUserInfo.profile_pic ?? null,
@@ -1322,7 +1334,7 @@ export const demoteAdmin = async (req: Request, res: Response, next: NextFunctio
     const { group_id, user_id } = req.params;
 
     // Admin's info
-    const { admin_id, username, profile_pic, group_name } = req.body;
+    const { admin_id } = req.body;
 
     const client = await pool.connect();
 
@@ -1330,7 +1342,7 @@ export const demoteAdmin = async (req: Request, res: Response, next: NextFunctio
         await client.query('BEGIN');
 
         // Check if the requester is an admin
-        const checkAdminQuery = `SELECT is_admin FROM group_members WHERE user_id = $1 AND group_id = $2;`;
+        const checkAdminQuery = `SELECT * FROM group_members WHERE user_id = $1 AND group_id = $2;`;
         const adminRes: QueryResult = await client.query(checkAdminQuery, [admin_id, group_id]);
 
         if (adminRes.rows.length === 0 || !adminRes.rows[0].is_admin) {
@@ -1339,7 +1351,7 @@ export const demoteAdmin = async (req: Request, res: Response, next: NextFunctio
         }
 
         // Check if target user is an admin
-        const checkMemberQuery = `SELECT is_admin FROM group_members WHERE user_id = $1 AND group_id = $2;`;
+        const checkMemberQuery = `SELECT is_admin FROM group_members_view WHERE user_id = $1 AND group_id = $2;`;
         const memberRes: QueryResult = await client.query(checkMemberQuery, [user_id, group_id]);
 
         if (memberRes.rows.length === 0 || !memberRes.rows[0].is_admin) {
@@ -1348,7 +1360,7 @@ export const demoteAdmin = async (req: Request, res: Response, next: NextFunctio
         }
 
         // Ensure there's at least one admin left
-        const adminCountQuery = `SELECT COUNT(*) FROM group_members WHERE group_id = $1 AND is_admin = TRUE;`;
+        const adminCountQuery = `SELECT COUNT(*) FROM group_members_view WHERE group_id = $1 AND is_admin = TRUE;`;
         const adminCountRes: QueryResult = await client.query(adminCountQuery, [group_id]);
 
         if (Number(adminCountRes.rows[0].count) <= 1) {
@@ -1370,11 +1382,11 @@ export const demoteAdmin = async (req: Request, res: Response, next: NextFunctio
         }
 
         // Create a notification
-        const notificationMessage = `${demotedUserInfo.username}, you have been removed as an admin in ${group_name}.`;
+        const notificationMessage = `${demotedUserInfo.username}, you have been removed as an admin in ${adminRes.rows[0].group_name}.`;
         await createNotification({
             sender_id: admin_id,
-            sender_username: username,
-            sender_profile_pic: profile_pic,
+            sender_username: adminRes.rows[0].username,
+            sender_profile_pic: adminRes.rows[0].profile_pic,
             receiver_id: Number(user_id),
             receiver_username: demotedUserInfo.username,
             receiver_profile_pic: demotedUserInfo.profile_pic ?? null,

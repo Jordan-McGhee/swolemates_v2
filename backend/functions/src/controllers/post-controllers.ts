@@ -25,7 +25,7 @@ export const getAllUserPosts = async (req: Request, res: Response, next: NextFun
         }
 
         // Fetch user's posts
-        const getAllUserPostsQuery = "SELECT * FROM posts WHERE user_id = $1 AND group_id = NULL ORDER BY created_at DESC";
+        const getAllUserPostsQuery = "SELECT * FROM post_with_likes_comments WHERE user_id = $1 AND group_id = NULL ORDER BY created_at DESC";
         const allUserPostsRes: QueryResult = await pool.query(getAllUserPostsQuery, [user_id]);
 
         return res.status(200).json({
@@ -49,28 +49,11 @@ export const getSinglePost = async (req: Request, res: Response, next: NextFunct
     }
 
     // Query for the post
-    const getSinglePostQuery = `SELECT * FROM posts WHERE post_id = $1 AND group_id = NULL`;
-
-    // Query for likes - pulls username, profile pic, and id for each user
-    const getLikesQuery = `
-        SELECT users.user_id, users.username, users.profile_pic 
-        FROM likes
-        INNER JOIN users ON likes.user_id = users.user_id
-        WHERE likes.post_id = $1;
-    `;
-
-    // Query for comments - pulls username, profile pic, and comment info
-    const getCommentsQuery = `
-        SELECT comments.comment_id, users.username, users.profile_pic, comments.content, comments.created_at, comments.updated_at
-        FROM comments
-        JOIN users ON comments.user_id = users.user_id
-        WHERE comments.post_id = $1
-        ORDER BY comments.created_at ASC;
-    `;
+    const getSinglePostQuery = `SELECT * FROM post_with_likes_comments WHERE post_id = $1`;
 
     // Query for workout (if it exists) using the workout_with_exercises view
     const getWorkoutQuery = `
-        SELECT * FROM workout_with_exercises WHERE workout_id = $1;
+        SELECT * FROM workout_with_likes_comments WHERE workout_id = $1;
     `;
 
     try {
@@ -83,24 +66,7 @@ export const getSinglePost = async (req: Request, res: Response, next: NextFunct
         }
 
         const post = postResponse.rows[0];
-        let likes = [];
-        let comments = [];
         let workout = null;
-
-        // Try to get likes and comments from db, but don't fail everything if it breaks
-        try {
-            const likesResponse: QueryResult = await pool.query(getLikesQuery, [post_id]);
-            likes = likesResponse.rows;
-        } catch (error) {
-            console.error(`Error fetching likes for post #${post_id}:`, error);
-        }
-
-        try {
-            const commentsResponse: QueryResult = await pool.query(getCommentsQuery, [post_id]);
-            comments = commentsResponse.rows;
-        } catch (error) {
-            console.error(`Error fetching comments for post #${post_id}:`, error);
-        }
 
         // If the post is linked to a workout, fetch the workout details
         if (post.workout_id) {
@@ -119,8 +85,8 @@ export const getSinglePost = async (req: Request, res: Response, next: NextFunct
             message: "Got post!",
             post,
             post_user_id: post.user_id,
-            likes,
-            comments,
+            likes: post.likes,
+            comments: post.comments,
             workout
         });
 
