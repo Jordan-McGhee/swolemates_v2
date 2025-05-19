@@ -1,6 +1,8 @@
 import React, { useState } from 'react';
-import './App.css';
-import './output.css'
+// import './App.css';
+// import './output.css'
+import './index.css';
+
 
 // rutes
 import { Route, Routes } from "react-router-dom"
