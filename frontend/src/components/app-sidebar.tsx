@@ -1,15 +1,16 @@
-import { Calendar, Home, Inbox, Search, Settings } from "lucide-react"
+import { Handshake, Home, Dumbbell, Bell, User, Users, LogOut } from "lucide-react"
 
 import {
     Sidebar,
     SidebarContent,
+    SidebarFooter,
     SidebarGroup,
     SidebarGroupContent,
     SidebarGroupLabel,
     SidebarMenu,
     SidebarMenuButton,
     SidebarMenuItem,
-} from "./ui/sidebar"
+} from "@/components/ui/sidebar"
 
 // Menu items.
 const items = [
@@ -19,49 +20,78 @@ const items = [
         icon: Home,
     },
     {
-        title: "Inbox",
+        title: "Friends",
         url: "#",
-        icon: Inbox,
+        icon: Users,
     },
     {
-        title: "Calendar",
+        title: "Workouts",
         url: "#",
-        icon: Calendar,
+        icon: Dumbbell,
     },
     {
-        title: "Search",
+        title: "Groups",
         url: "#",
-        icon: Search,
+        icon: Handshake,
+    }
+]
+
+const footerItems = [
+    {
+        title: "Profile",
+        url: "#",
+        icon: User,
     },
     {
-        title: "Settings",
+        title: "Notifications",
         url: "#",
-        icon: Settings,
+        icon: Bell,
     },
+    {
+        title: "Logout",
+        url: "#",
+        icon: LogOut,
+    }
 ]
 
 export function AppSidebar() {
     return (
-        <Sidebar>
-            <SidebarContent>
-                <SidebarGroup>
-                    <SidebarGroupLabel>Application</SidebarGroupLabel>
-                    <SidebarGroupContent>
-                        <SidebarMenu>
-                            {items.map((item) => (
-                                <SidebarMenuItem key={item.title}>
-                                    <SidebarMenuButton asChild>
-                                        <a href={item.url}>
-                                            <item.icon />
-                                            <span>{item.title}</span>
-                                        </a>
-                                    </SidebarMenuButton>
-                                </SidebarMenuItem>
-                            ))}
-                        </SidebarMenu>
-                    </SidebarGroupContent>
-                </SidebarGroup>
-            </SidebarContent>
-        </Sidebar>
+        <div>
+            <Sidebar collapsible="icon">
+                <SidebarContent>
+                    <SidebarGroup>
+                        <SidebarGroupLabel className="text-2xl uppercase">Swolemates</SidebarGroupLabel>
+                        <SidebarGroupContent>
+                            <SidebarMenu>
+                                {items.map((item) => (
+                                    <SidebarMenuItem key={item.title}>
+                                        <SidebarMenuButton asChild>
+                                            <a href={item.url}>
+                                                <item.icon />
+                                                <span>{item.title}</span>
+                                            </a>
+                                        </SidebarMenuButton>
+                                    </SidebarMenuItem>
+                                ))}
+                            </SidebarMenu>
+                        </SidebarGroupContent>
+                    </SidebarGroup>
+                </SidebarContent>
+                <SidebarFooter>
+                    <SidebarMenu>
+                        {footerItems.map((item) => (
+                            <SidebarMenuItem key={item.title}>
+                                <SidebarMenuButton asChild>
+                                    <a href={item.url}>
+                                        <item.icon />
+                                        <span>{item.title}</span>
+                                    </a>
+                                </SidebarMenuButton>
+                            </SidebarMenuItem>
+                        ))}
+                    </SidebarMenu>
+                </SidebarFooter>
+            </Sidebar>
+        </div>
     )
 }
