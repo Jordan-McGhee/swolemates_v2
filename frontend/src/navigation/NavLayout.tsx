@@ -1,0 +1,60 @@
+import { Outlet } from "react-router-dom"
+import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar"
+import { AppSidebar } from "@/components/app-sidebar"
+import { MobileTop, MobileBottom } from "@/navigation/MobileNav"
+import { useState } from "react"
+
+export default function Layout() {
+    const [useDarkMode, setUseDarkMode] = useState(false)
+
+    return (
+        <div className={useDarkMode ? "dark" : ""}>
+            <SidebarProvider>
+                <div className="hidden md:flex bg-light-off-bg text-light-black dark:bg-dark-background dark:text-dark-white transition-colors duration-300">
+                    {/* Sidebar */}
+                    <AppSidebar />
+
+                    {/* Main Content */}
+                    <main className="flex-1 flex flex-col relative -ml-2">
+                        <div className="p-4">
+                            <SidebarTrigger className="text-[var(--subhead-text)] hover:bg-[var(--accent-hover)] hover:text-[var(--accent)] hover:cursor-pointer" />
+                        </div>
+
+                        <div className="pb-24 w-full max-w-[120rem] mx-auto px-4 flex-1">
+                            <button
+                                className="mb-4 px-4 py-2 rounded bg-light-accent text-light-white hover:bg-light-accent-hover dark:bg-dark-accent dark:text-dark-background dark:hover:bg-dark-accent-hover"
+                                onClick={() => setUseDarkMode(!useDarkMode)}
+                            >
+                                Toggle {useDarkMode ? "Dark" : "Light"} Mode
+                            </button>
+
+                            <Outlet />
+                        </div>
+                    </main>
+                </div>
+
+                {/* 📱 Mobile Layout */}
+                <div className="md:hidden flex flex-col bg-light-off-bg text-light-black dark:bg-dark-background dark:text-dark-white transition-colors duration-300">
+                    {/* Top Navigation */}
+                    <div className="fixed top-0 w-full z-40">
+                        <MobileTop />
+                    </div>
+
+                    <main className="pt-16 pb-24 px-4 flex-1 w-full max-w-[120rem] mx-auto">
+                        <button
+                            className="mb-4 px-4 py-2 rounded bg-light-accent text-light-white hover:bg-light-accent-hover dark:bg-dark-accent dark:text-dark-background dark:hover:bg-dark-accent-hover"
+                            onClick={() => setUseDarkMode(!useDarkMode)}
+                        >
+                            Toggle {useDarkMode ? "Dark" : "Light"} Mode
+                        </button>
+
+                        <Outlet />
+                    </main>
+
+                    {/* Bottom Navigation */}
+                    <MobileBottom />
+                </div>
+            </SidebarProvider>
+        </div>
+    )
+}

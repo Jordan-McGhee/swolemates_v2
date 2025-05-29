@@ -16,7 +16,7 @@ import {
 const items = [
     {
         title: "Home",
-        url: "#",
+        url: "/",
         icon: Home,
     },
     {
@@ -26,12 +26,12 @@ const items = [
     },
     {
         title: "Workouts",
-        url: "#",
+        url: "/workouts",
         icon: Dumbbell,
     },
     {
         title: "Groups",
-        url: "#",
+        url: "/groups",
         icon: Handshake,
     }
 ]
@@ -39,7 +39,7 @@ const items = [
 const footerItems = [
     {
         title: "Profile",
-        url: "#",
+        url: "/profile",
         icon: User,
     },
     {
@@ -65,7 +65,10 @@ export function AppSidebar() {
                             <SidebarMenu>
                                 {items.map((item) => (
                                     <SidebarMenuItem key={item.title}>
-                                        <SidebarMenuButton asChild>
+                                        <SidebarMenuButton
+                                        asChild
+                                        tooltip={item.title}
+                                    >
                                             <a href={item.url}>
                                                 <item.icon />
                                                 <span>{item.title}</span>
@@ -81,7 +84,10 @@ export function AppSidebar() {
                     <SidebarMenu>
                         {footerItems.map((item) => (
                             <SidebarMenuItem key={item.title}>
-                                <SidebarMenuButton asChild>
+                                <SidebarMenuButton
+                                    asChild
+                                    tooltip={item.title}
+                                >
                                     <a href={item.url}>
                                         <item.icon />
                                         <span>{item.title}</span>
