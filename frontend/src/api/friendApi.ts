@@ -56,7 +56,7 @@ export const FriendApi = () => {
     }
 
     // deny friend request
-        const denyFriendRequest = async (friend_request_id: number) => {
+    const denyFriendRequest = async (friend_request_id: number) => {
         return await sendRequest({
             url: `${process.env.REACT_APP_BACKEND_URL}/friend/deny/${friend_request_id}`,
             method: "PATCH",
@@ -67,13 +67,10 @@ export const FriendApi = () => {
     }
 
     // cancel sent friend request
-        const cancelFriendRequest = async (friend_request_id: number) => {
+    const cancelFriendRequest = async (friend_request_id: number) => {
         return await sendRequest({
             url: `${process.env.REACT_APP_BACKEND_URL}/friend/cancel/${friend_request_id}`,
-            method: "PATCH",
-            headers: {
-                'Content-Type': 'application/json'
-            }
+            method: "DELETE"
         })
     }
 
