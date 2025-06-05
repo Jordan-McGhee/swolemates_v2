@@ -1,4 +1,5 @@
-import * as functions from "firebase-functions";
+// import * as functions from "firebase-functions";
+const { onRequest } = require("firebase-functions/v2/https")
 import express from "express";
 import * as bodyParser from "body-parser";
 import cors from "cors";
@@ -32,7 +33,7 @@ app.use((req, res, next) => {
 });
 
 // import routes
-
+const authRoutes = require("./routes/auth-routes")
 const friendRoutes = require("./routes/friend-routes")
 const groupRoutes = require("./routes/group-routes")
 const notificationRoutes = require("./routes/notification-routes")
@@ -42,7 +43,7 @@ const userRoutes = require("./routes/user-routes")
 const workoutRoutes = require("./routes/workout-routes")
 
 // route handlers
-
+app.use("/auth", authRoutes)
 app.use("/friend", friendRoutes)
 app.use("/group", groupRoutes)
 app.use("/notification", notificationRoutes)
@@ -59,5 +60,5 @@ app.use((error: { message: string; code: number }, req: express.Request, res: ex
     res.status(error.code || 500).json({ message: error.message || "Something went wrong!" });
 });
 
-// Export Express API as a Firebase Cloud Function
-exports.api = functions.https.onRequest(app);
+// v2 export
+exports.api = onRequest(app)
