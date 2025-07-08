@@ -7,6 +7,6 @@ const router = express.Router()
 router.post("/sync", authControllers.syncFirebaseUser)
 
 // delete user by firebaseUID
-router.delete("/:firebase_uid", authControllers.deleteUserByFirebaseUID)
+router.delete("/", authControllers.deleteUserByFirebaseUID)
 
 module.exports = router

@@ -37,9 +37,6 @@ router.get("/:user_id/friends", userControllers.getUserFriends)
 //     userControllers.changePassword
 // )
 
-// check username
-router.post("/checkUsername", userControllers.checkUsernameAvailability)
-
 // update bio
 router.patch("/:user_id/updateBio", userControllers.updateBio)
 

@@ -5,6 +5,7 @@ import * as bodyParser from "body-parser";
 import cors from "cors";
 import * as dotenv from "dotenv";
 import { Pool } from "pg"
+import { verifyFirebaseToken } from "./middleware/verifyFirebaseToken";
 dotenv.config();
 
 // Create and export db connection
@@ -27,7 +28,7 @@ app.use(cors({ origin: true }));
 // CORS headers
 app.use((req, res, next) => {
     res.setHeader("Access-Control-Allow-Origin", "*");
-    res.setHeader("Access-Control-Allow-Headers", "Origin, X-Requested-Width, Content-Type, Accept, Authorization");
+    res.setHeader("Access-Control-Allow-Headers", "Origin, X-Requested-With, Content-Type, Accept, Authorization");
     res.setHeader("Access-Control-Allow-Methods", "GET, POST, PATCH, DELETE");
     next();
 });
@@ -41,6 +42,13 @@ const postRoutes = require("./routes/post-routes")
 const searchRoutes = require("./routes/search-routes")
 const userRoutes = require("./routes/user-routes")
 const workoutRoutes = require("./routes/workout-routes")
+const utilRoutes = require("./routes/util-routes")
+
+// util routes before token verification
+app.use("/util", utilRoutes);
+
+// firebase token middleware
+app.use(verifyFirebaseToken);
 
 // route handlers
 app.use("/auth", authRoutes)
@@ -53,7 +61,7 @@ app.use("/user", userRoutes)
 app.use("/workout", workoutRoutes)
 
 // Error handling middleware
-app.use((error: { message: string; code: number }, req: express.Request, res: express.Response, next: express.NextFunction) => {
+app.use((error: { message?: string; code?: number }, req: express.Request, res: express.Response, next: express.NextFunction) => {
     if (res.headersSent) {
         return next(error);
     }
