@@ -44,13 +44,13 @@ const userRoutes = require("./routes/user-routes")
 const workoutRoutes = require("./routes/workout-routes")
 const utilRoutes = require("./routes/util-routes")
 
-// util routes before token verification
+// public routes
 app.use("/util", utilRoutes);
 
 // firebase token middleware
 app.use(verifyFirebaseToken);
 
-// route handlers
+// private routes
 app.use("/auth", authRoutes)
 app.use("/friend", friendRoutes)
 app.use("/group", groupRoutes)

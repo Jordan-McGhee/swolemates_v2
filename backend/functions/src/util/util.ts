@@ -134,3 +134,22 @@ export const getUserInfo = async (user_id: number, client?: any): Promise<string
 
     return getUsernameResponse.rows[0]
 };
+
+/**
+ * Retrieves the user_id for a given Firebase UID.
+ * @param {string} firebaseUid - The Firebase UID of the user.
+ * @returns {Promise<number>} - The user_id associated with the provided Firebase UID.
+ * @throws {Error} - Throws an error if the user is not found.
+ */
+export const getUserIdFromFirebaseUid = async (firebaseUid: string) => {
+    const { rows } = await pool.query(
+        "SELECT user_id FROM users WHERE firebase_uid = $1",
+        [firebaseUid]
+    );
+
+    if (rows.length === 0) {
+        throw new Error("User not found.");
+    }
+
+    return rows[0].user_id;
+};

@@ -15,6 +15,9 @@ router.get("/:user_id", userControllers.getSingleUser)
 // get user's friends
 router.get("/:user_id/friends", userControllers.getUserFriends)
 
+// update bio
+router.patch("/:user_id/updateBio", userControllers.updateBio)
+
 // sign up
 // router.post(
 //     "/signup",
@@ -36,9 +39,6 @@ router.get("/:user_id/friends", userControllers.getUserFriends)
 //     ], 
 //     userControllers.changePassword
 // )
-
-// update bio
-router.patch("/:user_id/updateBio", userControllers.updateBio)
 
 // delete account
 // router.delete("/:user_id", userControllers.deleteAccount)

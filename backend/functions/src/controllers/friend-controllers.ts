@@ -1,17 +1,27 @@
 import { Request, Response, NextFunction } from 'express';
 import { pool } from "../index";
-import { createNotification, getUserInfo } from "../util/util";
+import { createNotification, getUserInfo, getUserIdFromFirebaseUid } from "../util/util";
 import { QueryResult } from "pg";
 
 // Get all friend requests for a user
 export const getAllUserFriendRequests = async (req: Request, res: Response, next: NextFunction) => {
-    const { user_id } = req.params;
+
+    // Get the Firebase UID from the request user object
+    const firebase_uid = req.user?.uid;
 
     try {
+        // Get the user ID from the Firebase UID
+        const user_id: number = await getUserIdFromFirebaseUid(firebase_uid);
+
+        // Query to get all friend requests for the user
+        // This will return friend requests where the user is either the sender or receiver
         const query = "SELECT * FROM friend_requests_view WHERE sender_id = $1 OR receiver_id = $1";
         const response: QueryResult = await pool.query(query, [user_id]);
 
-        return res.status(200).json({ message: `Got all friend requests for #${user_id}.`, friend_requests: response.rows });
+        return res.status(200).json({
+            message: `Got all friend requests for #${user_id}.`,
+            friend_requests: response.rows
+        });
     } catch (error) {
         console.error('Error getting friend requests:', error);
         return res.status(500).json({ message: 'Error getting friend requests. Please try again later.' });
@@ -20,9 +30,15 @@ export const getAllUserFriendRequests = async (req: Request, res: Response, next
 
 // Get all friend requests sent by a user
 export const getAllUserSentRequests = async (req: Request, res: Response, next: NextFunction) => {
-    const { user_id } = req.params;
+    // Get the Firebase UID from the request user object
+    const firebase_uid = req.user?.uid;
 
     try {
+        // Get the user ID from the Firebase UID
+        const user_id: number = await getUserIdFromFirebaseUid(firebase_uid);
+
+        // Query to get all sent friend requests for the user
+        // This will return friend requests where the user is the sender and the status is 'Pending
         const query = "SELECT * FROM friend_requests_view WHERE sender_id = $1 AND status = 'Pending'";
         const response: QueryResult = await pool.query(query, [user_id]);
 
@@ -35,9 +51,15 @@ export const getAllUserSentRequests = async (req: Request, res: Response, next: 
 
 // Get all friend requests received by a user
 export const getAllUserReceivedRequests = async (req: Request, res: Response, next: NextFunction) => {
-    const { user_id } = req.params;
+    // Get the Firebase UID from the request user object
+    const firebase_uid = req.user?.uid;
 
     try {
+        // Get the user ID from the Firebase UID
+        const user_id: number = await getUserIdFromFirebaseUid(firebase_uid);
+
+        // Query to get all received friend requests for the user
+        // This will return friend requests where the user is the receiver and the status is 'Pending
         const query = "SELECT * FROM friend_requests_view WHERE receiver_id = $1 AND status = 'Pending'";
         const response: QueryResult = await pool.query(query, [user_id]);
 
@@ -50,11 +72,21 @@ export const getAllUserReceivedRequests = async (req: Request, res: Response, ne
 
 // create a friend request
 export const createFriendRequest = async (req: Request, res: Response, next: NextFunction) => {
+    
     const { receiver_id } = req.params;
-    const { user_id, username, profile_pic } = req.body;
+    const { username, profile_pic } = req.body;
+    const firebase_uid = req.user?.uid;
 
-    if (Number(user_id) === Number(receiver_id)) {
-        return res.status(400).json({ message: "You cannot send a friend request to yourself." });
+    if (!firebase_uid) {
+        return res.status(401).json({ message: "Unauthorized." });
+    }
+
+    const sender_id = await getUserIdFromFirebaseUid(firebase_uid);
+
+    if (Number(sender_id) === Number(receiver_id)) {
+        return res.status(400).json({
+            message: "You cannot send a friend request to yourself.",
+        });
     }
 
     // Start transaction
@@ -75,7 +107,7 @@ export const createFriendRequest = async (req: Request, res: Response, next: Nex
             SELECT * FROM friend_requests
             WHERE (sender_id = $1 AND receiver_id = $2) OR (sender_id = $2 AND receiver_id = $1)
         `;
-        const existingRequest: QueryResult = await client.query(checkExistingRequestQuery, [user_id, receiver_id]);
+        const existingRequest: QueryResult = await client.query(checkExistingRequestQuery, [sender_id, receiver_id]);
 
         if (existingRequest.rows.length > 0) {
             await client.query("ROLLBACK");
@@ -89,11 +121,11 @@ export const createFriendRequest = async (req: Request, res: Response, next: Nex
             RETURNING *;
         `;
 
-        const newRequest: QueryResult = await client.query(createFriendRequestQuery, [user_id, receiver_id]);
+        const newRequest: QueryResult = await client.query(createFriendRequestQuery, [sender_id, receiver_id]);
 
         // Create notification for the receiver
         await createNotification({
-            sender_id: user_id,
+            sender_id: sender_id,
             sender_username: username,
             sender_profile_pic: profile_pic,
             receiver_id: Number(receiver_id),

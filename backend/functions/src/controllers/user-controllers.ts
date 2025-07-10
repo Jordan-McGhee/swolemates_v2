@@ -1,9 +1,7 @@
 // const bcrypt = require('bcryptjs');
 import { pool } from "../index"
 import { Request, Response, NextFunction } from "express"
-// const { validationResult } = require("express-validator")
 import { QueryResult } from "pg";
-import { checkIfUsernameExists }  from "../util/util";
 
 // blank function
 // export const fnName = async (req: Request, res: Response, next: NextFunction) => {}
@@ -24,7 +22,7 @@ export const getAllUsers = async (req: Request, res: Response, next: NextFunctio
 // Get a single user
 export const getSingleUser = async (req: Request, res: Response, next: NextFunction) => {
     const { user_id } = req.params;
-    const userQuery: string = "SELECT * FROM users WHERE user_id = $1";
+    const userQuery: string = "SELECT user_id, username, profile_pic, bio, created_at, updated_at FROM users WHERE user_id = $1";
 
     try {
         const userResponse: QueryResult = await pool.query(userQuery, [user_id]);
@@ -83,6 +81,23 @@ export const getUserFriends = async (req: Request, res: Response, next: NextFunc
         return res.status(500).json({ message: 'Error fetching user friends. Please try again later.' });
     }
 };
+
+
+// Update bio
+export const updateBio = async (req: Request, res: Response, next: NextFunction) => {
+    const { user_id } = req.params;
+    const { bio } = req.body;
+    const updateBioQuery: string = "UPDATE users SET bio = $1 WHERE user_id = $2 RETURNING *";
+
+    try {
+        const userResponse: QueryResult = await pool.query(updateBioQuery, [bio, user_id]);
+        return res.status(200).json({ message: `Bio updated for user #${user_id}.`, user: userResponse.rows[0] });
+    } catch (error) {
+        console.error("Error updating profile:", error);
+        return res.status(500).json({ message: `Error updating Bio: ${error}` });
+    }
+};
+
 
 // Sign up controller
 // export const signUp = async (req: Request, res: Response, next: NextFunction) => {
@@ -198,23 +213,6 @@ export const getUserFriends = async (req: Request, res: Response, next: NextFunc
 //         return res.status(500).json({ message: `Error changing password: ${error}` });
 //     }
 // };
-
-
-// Update bio
-export const updateBio = async (req: Request, res: Response, next: NextFunction) => {
-    const { user_id } = req.params;
-    const { bio } = req.body;
-    const updateBioQuery: string = "UPDATE users SET bio = $1 WHERE user_id = $2 RETURNING *";
-
-    try {
-        const userResponse: QueryResult = await pool.query(updateBioQuery, [bio, user_id]);
-        return res.status(200).json({ message: `Bio updated for user #${user_id}.`, user: userResponse.rows[0] });
-    } catch (error) {
-        console.error("Error updating profile:", error);
-        return res.status(500).json({ message: `Error updating Bio: ${error}` });
-    }
-};
-
 
 // Delete account
 // export const deleteAccount = async (req: Request, res: Response, next: NextFunction) => {

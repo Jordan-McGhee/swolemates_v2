@@ -6,13 +6,13 @@ const router = express.Router()
 // /friend
 
 // get all friend request
-router.get("/:user_id", friendControllers.getAllUserFriendRequests)
+router.get("/", friendControllers.getAllUserFriendRequests)
 
 // get all friend requests sent by user
-router.get("/:user_id/sent", friendControllers.getAllUserSentRequests)
+router.get("/sent", friendControllers.getAllUserSentRequests)
 
 // get all friend requests received by user
-router.get("/:user_id/received", friendControllers.getAllUserReceivedRequests)
+router.get("/received", friendControllers.getAllUserReceivedRequests)
 
 // create friend request
 router.post("/:receiver_id", friendControllers.createFriendRequest)
