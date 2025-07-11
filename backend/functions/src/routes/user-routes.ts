@@ -6,17 +6,20 @@ const router = express.Router()
 
 // /user
 
-// all users
-router.get("/", userControllers.getAllUsers)
-
-// get user
-router.get("/:user_id", userControllers.getSingleUser)
-
-// get user's friends
-router.get("/:user_id/friends", userControllers.getUserFriends)
-
 // update bio
-router.patch("/:user_id/updateBio", userControllers.updateBio)
+router.patch("/updateBio", userControllers.updateBio)
+
+
+// moved to public routes
+
+// // all users
+// router.get("/", userControllers.getAllUsers)
+
+// // get user
+// router.get("/:user_id", userControllers.getSingleUser)
+
+// // get user's friends
+// router.get("/:user_id/friends", userControllers.getUserFriends)
 
 // sign up
 // router.post(

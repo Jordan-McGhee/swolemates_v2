@@ -1,5 +1,6 @@
 const express = require("express")
 import * as groupControllers from "../controllers/group-controllers"
+import { checkGroupAccess } from "../middleware/checkGroupAccess";
 
 const router = express.Router()
 
@@ -13,7 +14,7 @@ router.post("/", groupControllers.createGroup);
 router.get("/", groupControllers.getAllGroups);
 
 // get single group by ID
-router.get("/:group_id", groupControllers.getSingleGroup);
+router.get("/:group_id", checkGroupAccess, groupControllers.getSingleGroup);
 
 // update group details (only for group admin/moderators)
 router.put("/:group_id", groupControllers.updateGroup);
@@ -26,7 +27,7 @@ router.delete("/:group_id", groupControllers.deleteGroup);
 
 // POSTS
 // get all posts in a group
-router.get("/:group_id/posts", groupControllers.getGroupPosts);
+router.get("/:group_id/posts", checkGroupAccess, groupControllers.getGroupPosts);
 
 // create a post in a group
 router.post("/:group_id/posts", groupControllers.createGroupPost);
@@ -44,7 +45,7 @@ router.delete("/:group_id/posts/:post_id", groupControllers.deleteGroupPost);
 router.post("/:group_id/invite/:invited_user_id", groupControllers.inviteUserToGroup);
 
 // get all members of a group
-router.get("/:group_id/members", groupControllers.getGroupMembers);
+router.get("/:group_id/members", checkGroupAccess, groupControllers.getGroupMembers);
 
 // join group/request to join
 router.post("/:group_id/join", groupControllers.joinGroup);

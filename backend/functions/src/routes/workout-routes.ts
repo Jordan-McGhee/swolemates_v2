@@ -5,12 +5,6 @@ const router = express.Router()
 
 // /workout
 
-// get workouts by user
-router.get("/user/:user_id", workoutControllers.getWorkoutsByUser)
-
-// get single workout
-router.get("/:workout_id", workoutControllers.getSingleWorkout)
-
 // create workout
 router.post("/", workoutControllers.createWorkout)
 

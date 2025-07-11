@@ -1,101 +1,26 @@
-import { pool } from "../index"
-import { Request, Response, NextFunction } from "express"
+import { pool } from "../index";
+import { Request, Response, NextFunction } from "express";
 import { QueryResult } from "pg";
-import { createNotification, getUserInfo } from "../util/util";
+import { createNotification, getUserInfo, getUserIdFromFirebaseUid } from "../util/util";
 
-// blank function
-// export const fnName = async (req: Request, res: Response, next: NextFunction) => {}
-
-// get all workouts by user
-export const getWorkoutsByUser = async (req: Request, res: Response, next: NextFunction) => {
-    const { user_id } = req.params;
-
-    // Validate user_id
-    if (!user_id || isNaN(Number(user_id))) {
-        return res.status(400).json({ message: "Invalid user ID." });
-    }
-
-    try {
-        // Check if user exists
-        const checkUserQuery = "SELECT * FROM users WHERE user_id = $1";
-        const checkUserRes: QueryResult = await pool.query(checkUserQuery, [user_id]);
-
-        if (checkUserRes.rows.length === 0) {
-            return res.status(404).json({ message: `User #${user_id} not found.` });
-        }
-
-        // Fetch user's workouts
-        const getWorkoutsByUserQuery = "SELECT * FROM workouts_with_likes_comments WHERE user_id = $1 ORDER BY workout_created_at DESC";
-        const getWorkoutsByUserRes: QueryResult = await pool.query(getWorkoutsByUserQuery, [user_id]);
-
-        return res.status(200).json({
-            message: `Got all workouts created by user #${user_id}`,
-            workouts: getWorkoutsByUserRes.rows,
-            user_id: user_id
-        });
-    } catch (error) {
-        console.error(`Error retrieving workouts created by user #${user_id}:`, error);
-        return res.status(500).json({ message: `Error retrieving workouts created by user #${user_id}. Please try again later.` });
-    }
-};
-
-
-// get single workout
-export const getSingleWorkout = async (req: Request, res: Response, next: NextFunction) => {
-    const { workout_id } = req.params
-
-    // Validate workout_id
-    if (!workout_id || isNaN(Number(workout_id))) {
-        return res.status(400).json({ message: "Invalid post ID." });
-    }
-
-    // Query for the post
-    const getSingleWorkoutQuery = `SELECT * FROM workouts_with_likes_comments WHERE workout_id = $1`;
-
-    try {
-        // get the workout (this must succeed)
-        const workoutResponse: QueryResult = await pool.query(getSingleWorkoutQuery, [workout_id])
-
-        // check that workout exists
-        if (workoutResponse.rows.length === 0) {
-            return res.status(404).json({ message: "Workout not found" })
-        }
-
-        const workout = workoutResponse.rows[0]
-
-        return res.status(200).json({
-            message: "Got workout!",
-            workout,
-            workout_user_id: workout.user_id,
-            likes: workout.likes,
-            comments: workout.comments
-        });
-
-    } catch (error) {
-        console.error(`Error retrieving post #${workout_id}:`, error);
-        return res.status(500).json({ message: `Error retrieving post #${workout_id}. Please try again later.` });
-    }
-}
-
+// Create workout
 export const createWorkout = async (req: Request, res: Response, next: NextFunction) => {
-    const { user_id, title, description, exercises } = req.body;
+    const firebase_uid = req.user?.uid;
+    const { title, description, exercises } = req.body;
 
-    // Validate input
-    if (!user_id || !title || !Array.isArray(exercises) || exercises.length < 3 || exercises.length > 10) {
-        return res.status(400).json({ message: "Invalid workout. Must include a title, a short description, and 3 to 10 exercises." });
+    if (!title || typeof title !== "string" || !description || typeof description !== "string") {
+        return res.status(400).json({ message: "Workout must include a title and description." });
+    }
+    if (!Array.isArray(exercises) || exercises.length < 3 || exercises.length > 10) {
+        return res.status(400).json({ message: "Workout must have between 3 and 10 exercises." });
     }
 
-    // Track duplicate exercise titles
     const exerciseTitleSet = new Set();
-
-    // Validate each exercise
     for (const ex of exercises) {
         const { title: exTitle, set_count, rep_count } = ex;
-
         if (!exTitle || !Number.isInteger(set_count) || !Number.isInteger(rep_count) || set_count <= 0 || rep_count <= 0) {
-            return res.status(400).json({ message: "Each exercise must have a title and set/rep counts greater than 0." });
+            return res.status(400).json({ message: "Each exercise must have a title and set/rep counts > 0." });
         }
-
         const lowerTitle = exTitle.trim().toLowerCase();
         if (exerciseTitleSet.has(lowerTitle)) {
             return res.status(400).json({ message: `Duplicate exercise title detected: "${exTitle}"` });
@@ -103,101 +28,78 @@ export const createWorkout = async (req: Request, res: Response, next: NextFunct
         exerciseTitleSet.add(lowerTitle);
     }
 
-    // Create connection to start a transaction
     const client = await pool.connect();
     try {
         await client.query("BEGIN");
 
-        // Insert new workout
-        const workoutQuery = `
-            INSERT INTO workouts (user_id, title, description, created_at, updated_at) 
-            VALUES ($1, $2, $3, NOW(), NOW()) 
-            RETURNING workout_id;
-        `;
-        const workoutResponse: QueryResult = await client.query(workoutQuery, [user_id, title, description]);
+        const user_id = await getUserIdFromFirebaseUid(firebase_uid);
 
-        // Grab ID from newly created workout
-        const workout_id = workoutResponse.rows[0].workout_id;
+        const workoutRes = await client.query(
+            `INSERT INTO workouts (user_id, title, description, created_at, updated_at)
+            VALUES ($1, $2, $3, NOW(), NOW())
+            RETURNING workout_id`,
+            [user_id, title, description]
+        );
+        const workout_id = workoutRes.rows[0].workout_id;
 
-        // Iterate over exercises
         for (const ex of exercises) {
             const { title: exTitle, description: exDescription, weight_used, set_count, rep_count } = ex;
             const lowerTitle = exTitle.trim().toLowerCase();
 
-            // Check if exercise already exists
-            const checkExerciseQuery = `SELECT exercise_id FROM exercises WHERE LOWER(title) = $1;`;
-            const exerciseResponse: QueryResult = await client.query(checkExerciseQuery, [lowerTitle]);
+            const checkRes = await client.query(
+                `SELECT exercise_id FROM exercises WHERE LOWER(title) = $1`,
+                [lowerTitle]
+            );
 
             let exercise_id;
-
-            if (exerciseResponse.rows.length === 0) {
-                // Insert new exercise if it doesn't exist
-                const insertExerciseQuery = `
-                    INSERT INTO exercises (title, description, created_at, updated_at) 
-                    VALUES ($1, $2, NOW(), NOW()) 
-                    RETURNING exercise_id;
-                `;
-                const insertExerciseResponse = await client.query(insertExerciseQuery, [exTitle, exDescription ?? null]);
-                exercise_id = insertExerciseResponse.rows[0].exercise_id;
+            if (checkRes.rows.length === 0) {
+                const insertRes = await client.query(
+                    `INSERT INTO exercises (title, description, created_at, updated_at)
+                    VALUES ($1, $2, NOW(), NOW()) RETURNING exercise_id`,
+                    [exTitle, exDescription ?? null]
+                );
+                exercise_id = insertRes.rows[0].exercise_id;
             } else {
-                exercise_id = exerciseResponse.rows[0].exercise_id;
+                exercise_id = checkRes.rows[0].exercise_id;
             }
 
-            // Insert into workout_exercises
-            const insertWorkoutExerciseQuery = `
-                INSERT INTO workout_exercises (workout_id, workout_name, exercise_id, exercise_name, weight_used, set_count, rep_count, created_at) 
-                VALUES ($1, $2, $3, $4, $5, $6, $7, NOW());
-            `;
-            await client.query(insertWorkoutExerciseQuery, [
-                workout_id,
-                title,
-                exercise_id,
-                exTitle,
-                weight_used ?? null,
-                set_count,
-                rep_count
-            ]);
+            await client.query(
+                `INSERT INTO workout_exercises (workout_id, workout_name, exercise_id, exercise_name, weight_used, set_count, rep_count, created_at)
+                VALUES ($1, $2, $3, $4, $5, $6, $7, NOW())`,
+                [workout_id, title, exercise_id, exTitle, weight_used ?? null, set_count, rep_count]
+            );
         }
 
-        // Commit transaction
         await client.query("COMMIT");
         return res.status(201).json({ message: "Workout created successfully.", workout_id });
     } catch (error) {
         await client.query("ROLLBACK");
         console.error("Error creating workout:", error);
-        return res.status(500).json({ message: `Error creating workout. ${error}` });
+        return res.status(500).json({ message: "Error creating workout. Please try again later." });
     } finally {
         client.release();
     }
 };
 
-
-
-// edit workout
+// Edit workout
 export const editWorkout = async (req: Request, res: Response, next: NextFunction) => {
+    const firebase_uid = req.user?.uid;
     const { workout_id } = req.params;
-    const { user_id, title, description, exercises } = req.body;
+    const { title, description, exercises } = req.body;
 
-    // VALIDATIONS
     if (!workout_id || isNaN(Number(workout_id))) {
         return res.status(400).json({ message: "Invalid workout ID." });
     }
-
-    if (!user_id || !title || !Array.isArray(exercises) || exercises.length < 3 || exercises.length > 10) {
-        return res.status(400).json({ message: "Invalid workout. Must include a title and 3 to 10 exercises." });
+    if (!title || typeof title !== "string" || !Array.isArray(exercises) || exercises.length < 3 || exercises.length > 10) {
+        return res.status(400).json({ message: "Invalid workout update data." });
     }
 
-    // Track duplicate exercise titles
     const exerciseTitleSet = new Set();
-
-    // Validate each exercise before starting the transaction
     for (const ex of exercises) {
         const { title: exTitle, set_count, rep_count } = ex;
-
         if (!exTitle || !Number.isInteger(set_count) || !Number.isInteger(rep_count) || set_count <= 0 || rep_count <= 0) {
-            return res.status(400).json({ message: "Each exercise must have a title and set/rep counts greater than 0." });
+            return res.status(400).json({ message: "Each exercise must have a title and valid set/rep counts." });
         }
-
         const lowerTitle = exTitle.trim().toLowerCase();
         if (exerciseTitleSet.has(lowerTitle)) {
             return res.status(400).json({ message: `Duplicate exercise title detected: "${exTitle}"` });
@@ -209,106 +111,85 @@ export const editWorkout = async (req: Request, res: Response, next: NextFunctio
     try {
         await client.query("BEGIN");
 
-        // Check if workout exists and belongs to user
-        const checkWorkoutQuery = "SELECT user_id FROM workouts WHERE workout_id = $1";
-        const checkWorkoutResult = await client.query(checkWorkoutQuery, [workout_id]);
+        const user_id = await getUserIdFromFirebaseUid(firebase_uid);
 
-        if (checkWorkoutResult.rows.length === 0) {
+        const workoutRes = await client.query(
+            `SELECT user_id FROM workouts WHERE workout_id = $1`,
+            [workout_id]
+        );
+        if (workoutRes.rows.length === 0) {
             await client.query("ROLLBACK");
             return res.status(404).json({ message: "Workout not found." });
         }
-
-        if (checkWorkoutResult.rows[0].user_id !== Number(user_id)) {
+        if (workoutRes.rows[0].user_id !== user_id) {
             await client.query("ROLLBACK");
-            return res.status(403).json({ message: "Unauthorized: You do not have permission to edit this workout." });
+            return res.status(403).json({ message: "Unauthorized to edit this workout." });
         }
 
-        // Update workout details
         await client.query(
-            "UPDATE workouts SET title = $1, description = $2, updated_at = NOW() WHERE workout_id = $3",
+            `UPDATE workouts SET title = $1, description = $2, updated_at = NOW() WHERE workout_id = $3`,
             [title, description, workout_id]
         );
 
-        // Fetch existing exercises tied to this workout
-        const existingExercisesResult = await client.query(
-            "SELECT exercise_id FROM workout_exercises WHERE workout_id = $1",
+        const existingRes = await client.query(
+            `SELECT exercise_id FROM workout_exercises WHERE workout_id = $1`,
             [workout_id]
         );
-        const existingExerciseIds = existingExercisesResult.rows.map((row) => row.exercise_id);
+        const existingIds = existingRes.rows.map((r) => r.exercise_id);
 
-        // Fetch existing exercises from the `exercises` table in a single batch query
-        const exerciseTitles = exercises.map((ex) => ex.title.toLowerCase());
-        const checkExistingExercisesQuery = `
-            SELECT exercise_id, LOWER(title) AS title FROM exercises WHERE LOWER(title) = ANY($1::text[])
-        `;
-        const checkExistingExercisesRes = await client.query(checkExistingExercisesQuery, [exerciseTitles]);
-
-        // Map found exercises for quick lookup
-        const titleToIdMap: Record<string, number> = {};
-        checkExistingExercisesRes.rows.forEach((row) => {
-            titleToIdMap[row.title] = row.exercise_id;
+        const titles = exercises.map((ex) => ex.title.toLowerCase());
+        const checkRes = await client.query(
+            `SELECT exercise_id, LOWER(title) AS title FROM exercises WHERE LOWER(title) = ANY($1::text[])`,
+            [titles]
+        );
+        const titleToId: Record<string, number> = {};
+        checkRes.rows.forEach((r) => {
+            titleToId[r.title] = r.exercise_id;
         });
 
-        // Process exercises
         for (const ex of exercises) {
             const { title: exTitle, description: exDescription, weight_used, set_count, rep_count } = ex;
-            const lowerTitle = exTitle.toLowerCase();
-
-            let exercise_id = titleToIdMap[lowerTitle];
-
-            // If the exercise does not exist, insert it
+            const lowerTitle = exTitle.trim().toLowerCase();
+            let exercise_id = titleToId[lowerTitle];
             if (!exercise_id) {
-                const insertExerciseQuery = `
-                    INSERT INTO exercises (title, description, created_at, updated_at) 
-                    VALUES ($1, $2, NOW(), NOW()) 
-                    RETURNING exercise_id;
-                `;
-                const insertExerciseRes = await client.query(insertExerciseQuery, [exTitle, exDescription || null]);
-                exercise_id = insertExerciseRes.rows[0].exercise_id;
-                titleToIdMap[lowerTitle] = exercise_id;
+                const insertRes = await client.query(
+                    `INSERT INTO exercises (title, description, created_at, updated_at)
+                    VALUES ($1, $2, NOW(), NOW()) RETURNING exercise_id`,
+                    [exTitle, exDescription ?? null]
+                );
+                exercise_id = insertRes.rows[0].exercise_id;
+                titleToId[lowerTitle] = exercise_id;
             }
 
-            // If this exercise is not already in the workout, insert it
-            if (!existingExerciseIds.includes(exercise_id)) {
-                const insertWorkoutExerciseQuery = `
-                    INSERT INTO workout_exercises (workout_id, workout_name, exercise_id, exercise_name, weight_used, set_count, rep_count, created_at) 
-                    VALUES ($1, $2, $3, $4, $5, $6, $7, NOW());
-                `;
-                await client.query(insertWorkoutExerciseQuery, [
-                    workout_id,
-                    title,
-                    exercise_id,
-                    exTitle,
-                    weight_used ?? null,
-                    set_count,
-                    rep_count
-                ]);
+            if (!existingIds.includes(exercise_id)) {
+                await client.query(
+                    `INSERT INTO workout_exercises (workout_id, workout_name, exercise_id, exercise_name, weight_used, set_count, rep_count, created_at)
+                    VALUES ($1, $2, $3, $4, $5, $6, $7, NOW())`,
+                    [workout_id, title, exercise_id, exTitle, weight_used ?? null, set_count, rep_count]
+                );
             }
         }
 
-        // Identify exercises to remove
-        const newExerciseIds = exercises.map((ex) => titleToIdMap[ex.title.toLowerCase()]);
-        const exercisesToRemove = existingExerciseIds.filter((id) => !newExerciseIds.includes(id));
-
-        // Remove exercises in one query
-        if (exercisesToRemove.length > 0) {
+        const newIds = exercises.map((ex) => titleToId[ex.title.toLowerCase()]);
+        const toRemove = existingIds.filter((id) => !newIds.includes(id));
+        if (toRemove.length > 0) {
             await client.query(
-                "DELETE FROM workout_exercises WHERE workout_id = $1 AND exercise_id = ANY($2::int[])",
-                [workout_id, exercisesToRemove]
+                `DELETE FROM workout_exercises WHERE workout_id = $1 AND exercise_id = ANY($2::int[])`,
+                [workout_id, toRemove]
             );
         }
 
         await client.query("COMMIT");
         return res.status(200).json({ message: "Workout updated successfully." });
-
     } catch (error) {
         await client.query("ROLLBACK");
-        console.error("Error updating workout:", error);
-        return res.status(500).json({ message: "Error updating workout. Please try again later." });
+        console.error("Error editing workout:", error);
+        return res.status(500).json({ message: "Error editing workout. Please try again later." });
     } finally {
         client.release();
     }
 };
+
 
 
 
@@ -316,30 +197,30 @@ export const editWorkout = async (req: Request, res: Response, next: NextFunctio
 
 // comment on workout
 export const commentOnWorkout = async (req: Request, res: Response, next: NextFunction) => {
+    const firebase_uid = req.user?.uid;
+    if (!firebase_uid) {
+        return res.status(401).json({ message: "Unauthorized: Missing Firebase UID." });
+    }
+
     const { workout_id } = req.params;
-    const { user_id, content } = req.body;
+    const { content } = req.body;
 
     // Validations
     if (!workout_id || isNaN(Number(workout_id))) {
         return res.status(400).json({ message: "Invalid workout ID." });
     }
 
-    if (!user_id || isNaN(Number(user_id))) {
-        return res.status(400).json({ message: "Invalid user ID." });
-    }
-
     if (!content || typeof content !== "string" || content.trim().length === 0) {
         return res.status(400).json({ message: "Comment content cannot be empty." });
     }
 
-
-    // Start a transaction by getting a client
     const client = await pool.connect();
 
     try {
-
-        // Begin transaction
         await client.query('BEGIN');
+
+        // Retrieve user_id from firebase_uid
+        const user_id = await getUserIdFromFirebaseUid(firebase_uid);
 
         // Check if workout exists and get the owner of the workout
         const checkWorkoutQuery = `
@@ -355,8 +236,6 @@ export const commentOnWorkout = async (req: Request, res: Response, next: NextFu
         }
 
         const workout = checkWorkoutRes.rows[0];
-
-        // Get the user who owns the workout
         const workoutOwnerId = workout.user_id;
 
         // Insert comment into comments table
@@ -380,7 +259,7 @@ export const commentOnWorkout = async (req: Request, res: Response, next: NextFu
                 message: notificationMessage,
                 reference_type: 'workout',
                 reference_id: Number(workout_id),
-                client,  // Pass client to ensure notification is also part of the transaction
+                client,
             });
         }
 
@@ -400,12 +279,15 @@ export const commentOnWorkout = async (req: Request, res: Response, next: NextFu
     }
 };
 
-
-
 // edit comment on workout
 export const editCommentOnWorkout = async (req: Request, res: Response, next: NextFunction) => {
+    const firebase_uid = req.user?.uid;
+    if (!firebase_uid) {
+        return res.status(401).json({ message: "Unauthorized: Missing Firebase UID." });
+    }
+
     const { workout_id, comment_id } = req.params;
-    const { user_id, content } = req.body;
+    const { content } = req.body;
 
     // Validations
     if (!workout_id || isNaN(Number(workout_id))) {
@@ -416,28 +298,26 @@ export const editCommentOnWorkout = async (req: Request, res: Response, next: Ne
         return res.status(400).json({ message: "Invalid comment ID." });
     }
 
-    if (!user_id || isNaN(Number(user_id))) {
-        return res.status(400).json({ message: "Invalid user ID." });
-    }
-
     if (!content || typeof content !== "string" || content.trim().length === 0) {
         return res.status(400).json({ message: "Content cannot be empty." });
     }
 
     try {
+        // Retrieve user_id from firebase_uid
+        const user_id = await getUserIdFromFirebaseUid(firebase_uid);
+
         // Check if comment exists and retrieve its owner
         const checkCommentQuery = `
             SELECT user_id FROM comments WHERE comment_id = $1;
         `;
         const checkCommentResponse: QueryResult = await pool.query(checkCommentQuery, [comment_id]);
 
-        // Check if query returns a single comment
         if (checkCommentResponse.rows.length === 0) {
             return res.status(404).json({ message: "Comment not found." });
         }
 
         // Check if the current user is the owner of the comment
-        if (checkCommentResponse.rows[0].user_id !== Number(user_id)) {
+        if (checkCommentResponse.rows[0].user_id !== user_id) {
             return res.status(403).json({ message: "You don't have permission to edit this comment." });
         }
 
@@ -460,23 +340,17 @@ export const editCommentOnWorkout = async (req: Request, res: Response, next: Ne
 
 // delete comment on workout
 export const deleteCommentOnWorkout = async (req: Request, res: Response, next: NextFunction) => {
+    const firebase_uid = req.user?.uid;
+    if (!firebase_uid) {
+        return res.status(401).json({ message: "Unauthorized: Missing Firebase UID." });
+    }
+
     const { workout_id, comment_id } = req.params;
-    const { user_id } = req.body; // User attempting to delete the comment
-
-    // Validations
-    if (!workout_id || isNaN(Number(workout_id))) {
-        return res.status(400).json({ message: "Invalid post ID." });
-    }
-
-    if (!comment_id || isNaN(Number(comment_id))) {
-        return res.status(400).json({ message: "Invalid comment ID." });
-    }
-
-    if (!user_id || isNaN(Number(user_id))) {
-        return res.status(400).json({ message: "Invalid user ID." });
-    }
 
     try {
+        // Retrieve user_id from firebase_uid
+        const user_id = await getUserIdFromFirebaseUid(firebase_uid);
+
         // Retrieve comment info and check ownership by joining with workouts
         const getCommentQuery = `
             SELECT c.user_id AS comment_owner, w.user_id AS workout_owner
@@ -486,15 +360,14 @@ export const deleteCommentOnWorkout = async (req: Request, res: Response, next: 
         `;
         const commentResult: QueryResult = await pool.query(getCommentQuery, [comment_id]);
 
-        // Check if comment exists
         if (commentResult.rows.length === 0) {
             return res.status(404).json({ message: `Comment #${comment_id} not found.` });
         }
 
         const { comment_owner, workout_owner } = commentResult.rows[0];
 
-        // Check if user is authorized to delete (must be comment owner OR work owner)
-        if (Number(user_id) !== comment_owner && Number(user_id) !== workout_owner) {
+        // Check if user is authorized to delete (must be comment owner OR workout owner)
+        if (user_id !== comment_owner && user_id !== workout_owner) {
             return res.status(403).json({ message: "You are not authorized to delete this comment." });
         }
 
@@ -506,36 +379,33 @@ export const deleteCommentOnWorkout = async (req: Request, res: Response, next: 
             message: `Comment #${comment_id} deleted successfully.`,
             deletedComment: deleteCommentResponse.rows[0]
         });
-
     } catch (error) {
         console.error(`Error deleting comment #${comment_id}:`, error);
         return res.status(500).json({ message: `Error deleting comment #${comment_id}. Please try again later.` });
     }
 }
 
-// LIKES
-
 // like workout
 export const likeWorkout = async (req: Request, res: Response, next: NextFunction) => {
+    const firebase_uid = req.user?.uid;
+    if (!firebase_uid) {
+        return res.status(401).json({ message: "Unauthorized: Missing Firebase UID." });
+    }
+
     const { workout_id } = req.params;
-    const { user_id } = req.body;
 
     // Validations
     if (!workout_id || isNaN(Number(workout_id))) {
         return res.status(400).json({ message: "Invalid workout ID." });
     }
 
-    if (!user_id || isNaN(Number(user_id))) {
-        return res.status(400).json({ message: "Invalid user ID." });
-    }
-
-    // Start a transaction by getting a client
     const client = await pool.connect();
 
     try {
-
-        // Begin transaction
         await client.query('BEGIN');
+
+        // Retrieve user_id from firebase_uid
+        const user_id = await getUserIdFromFirebaseUid(firebase_uid);
 
         // Check if workout exists and get the owner of the workout
         const checkWorkoutQuery = `
@@ -546,15 +416,11 @@ export const likeWorkout = async (req: Request, res: Response, next: NextFunctio
         const checkWorkoutRes: QueryResult = await client.query(checkWorkoutQuery, [workout_id]);
 
         if (checkWorkoutRes.rows.length === 0) {
-
-            // Rollback transaction if workout is not found
             await client.query('ROLLBACK');
             return res.status(404).json({ message: `Workout #${workout_id} not found.` });
         }
 
         const workout = checkWorkoutRes.rows[0];
-
-        // Get the user who owns the workout
         const workoutOwnerId = workout.user_id;
 
         // Check if the user already liked the workout
@@ -562,8 +428,6 @@ export const likeWorkout = async (req: Request, res: Response, next: NextFunctio
         const checkLikeRes: QueryResult = await client.query(checkLikeQuery, [user_id, workout_id]);
 
         if (checkLikeRes.rows.length > 0) {
-
-            // Rollback transaction if already liked
             await client.query('ROLLBACK');
             return res.status(409).json({ message: "You have already liked this workout." });
         }
@@ -576,10 +440,8 @@ export const likeWorkout = async (req: Request, res: Response, next: NextFunctio
         `;
         const likeRes: QueryResult = await client.query(likeQuery, [user_id, workout_id]);
 
-        // Create a notification for the workout owner (if the user liking is not the owner)
+        // Create a notification for the workout owner if the user liking is not the owner
         if (workoutOwnerId !== user_id) {
-
-            // Fetch user details using client
             const likerDetails: any = await getUserInfo(user_id, client);
             const notificationMessage = `${likerDetails.username} liked your workout.`;
             await createNotification({
@@ -591,11 +453,10 @@ export const likeWorkout = async (req: Request, res: Response, next: NextFunctio
                 message: notificationMessage,
                 reference_type: 'workout',
                 reference_id: Number(workout_id),
-                client,  // Pass client to ensure notification is also part of the transaction
+                client,
             });
         }
 
-        // Commit the transaction if everything is successful
         await client.query('COMMIT');
 
         return res.status(201).json({ message: "Workout liked successfully!", like: likeRes.rows[0] });
@@ -604,29 +465,28 @@ export const likeWorkout = async (req: Request, res: Response, next: NextFunctio
         console.error(`Error liking workout #${workout_id}:`, error);
         return res.status(500).json({ message: `Error liking workout #${workout_id}. Please try again later.` });
     } finally {
-
-        // Release the client back to the pool
         client.release();
     }
 };
 
-
-
 // unlike workout
 export const unlikeWorkout = async (req: Request, res: Response, next: NextFunction) => {
+    const firebase_uid = req.user?.uid;
+    if (!firebase_uid) {
+        return res.status(401).json({ message: "Unauthorized: Missing Firebase UID." });
+    }
+
     const { workout_id } = req.params;
-    const { user_id } = req.body;
 
     // Validations
     if (!workout_id || isNaN(Number(workout_id))) {
         return res.status(400).json({ message: "Invalid workout ID." });
     }
 
-    if (!user_id || isNaN(Number(user_id))) {
-        return res.status(400).json({ message: "Invalid user ID." });
-    }
-
     try {
+        // Retrieve user_id from firebase_uid
+        const user_id = await getUserIdFromFirebaseUid(firebase_uid);
+
         // Check if workout exists
         const checkWorkoutQuery = `SELECT * FROM workouts WHERE workout_id = $1`;
         const checkWorkoutRes: QueryResult = await pool.query(checkWorkoutQuery, [workout_id]);
@@ -654,28 +514,26 @@ export const unlikeWorkout = async (req: Request, res: Response, next: NextFunct
     }
 };
 
-
-// DELETE
-
 // delete workout
 export const deleteWorkout = async (req: Request, res: Response, next: NextFunction) => {
-    const { workout_id } = req.params;
-    const { user_id } = req.body;
-
-    // Validations
-    if (!workout_id || isNaN(Number(workout_id))) {
-        return res.status(400).json({ message: "Invalid workout ID." });
+    const firebase_uid = req.user?.uid;
+    if (!firebase_uid) {
+        return res.status(401).json({ message: "Unauthorized: Missing Firebase UID." });
     }
 
-    if (!user_id || isNaN(Number(user_id))) {
-        return res.status(400).json({ message: "Invalid user ID." });
+    const { workout_id } = req.params;
+
+    if (!workout_id || isNaN(Number(workout_id))) {
+        return res.status(400).json({ message: "Invalid workout ID." });
     }
 
     const client = await pool.connect();
 
     try {
-        // Begin transaction to update posts and delete related data before removing the workout
         await client.query("BEGIN");
+
+        // Retrieve user_id from firebase_uid
+        const user_id = await getUserIdFromFirebaseUid(firebase_uid);
 
         // Check if the workout exists and belongs to the user
         const checkWorkoutQuery = `SELECT user_id FROM workouts WHERE workout_id = $1`;
@@ -686,7 +544,7 @@ export const deleteWorkout = async (req: Request, res: Response, next: NextFunct
             return res.status(404).json({ message: "Workout not found." });
         }
 
-        if (checkWorkoutResponse.rows[0].user_id !== Number(user_id)) {
+        if (checkWorkoutResponse.rows[0].user_id !== user_id) {
             await client.query("ROLLBACK");
             return res.status(403).json({ message: "You are not authorized to delete this workout." });
         }
@@ -703,11 +561,9 @@ export const deleteWorkout = async (req: Request, res: Response, next: NextFunct
         const deleteWorkoutQuery = `DELETE FROM workouts WHERE workout_id = $1 RETURNING *;`;
         const deleteWorkoutResponse: QueryResult = await client.query(deleteWorkoutQuery, [workout_id]);
 
-        // Commit transaction
         await client.query("COMMIT");
 
         return res.status(200).json({ message: "Workout deleted successfully. All related posts updated.", deletedWorkout: deleteWorkoutResponse.rows[0] });
-
     } catch (error) {
         await client.query("ROLLBACK");
         console.error(`Error deleting workout #${workout_id}:`, error);
@@ -716,4 +572,3 @@ export const deleteWorkout = async (req: Request, res: Response, next: NextFunct
         client.release();
     }
 };
-

@@ -5,12 +5,6 @@ const router = express.Router()
 
 // / post
 
-// get all posts from user
-router.get("/user/:user_id", postControllers.getAllUserPosts)
-
-// get single post
-router.get("/:post_id", postControllers.getSinglePost)
-
 // create post
 router.post("/", postControllers.createPost)
 
@@ -40,5 +34,16 @@ router.delete("/:post_id/unlike", postControllers.unlikePost)
 
 // delete post
 router.delete("/:post_id", postControllers.deletePost)
+
+
+// made public
+
+// // get all posts from user
+// router.get("/user/:user_id", postControllers.getAllUserPosts)
+
+// // get single post
+// router.get("/:post_id", postControllers.getSinglePost)
+
+
 
 module.exports = router

@@ -42,10 +42,11 @@ const postRoutes = require("./routes/post-routes")
 const searchRoutes = require("./routes/search-routes")
 const userRoutes = require("./routes/user-routes")
 const workoutRoutes = require("./routes/workout-routes")
-const utilRoutes = require("./routes/util-routes")
+const publicRoutes = require("./routes/public-routes")
 
 // public routes
-app.use("/util", utilRoutes);
+app.use("/public", publicRoutes);
+app.use("/search", searchRoutes)
 
 // firebase token middleware
 app.use(verifyFirebaseToken);
@@ -56,7 +57,6 @@ app.use("/friend", friendRoutes)
 app.use("/group", groupRoutes)
 app.use("/notification", notificationRoutes)
 app.use("/post", postRoutes)
-app.use("/search", searchRoutes)
 app.use("/user", userRoutes)
 app.use("/workout", workoutRoutes)
 

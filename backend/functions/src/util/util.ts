@@ -2,6 +2,9 @@ import jwt from "jsonwebtoken";
 import { pool } from "../index";
 import { QueryResult } from "pg";
 
+// types import
+import { UserInfo } from "../types/types";
+
 // generate token
 const JWT_TOKEN = process.env.JWT_TOKEN as string;
 
@@ -105,34 +108,35 @@ export const createNotification = async ({
 
 
 /**
- * Retrieves the username for a given user_id, supports transactions.
- * @param {number} user_id - The ID of the user whose username is being retrieved.
- * @param {any} [client] - An optional client (transaction) to run the query in the same transaction.
- * @returns {Promise<string>} - The username associated with the provided user_id.
- * @throws {Error} - Throws an error if the user is not found.
+ * Retrieves user info for a given user_id, supports transactions.
+ * @param {number} user_id - The ID of the user to retrieve.
+ * @param {any} [client] - Optional transaction client.
+ * @returns {Promise<UserInfo>} - The user info object.
+ * @throws {Error} - Throws if user not found.
  */
-export const getUserInfo = async (user_id: number, client?: any): Promise<string> => {
-    const getUsernameQuery = `
-        SELECT *
-        FROM users
-        WHERE user_id = $1
-    `;
+export const getUserInfo = async (
+    user_id: number,
+    client?: any
+): Promise<UserInfo> => {
+    const getUserQuery = `
+    SELECT user_id, username, profile_pic, bio, created_at, updated_at
+    FROM users
+    WHERE user_id = $1
+`;
 
-    let getUsernameResponse: QueryResult;
+    let result: QueryResult;
 
     if (client) {
-        // If a client (transaction) is provided, use it
-        getUsernameResponse = await client.query(getUsernameQuery, [user_id]);
+        result = await client.query(getUserQuery, [user_id]);
     } else {
-        // Otherwise, use the pool
-        getUsernameResponse = await pool.query(getUsernameQuery, [user_id]);
+        result = await pool.query(getUserQuery, [user_id]);
     }
 
-    if (getUsernameResponse.rows.length === 0) {
+    if (result.rows.length === 0) {
         throw new Error(`User #${user_id} not found.`);
     }
 
-    return getUsernameResponse.rows[0]
+    return result.rows[0] as UserInfo;
 };
 
 /**

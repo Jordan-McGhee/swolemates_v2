@@ -2,101 +2,39 @@
 import { pool } from "../index"
 import { Request, Response, NextFunction } from "express"
 import { QueryResult } from "pg";
+import { getUserIdFromFirebaseUid } from "../util/util";
 
 // blank function
 // export const fnName = async (req: Request, res: Response, next: NextFunction) => {}
 
-// Get all users
-export const getAllUsers = async (req: Request, res: Response, next: NextFunction) => {
-    const userQuery: string = "SELECT * FROM users";
-
-    try {
-        const userResponse: QueryResult = await pool.query(userQuery);
-        return res.status(200).json({ message: "Got all users.", users: userResponse.rows });
-    } catch (error) {
-        console.error("Error getting all users:", error);
-        return res.status(500).json({ message: `Error getting all users: ${error}` });
-    }
-};
-
-// Get a single user
-export const getSingleUser = async (req: Request, res: Response, next: NextFunction) => {
-    const { user_id } = req.params;
-    const userQuery: string = "SELECT user_id, username, profile_pic, bio, created_at, updated_at FROM users WHERE user_id = $1";
-
-    try {
-        const userResponse: QueryResult = await pool.query(userQuery, [user_id]);
-        if (userResponse.rows.length === 0) {
-            return res.status(404).json({ message: "User not found." });
-        }
-        return res.status(200).json({ message: "Got user.", user: userResponse.rows[0] });
-    } catch (error) {
-        console.error("Error getting user:", error);
-        return res.status(500).json({ message: `Error getting user: ${error}` });
-    }
-};
-
-// Get user's friends
-export const getUserFriends = async (req: Request, res: Response, next: NextFunction) => {
-    const { user_id } = req.params;
-
-    try {
-        // Query to get the accepted friend requests for the user
-        const query = `
-            SELECT 
-                CASE 
-                    WHEN f.sender_id = $1 THEN f.receiver_id 
-                    ELSE f.sender_id 
-                END AS friend_id
-            FROM 
-                friend_requests f
-            WHERE 
-                (f.sender_id = $1 OR f.receiver_id = $1)
-                AND f.status = 'Accepted';
-        `;
-
-        // Run the query with the user_id
-        const result: QueryResult = await pool.query(query, [user_id]);
-
-        if (result.rows.length === 0) {
-            return res.status(404).json({ message: 'No friends found.' });
-        }
-
-        // Extract the friend_ids from the query result
-        const friendIds = result.rows.map(row => row.friend_id);
-
-        // Now, get the user information for each friend
-        const userQuery = `
-            SELECT user_id, username, profile_pic
-            FROM users
-            WHERE user_id = ANY($1);
-        `;
-
-        // Get friends' details using the friend_ids
-        const userResult: QueryResult = await pool.query(userQuery, [friendIds]);
-
-        return res.status(200).json(userResult.rows);
-    } catch (error) {
-        console.error('Error fetching user friends:', error);
-        return res.status(500).json({ message: 'Error fetching user friends. Please try again later.' });
-    }
-};
-
-
 // Update bio
 export const updateBio = async (req: Request, res: Response, next: NextFunction) => {
-    const { user_id } = req.params;
+    const firebase_uid = req.user?.uid;
     const { bio } = req.body;
-    const updateBioQuery: string = "UPDATE users SET bio = $1 WHERE user_id = $2 RETURNING *";
+
+    if (!firebase_uid) {
+        return res.status(401).json({ message: "Unauthorized." });
+    }
 
     try {
+        // Resolve user_id securely
+        const user_id = await getUserIdFromFirebaseUid(firebase_uid);
+
+        const updateBioQuery = ` UPDATE users SET bio = $1, updated_at = NOW() WHERE user_id = $2 RETURNING user_id, username, bio, profile_pic
+    `;
+
         const userResponse: QueryResult = await pool.query(updateBioQuery, [bio, user_id]);
-        return res.status(200).json({ message: `Bio updated for user #${user_id}.`, user: userResponse.rows[0] });
+
+        return res.status(200).json({
+            message: `Bio updated.`,
+            user: userResponse.rows[0],
+        });
     } catch (error) {
-        console.error("Error updating profile:", error);
-        return res.status(500).json({ message: `Error updating Bio: ${error}` });
+        console.error("Error updating bio:", error);
+        return res.status(500).json({ message: "Error updating bio." });
     }
 };
+
 
 
 // Sign up controller

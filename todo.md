@@ -16,6 +16,8 @@
 
 # BACKEND
 
+### MAKE SURE PROMOTE/DEMOTE MODERATOR AND ADMIN FUNCTIONS ARE WORKING PROPERLY WITH USER IDS AND MEMBER IDS!!!!
+
 <!-- GENERAL -->
 ### ANYTIME YOU CHANGE FUNCTIONS — DEPLOY TO FIREBASE
 - When deleting workout or group, make sure to delete the link in workout_exercises and group_members tables
