@@ -45,7 +45,6 @@ export const authApi = () => {
                 Authorization: `Bearer ${token}` // optional if backend checks
             },
             body: JSON.stringify({
-                firebase_uid: user.uid,
                 email: user.email,
                 username: user.displayName || "",
                 profile_pic: user.photoURL || null
@@ -62,15 +61,25 @@ export const authApi = () => {
     };
 
     // login with email
-    const logInWithEmail = (email: string, password: string) => {
-        return signInWithEmailAndPassword(auth, email, password);
+    const logInWithEmail = async (email: string, password: string) => {
+        const userCredential = await signInWithEmailAndPassword(auth, email, password);
+
+        // Automatically sync to backend
+        await syncUserWithBackend(userCredential.user);
+
+        return userCredential;
     };
 
     // login with google
     const googleProvider = new GoogleAuthProvider();
 
-    const logInWithGoogle = () => {
-        return signInWithPopup(auth, googleProvider);
+    const logInWithGoogle = async () => {
+        const userCredential = await signInWithPopup(auth, googleProvider);
+
+        // Automatically sync to backend
+        await syncUserWithBackend(userCredential.user);
+
+        return userCredential;
     };
 
     // logout
@@ -114,6 +123,8 @@ export const authApi = () => {
         changePassword,
         deleteAccount,
         onAuthChange,
-        isLoadingAuth: isLoading, hasError, clearError
+        isLoadingAuth: isLoading,
+        hasError,
+        clearError
     };
 };

@@ -347,6 +347,15 @@ export const deleteCommentOnWorkout = async (req: Request, res: Response, next: 
 
     const { workout_id, comment_id } = req.params;
 
+    // Validations
+    if (!workout_id || isNaN(Number(workout_id))) {
+        return res.status(400).json({ message: "Invalid post ID." });
+    }
+
+    if (!comment_id || isNaN(Number(comment_id))) {
+        return res.status(400).json({ message: "Invalid comment ID." });
+    }
+
     try {
         // Retrieve user_id from firebase_uid
         const user_id = await getUserIdFromFirebaseUid(firebase_uid);

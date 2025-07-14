@@ -1,6 +1,6 @@
 import { pool } from "../index";
 import { Request, Response, NextFunction } from "express";
-import { QueryResult } from "pg";
+// import { QueryResult } from "pg";
 import { createNotification, getUserInfo } from "../util/util";
 import { getUserIdFromFirebaseUid } from "../util/util";
 
