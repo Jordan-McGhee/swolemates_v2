@@ -10,9 +10,23 @@
     - likes/comments on workouts
     <!-- - workout with exercies DONE -->
 
+
+
+
+
+
 # FRONTEND
 <!-- GENERAL -->
 ### NPM RUN BUILD AND DEPLOY TO FIREBASE
+
+<!-- AUTH -->
+- Sign up:
+    - check if username is available after user unfocuses and enters acceptable name
+    - check if email is already in use
+- Login:
+    -on entered username that is in db, grab profile pic and user info to display
+
+
 
 # BACKEND
 

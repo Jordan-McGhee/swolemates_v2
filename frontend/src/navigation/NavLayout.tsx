@@ -1,18 +1,23 @@
 import { Outlet } from "react-router-dom"
-import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar"
-import { AppSidebar } from "@/components/app-sidebar"
-import { MobileTop, MobileBottom } from "@/navigation/MobileNav"
 import { useState } from "react"
+
+// component imports
+import { AppSidebar } from "@/components/app-sidebar"
+import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar"
+import { MobileTop, MobileBottom } from "@/navigation/MobileNav"
+import AuthModal from "@/components/auth/AuthModal"
 
 export default function Layout() {
     const [useDarkMode, setUseDarkMode] = useState(false)
+    const [authModalOpen, setAuthModalOpen] = useState(false)
+
 
     return (
         <div className={useDarkMode ? "dark" : ""}>
             <SidebarProvider>
                 <div className="hidden w-full md:flex bg-light-off-bg text-light-black dark:bg-dark-background dark:text-dark-white transition-colors duration-300">
                     {/* Sidebar */}
-                    <AppSidebar />
+                    <AppSidebar onLoginClick={() => setAuthModalOpen(true)} />
 
                     {/* Main Content */}
                     <main className="flex-1 flex flex-col relative -mt-1.5 w-full">
@@ -32,6 +37,11 @@ export default function Layout() {
                         </div>
                     </main>
                 </div>
+
+                {/* Modal */}
+                {authModalOpen && (
+                    <AuthModal onClose={() => setAuthModalOpen(false)} isOpen={authModalOpen} />
+                )}
 
                 {/* 📱 Mobile Layout */}
                 <div className="md:hidden flex flex-col bg-[var(--off-bg)] transition-colors duration-300">

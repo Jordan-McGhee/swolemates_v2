@@ -1,5 +1,9 @@
 import { Handshake, Home, Dumbbell, Bell, User, Users, LogOut } from "lucide-react"
 import { useLocation, Link } from "react-router-dom"
+import { useAuth } from "@/context/AuthProvider"  // adjust import path if needed
+
+// types import
+import { AppSidebarProps } from "@/types/props/props-types"
 
 import {
     Sidebar,
@@ -26,11 +30,12 @@ const footerItems = [
     { title: "Logout", url: "#", icon: LogOut },
 ]
 
-export function AppSidebar() {
+export function AppSidebar({ onLoginClick }: AppSidebarProps) {
     const location = useLocation()
     const isActive = (url: string) => location.pathname === url
-    // broader matching option:
-    // const isActive = (url: string) => location.pathname.startsWith(url)
+
+    // get user from auth context
+    const { user } = useAuth()
 
     return (
         <Sidebar collapsible="icon">
@@ -73,26 +78,41 @@ export function AppSidebar() {
 
             <SidebarFooter>
                 <SidebarMenu>
-                    {footerItems.map((item) => {
-                        const active = isActive(item.url)
-                        return (
-                            <SidebarMenuItem key={item.title}>
-                                <SidebarMenuButton
-                                    asChild
-                                    tooltip={item.title}
-                                    className={`group w-full ${active
-                                        ? "bg-[var(--accent-hover)] text-[var(--accent)]"
-                                        : "text-[var(--subhead-text)] hover:bg-[var(--accent-hover)] hover:text-[var(--accent)]"
-                                        }`}
-                                >
-                                    <Link to={item.url} className="flex items-center gap-3 px-3 py-2 rounded transition-colors w-full">
-                                        <item.icon className="w-5 h-5" />
-                                        <span>{item.title}</span>
-                                    </Link>
-                                </SidebarMenuButton>
-                            </SidebarMenuItem>
-                        )
-                    })}
+                    {user ? (
+                        footerItems.map((item) => {
+                            const active = isActive(item.url)
+                            return (
+                                <SidebarMenuItem key={item.title}>
+                                    <SidebarMenuButton
+                                        asChild
+                                        tooltip={item.title}
+                                        className={`group w-full ${active
+                                            ? "bg-[var(--accent-hover)] text-[var(--accent)]"
+                                            : "text-[var(--subhead-text)] hover:bg-[var(--accent-hover)] hover:text-[var(--accent)]"
+                                            }`}
+                                    >
+                                        <Link to={item.url} className="flex items-center gap-3 px-3 py-2 rounded transition-colors w-full">
+                                            <item.icon className="w-5 h-5" />
+                                            <span>{item.title}</span>
+                                        </Link>
+                                    </SidebarMenuButton>
+                                </SidebarMenuItem>
+                            )
+                        })
+                    ) : (
+                        <SidebarMenuItem>
+                            <SidebarMenuButton
+                                tooltip="Login"
+                                className="group w-full text-[var(--subhead-text)] hover:bg-[var(--accent-hover)] hover:text-[var(--accent)]"
+                                onClick={onLoginClick}
+                            >
+                                <div className="flex items-center gap-3 px-3 py-2 rounded transition-colors w-full cursor-pointer">
+                                    <User className="w-5 h-5" />
+                                    <span>Login</span>
+                                </div>
+                            </SidebarMenuButton>
+                        </SidebarMenuItem>
+                    )}
                 </SidebarMenu>
             </SidebarFooter>
         </Sidebar>
