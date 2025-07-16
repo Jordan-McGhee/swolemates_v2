@@ -19,12 +19,19 @@
 <!-- GENERAL -->
 ### NPM RUN BUILD AND DEPLOY TO FIREBASE
 
+CHANGE LOGO COLOR
+
 <!-- AUTH -->
 - Sign up:
     - check if username is available after user unfocuses and enters acceptable name
     - check if email is already in use
 - Login:
     -on entered username that is in db, grab profile pic and user info to display
+- Error/Success flow for sign in
+- Use functions for checking username/email availability
+
+- Left off with issue:
+    - username/email availability checks return 401 unauthorized
 
 
 

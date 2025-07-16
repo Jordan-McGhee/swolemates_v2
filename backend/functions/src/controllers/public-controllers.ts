@@ -8,21 +8,50 @@ import { checkIfUsernameExists } from "../util/util";
 // blank function
 // export const fnName = async (req: Request, res: Response, next: NextFunction) => {}
 
-// Check username availability
-export const checkUsernameAvailability = async (req: Request, res: Response, next: NextFunction) => {
-    const { username } = req.body;
+// check if username is available
+export const checkUsername = async (req: Request, res: Response) => {
+    const { username } = req.query;
+
+    console.log("=== CheckUsernameExists Called ===");
+    console.log("Username to check:", username);
+
+    if (!username || typeof username !== "string") {
+        return res.status(400).json({ message: "Missing or invalid username." });
+    }
 
     try {
-        const usernameExists = await checkIfUsernameExists(username);
+        const result = await checkIfUsernameExists(username);
 
-        if (usernameExists) {
-            return res.status(400).json({ message: "Username is already taken." });
-        }
+        console.log("Query result:", result);
 
-        return res.status(200).json({ message: "Username is available." });
+        return res.status(200).json({ exists: result });
     } catch (error) {
-        console.error("Error checking username availability:", error);
-        return res.status(500).json({ message: `Error checking username availability: ${error}` });
+        console.error("Error checking username existence:", error);
+        return res.status(500).json({ message: "Failed to check username." });
+    }
+};
+
+// check if email is available
+export const checkEmail = async (req: Request, res: Response) => {
+    const { email } = req.query;
+
+    console.log("=== CheckEmailExists Called ===");
+    console.log("Email to check:", email);
+
+    if (!email || typeof email !== "string") {
+        return res.status(400).json({ message: "Missing or invalid email." });
+    }
+
+    try {
+        const query = "SELECT 1 FROM users WHERE email = $1";
+        const result = await pool.query(query, [email]);
+
+        console.log("Query result:", result.rows);
+
+        return res.status(200).json({ exists: result.rows.length > 0 });
+    } catch (error) {
+        console.error("Error checking email existence:", error);
+        return res.status(500).json({ message: "Failed to check email." });
     }
 };
 

@@ -2,23 +2,11 @@ import React, { createContext, useContext, useEffect, useState, ReactNode } from
 import { User } from "firebase/auth";
 import { authApi } from "@/api/authApi";
 
-interface AuthContextValue {
-    user: User | null;
-    isAuthLoading: boolean;
-    hasError: string | null;
-    clearError: () => void;
-    signUpWithEmail: (email: string, password: string, username: string) => Promise<void>;
-    logInWithEmail: (email: string, password: string) => Promise<void>;
-    logInWithGoogle: () => Promise<void>;
-    logOut: () => Promise<void>;
-    syncUserWithBackend: (user: User) => Promise<any>;
-}
+// type imports
+import { AuthContextValue, AuthProviderProps } from "@/types/props/props-types";
 
+// Create AuthContext
 const AuthContext = createContext<AuthContextValue | undefined>(undefined);
-
-interface AuthProviderProps {
-    children: ReactNode;
-}
 
 export const AuthProvider = ({ children }: AuthProviderProps) => {
 
@@ -27,6 +15,8 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
 
     // use your authApi for helpers
     const {
+        checkUsernameAvailability,
+        checkEmailAvailability,
         signUpWithEmail,
         logInWithEmail,
         logInWithGoogle,
@@ -89,10 +79,12 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
                 isAuthLoading: isAuthLoading || isLoadingAuth,
                 hasError,
                 clearError,
-                signUpWithEmail: handleSignUp,
-                logInWithEmail: handleLoginEmail,
-                logInWithGoogle: handleLoginGoogle,
-                logOut: handleLogout,
+                checkUsernameAvailability,
+                checkEmailAvailability,
+                handleSignUp,
+                handleLoginEmail,
+                handleLoginGoogle,
+                handleLogout,
                 syncUserWithBackend
             }}
         >

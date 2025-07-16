@@ -5,62 +5,145 @@ import { Loader2 } from "lucide-react";
 import google from "../../../assets/google.png";
 import swolematesLogo from "../../../assets/swolemates.png";
 
-// hook import
+// hooks
 import { useAuth } from "@/context/AuthProvider";
 
-// component import
+// components
 import { Button } from "@/components/ui/button";
 import AuthInput from "../AuthInput";
 
+// validation utils
+import {
+    validateUsername,
+    validateEmail,
+    validatePassword,
+    validateConfirmPassword,
+} from "@/util/input-validators";
+
 const SignupForm = () => {
-    const { signUpWithEmail, logInWithGoogle, isAuthLoading, hasError, clearError } = useAuth();
+    const {
+        checkUsernameAvailability,
+        checkEmailAvailability,
+        handleSignUp,
+        handleLoginGoogle,
+        isAuthLoading,
+        hasError,
+        clearError,
+    } = useAuth();
 
     const [formData, setFormData] = useState({
         username: "",
         email: "",
         password: "",
         confirmPassword: "",
-        profilePic: null as File | null
     });
 
+    // states
     const [errors, setErrors] = useState<Record<string, string>>({});
+    const [usernameCheck, setUsernameCheck] = useState<{
+        isLoading: boolean;
+        isAvailable: boolean | null;
+    }>({
+        isLoading: false,
+        isAvailable: null,
+    });
 
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    const passwordRegex = /^(?=.*[0-9])(?=.*[!@#$%^&*()_\-+={}[\]|:;"'<>,.?/]).{8,}$/;
+    const [emailCheck, setEmailCheck] = useState<{
+        isLoading: boolean;
+        isAvailable: boolean | null;
+    }>({
+        isLoading: false,
+        isAvailable: null,
+    });
 
+    // handlers
     const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-        const { name, value, files } = e.target;
-        if (files) {
-            setFormData(prev => ({ ...prev, [name]: files[0] }));
-        } else {
-            setFormData(prev => ({ ...prev, [name]: value }));
-        }
-        setErrors(prev => ({ ...prev, [name]: "" }));
+        const { name, value } = e.target;
+        setFormData((prev) => ({ ...prev, [name]: value }));
+        setErrors((prev) => ({ ...prev, [name]: "" }));
         if (hasError) clearError();
     };
 
-    const validate = () => {
-        const newErrors: Record<string, string> = {};
-        if (formData.username.length < 6) newErrors.username = "Username must be at least 6 characters.";
-        if (!emailRegex.test(formData.email)) newErrors.email = "Invalid email address.";
-        if (!passwordRegex.test(formData.password)) newErrors.password = "Password must be 8+ characters with number and symbol.";
-        if (formData.password !== formData.confirmPassword) newErrors.confirmPassword = "Passwords must match.";
-        setErrors(newErrors);
-        return Object.keys(newErrors).length === 0;
+    const handleUsernameBlur = async () => {
+        const error = validateUsername(formData.username);
+        if (error) {
+            setErrors((prev) => ({ ...prev, username: error }));
+            setUsernameCheck({ isLoading: false, isAvailable: null });
+            return;
+        }
+
+        setUsernameCheck({ isLoading: true, isAvailable: null });
+        const available = await checkUsernameAvailability(formData.username);
+        setUsernameCheck({ isLoading: false, isAvailable: available });
+
+        if (!available) {
+            setErrors((prev) => ({
+                ...prev,
+                username: "Username is already taken.",
+            }));
+        }
     };
+
+    const handleEmailBlur = async () => {
+        const error = validateEmail(formData.email);
+        if (error) {
+            setErrors((prev) => ({ ...prev, email: error }));
+            setEmailCheck({ isLoading: false, isAvailable: null });
+            return;
+        }
+
+        setEmailCheck({ isLoading: true, isAvailable: null });
+        const available = await checkEmailAvailability(formData.email);
+        setEmailCheck({ isLoading: false, isAvailable: available });
+
+        if (!available) {
+            setErrors((prev) => ({
+                ...prev,
+                email: "Email is already in use.",
+            }));
+        }
+    };
+
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
-        if (!validate()) return;
+        const newErrors: Record<string, string> = {};
+        newErrors.username = validateUsername(formData.username) || "";
+        newErrors.email = validateEmail(formData.email) || "";
+        newErrors.password = validatePassword(formData.password) || "";
+        newErrors.confirmPassword = validateConfirmPassword(formData.password, formData.confirmPassword) || "";
+
+        setErrors(newErrors);
+        const hasAnyError = Object.values(newErrors).some((e) => e);
+        if (hasAnyError) return;
 
         try {
-            await signUpWithEmail(formData.email, formData.password, formData.username);
-        } catch (err) { }
+
+            // Log the form data for debugging
+            console.log("Signing up with:", formData);
+
+            await handleSignUp(
+                formData.email,
+                formData.password,
+                formData.username
+            );
+        } catch (err) {
+            // Handle error if needed
+        }
     };
+
+    const isFormValid =
+        formData.username.trim() &&
+        formData.email.trim() &&
+        formData.password &&
+        formData.confirmPassword &&
+        !errors.username &&
+        !errors.email &&
+        !errors.password &&
+        !errors.confirmPassword;
 
     return (
         <form onSubmit={handleSubmit} className="space-y-4">
-
             {/* Logo & Welcome */}
             <div className="flex flex-col items-center mb-4">
                 <img
@@ -69,11 +152,12 @@ const SignupForm = () => {
                     className="size-20"
                     style={{
                         filter:
-                            "invert(42%) sepia(84%) saturate(542%) hue-rotate(134deg) brightness(94%) contrast(94%)"
+                            "invert(42%) sepia(84%) saturate(542%) hue-rotate(134deg) brightness(94%) contrast(94%)",
                     }}
                 />
-
-                <h2 className="text-2xl font-semibold text-accent">Welcome to Swolemates!</h2>
+                <h2 className="text-2xl font-semibold text-[var(--accent)]">
+                    Welcome to Swolemates!
+                </h2>
             </div>
 
             <AuthInput
@@ -81,8 +165,17 @@ const SignupForm = () => {
                 label="Username"
                 value={formData.username}
                 onChange={handleChange}
+                onBlur={handleUsernameBlur}
+                validate={(value) => {
+                    const error = validateUsername(value);
+                    setErrors((prev) => ({ ...prev, username: error || "" }));
+                    // Reset check when typing
+                    setUsernameCheck({ isLoading: false, isAvailable: null });
+                    return error;
+                }}
                 error={errors.username}
-                required
+                isLoading={usernameCheck.isLoading}
+                isAvailable={usernameCheck.isAvailable}
             />
 
             <AuthInput
@@ -90,8 +183,16 @@ const SignupForm = () => {
                 label="Email"
                 value={formData.email}
                 onChange={handleChange}
+                onBlur={handleEmailBlur}
+                validate={(value) => {
+                    const error = validateEmail(value);
+                    setErrors((prev) => ({ ...prev, email: error || "" }));
+                    setEmailCheck({ isLoading: false, isAvailable: null });
+                    return error;
+                }}
                 error={errors.email}
-                required
+                isLoading={emailCheck.isLoading}
+                isAvailable={emailCheck.isAvailable}
             />
 
             <AuthInput
@@ -100,8 +201,12 @@ const SignupForm = () => {
                 value={formData.password}
                 onChange={handleChange}
                 isPassword
+                validate={(value) => {
+                    const error = validatePassword(value);
+                    setErrors((prev) => ({ ...prev, password: error || "" }));
+                    return error;
+                }}
                 error={errors.password}
-                required
             />
 
             <AuthInput
@@ -110,29 +215,30 @@ const SignupForm = () => {
                 value={formData.confirmPassword}
                 onChange={handleChange}
                 isPassword
+                validate={(value) => {
+                    const error = validateConfirmPassword(
+                        formData.password,
+                        value
+                    );
+                    setErrors((prev) => ({ ...prev, confirmPassword: error || "" }));
+                    return error;
+                }}
                 error={errors.confirmPassword}
-                required
             />
 
-            {/* Optional profile picture */}
-            <div className="flex flex-col gap-1">
-                <label htmlFor="profilePic" className="text-sm font-medium">
-                    Profile Picture (optional)
-                </label>
-                <input
-                    type="file"
-                    name="profilePic"
-                    id="profilePic"
-                    accept="image/*"
-                    onChange={handleChange}
-                    className="border rounded px-3 py-2"
-                />
-            </div>
+            {hasError && (
+                <p className="text-sm text-[var(--danger)]">{hasError}</p>
+            )}
 
-            {hasError && <p className="text-sm text-destructive">{hasError}</p>}
-
-            <Button variant={"outline"} disabled={isAuthLoading} className="w-full bg-accent text-white hover:bg-white hover:text-accent hover:cursor-pointer" type="submit">
-                {isAuthLoading && <Loader2 className="w-4 h-4 animate-spin mr-2" />}
+            <Button
+                variant="outline"
+                disabled={isAuthLoading || !isFormValid}
+                className="w-full bg-[var(--accent)] text-[var(--white)] hover:bg-[var(--white)] hover:text-[var(--accent)] hover:cursor-pointer"
+                type="submit"
+            >
+                {isAuthLoading && (
+                    <Loader2 className="w-4 h-4 animate-spin mr-2" />
+                )}
                 Sign Up
             </Button>
 
@@ -144,9 +250,9 @@ const SignupForm = () => {
 
             <Button
                 type="button"
-                onClick={logInWithGoogle}
+                onClick={handleLoginGoogle}
                 variant="outline"
-                className="w-full flex gap-2 justify-center text-accent hover:text-white hover:cursor-pointer"
+                className="w-full flex gap-2 justify-center text-[var(--accent)] hover:text-[var(--white)] hover:cursor-pointer"
             >
                 <img src={google} alt="Google Logo" className="w-4 h-4" />
                 Continue with Google

@@ -1,0 +1,32 @@
+[
+    {
+        "username": "fitfanatic23",
+        "email": "fitfanatic23@example.com",
+        "password": "Test@1234",
+        "bio": "Lover of all things fitness. Always up for a challenge!"
+    },
+    {
+        "username": "ironwarrior",
+        "email": "ironwarrior@example.com",
+        "password": "Strong!2024",
+        "bio": "Powerlifter and part-time coach. Let's get stronger together."
+    },
+    {
+        "username": "yogijane",
+        "email": "yogijane@example.com",
+        "password": "Namaste#1",
+        "bio": "Yoga instructor sharing mindfulness and balance."
+    },
+    {
+        "username": "cardio_king",
+        "email": "cardio_king@example.com",
+        "password": "RunRun88!",
+        "bio": "Marathon runner and endurance enthusiast."
+    },
+    {
+        "username": "liftlikeagirl",
+        "email": "liftlikeagirl@example.com",
+        "password": "Lift&Love2023",
+        "bio": "Breaking stereotypes one rep at a time."
+    }
+]

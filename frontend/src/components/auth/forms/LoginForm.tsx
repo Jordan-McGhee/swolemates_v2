@@ -5,24 +5,31 @@ import { Loader2 } from "lucide-react";
 import google from "../../../assets/google.png";
 import swolematesLogo from "../../../assets/swolemates.png";
 
-// hook import
+// hooks
 import { useAuth } from "@/context/AuthProvider";
 
-// component import
+// components
 import { Button } from "@/components/ui/button";
 import AuthInput from "../AuthInput";
 
+// validation utils
+import { validateEmail, validatePassword } from "@/util/input-validators";
+
 const LoginForm = () => {
-    const { logInWithEmail, logInWithGoogle, isAuthLoading, hasError, clearError } = useAuth();
+    const {
+        handleLoginEmail,
+        handleLoginGoogle,
+        isAuthLoading,
+        hasError,
+        clearError
+    } = useAuth();
 
     const [formData, setFormData] = useState({
-        usernameOrEmail: "",
-        password: ""
+        email: "",
+        password: "",
     });
 
     const [errors, setErrors] = useState<Record<string, string>>({});
-
-    const passwordRegex = /^(?=.*[0-9])(?=.*[!@#$%^&*()_\-+={}[\]|:;"'<>,.?/]).{8,}$/;
 
     const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         const { name, value } = e.target;
@@ -31,22 +38,28 @@ const LoginForm = () => {
         if (hasError) clearError();
     };
 
-    const validate = () => {
-        const newErrors: Record<string, string> = {};
-        if (!formData.usernameOrEmail.trim()) newErrors.usernameOrEmail = "Username or Email is required.";
-        if (!passwordRegex.test(formData.password)) newErrors.password = "Password must be 8+ characters with number and symbol.";
-        setErrors(newErrors);
-        return Object.keys(newErrors).length === 0;
-    };
-
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
-        if (!validate()) return;
+        const newErrors: Record<string, string> = {};
+        newErrors.email = validateEmail(formData.email) || "";
+        newErrors.password = validatePassword(formData.password) || "";
+
+        setErrors(newErrors);
+        const hasAnyError = Object.values(newErrors).some(e => e);
+        if (hasAnyError) return;
 
         try {
-            await logInWithEmail(formData.usernameOrEmail, formData.password);
-        } catch (err) { }
+            await handleLoginEmail(formData.email, formData.password);
+        } catch (err) {
+            // Handle error if needed
+        }
     };
+
+    const isFormValid =
+        formData.email.trim() &&
+        formData.password &&
+        !errors.email &&
+        !errors.password;
 
     return (
         <form onSubmit={handleSubmit} className="space-y-4">
@@ -65,12 +78,16 @@ const LoginForm = () => {
             </div>
 
             <AuthInput
-                name="usernameOrEmail"
-                label="Username or Email"
-                value={formData.usernameOrEmail}
+                name="email"
+                label="Email"
+                value={formData.email}
                 onChange={handleChange}
+                validate={(value) => {
+                    const error = validateEmail(value);
+                    setErrors(prev => ({ ...prev, usernameOrEmail: error || "" }));
+                    return error;
+                }}
                 error={errors.usernameOrEmail}
-                required
             />
 
             <AuthInput
@@ -79,11 +96,20 @@ const LoginForm = () => {
                 value={formData.password}
                 onChange={handleChange}
                 isPassword
+                validate={(value) => {
+                    const error = validatePassword(value);
+                    setErrors(prev => ({ ...prev, password: error || "" }));
+                    return error;
+                }}
                 error={errors.password}
-                required
             />
 
-            <Button variant={"outline"} disabled={isAuthLoading} className="w-full bg-accent text-white hover:bg-white hover:text-accent hover:cursor-pointer" type="submit">
+            <Button
+                variant="outline"
+                disabled={isAuthLoading || !isFormValid}
+                className="w-full bg-accent text-white hover:bg-white hover:text-accent hover:cursor-pointer"
+                type="submit"
+            >
                 {isAuthLoading && <Loader2 className="w-4 h-4 animate-spin mr-2" />}
                 Log In
             </Button>
@@ -96,7 +122,7 @@ const LoginForm = () => {
 
             <Button
                 type="button"
-                onClick={logInWithGoogle}
+                onClick={handleLoginGoogle}
                 variant="outline"
                 className="w-full flex gap-2 justify-center text-accent hover:text-white hover:cursor-pointer"
             >

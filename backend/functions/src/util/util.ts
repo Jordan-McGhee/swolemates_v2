@@ -23,7 +23,7 @@ export const generateToken = (user_id: string): string => {
  * @returns {Promise<boolean>} - Returns true if the username exists, false otherwise.
  */
 export const checkIfUsernameExists = async (username: string): Promise<boolean> => {
-    const query = "SELECT user_id FROM users WHERE username = $1";
+    const query = "SELECT 1 FROM users WHERE username = $1";
     const result: QueryResult = await pool.query(query, [username]);
     return result.rows.length > 0;
 };

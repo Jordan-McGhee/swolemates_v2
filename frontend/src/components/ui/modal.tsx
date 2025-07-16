@@ -14,9 +14,9 @@ export const Modal: React.FC<ModalProps> = ({ isOpen, onClose, children, modalCl
                 <>
                     {/* Backdrop */}
                     <motion.div
-                        className="fixed inset-0 z-50 bg-black bg-opacity-50"
+                        className="fixed inset-0 z-40 bg-black bg-opacity-50"
                         initial={{ opacity: 0 }}
-                        animate={{ opacity: 1 }}
+                        animate={{ opacity: .9 }}
                         exit={{ opacity: 0 }}
                         onClick={onClose}
                     />
@@ -43,7 +43,7 @@ export const Modal: React.FC<ModalProps> = ({ isOpen, onClose, children, modalCl
                             <button
                                 onClick={onClose}
                                 aria-label="Close modal"
-                                className="absolute top-3 right-3 text-gray-500 hover:text-gray-700"
+                                className="absolute top-3 right-3 hover:cursor-pointer text-gray-500 hover:text-gray-700"
                             >
                                 <X size={20} />
                             </button>

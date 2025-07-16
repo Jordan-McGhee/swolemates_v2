@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { Input } from "@/components/ui/input";
-import { Eye, EyeOff } from "lucide-react";
+import { Eye, EyeOff, CheckCircle, XCircle, Loader2 } from "lucide-react";
 
 // type import
 import { AuthInputProps } from "@/types/props/props-types";
@@ -11,21 +11,32 @@ const AuthInput: React.FC<AuthInputProps> = ({
     placeholder,
     value,
     onChange,
-    isPassword = false,
+    validate,
+    type,
     error,
-    required = false,
+    isPassword = false,
+    onBlur,
+    isLoading,
+    isAvailable,
 }) => {
     const [showPassword, setShowPassword] = useState(false);
 
-    const inputType = isPassword ? (showPassword ? "text" : "password") : "text";
+    const handleBlur = () => {
+        if (validate) {
+            validate(value);
+        }
+        if (onBlur) {
+            onBlur();
+        }
+    };
 
     return (
         <div className="w-full max-w-md space-y-1">
-            {/* Static Label */}
             {label && (
                 <label
                     htmlFor={name}
-                    className="block text-sm font-medium text-muted-foreground"
+                    className={`block text-sm font-medium ${error ? "text-[var(--danger)]" : "text-[var(--subhead-text)]"
+                        }`}
                 >
                     {label}
                 </label>
@@ -35,19 +46,27 @@ const AuthInput: React.FC<AuthInputProps> = ({
                 <Input
                     id={name}
                     name={name}
-                    type={inputType}
+                    type={isPassword ? (showPassword ? "text" : "password") : type}
                     value={value}
                     placeholder={placeholder}
                     onChange={onChange}
-                    required={required}
-                    className={`pr-10 ${error ? "border-destructive focus-visible:ring-destructive" : ""}`}
+                    onBlur={handleBlur}
+                    className={`
+                        pr-10
+                        selection:bg-[var(--accent-hover)] selection:text-[var(--accent)]
+                        ${error
+                            ? "border-[var(--danger)] focus-visible:ring-[var(--danger)]"
+                            : "focus:border-[var(--accent)] focus-visible:ring-[var(--accent)]"
+                        }
+                    `}
                 />
 
+                {/* Password toggle */}
                 {isPassword && (
                     <button
                         type="button"
                         onClick={() => setShowPassword((prev) => !prev)}
-                        className="absolute inset-y-0 right-3 flex items-center text-muted-foreground hover:text-foreground"
+                        className="absolute inset-y-0 right-3 flex items-center text-[var(--subhead-text)] hover:text-[var(--accent)]"
                         aria-label={showPassword ? "Hide password" : "Show password"}
                     >
                         {showPassword ? (
@@ -57,12 +76,24 @@ const AuthInput: React.FC<AuthInputProps> = ({
                         )}
                     </button>
                 )}
+
+                {/* Availability Check Indicators (only show if not a password field) */}
+                {!isPassword && (
+                    <div className="absolute inset-y-0 right-3 flex items-center">
+                        {isLoading && (
+                            <Loader2 className="w-4 h-4 animate-spin text-[var(--accent-hover)]" />
+                        )}
+                        {!isLoading && isAvailable === true && (
+                            <CheckCircle className="w-4 h-4 text-[var(--accent)]" />
+                        )}
+                        {!isLoading && isAvailable === false && (
+                            <XCircle className="w-4 h-4 text-[var(--danger)]" />
+                        )}
+                    </div>
+                )}
             </div>
 
-            {error && (
-                <p className="text-red text-xs mt-0.5">{error}</p>
-            )}
-
+            {error && <p className="text-[var(--danger)] text-xs mt-0.5">{error}</p>}
         </div>
     );
 };
