@@ -10,6 +10,12 @@ export interface ModalProps {
     modalClassName?: string;
 }
 
+export interface AuthModalProps {
+    onClose: () => void;
+    isOpen: boolean;
+    onAuthSuccess?: () => void;
+}
+
 // AUTH TYPES
 export interface AuthInputProps {
     name: string;
@@ -27,9 +33,8 @@ export interface AuthInputProps {
     required?: boolean;
 }
 
-export interface AuthModalProps {
-    onClose: () => void;
-    isOpen: boolean;
+export interface AuthFormProps {
+    onAuthSuccess?: () => void;
 }
 
 export interface AuthContextValue {

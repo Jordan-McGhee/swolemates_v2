@@ -26,12 +26,14 @@ export const authApi = () => {
 
     // Check if username is available
     const checkUsernameAvailability = async (username: string): Promise<boolean> => {
+
+        console.log("Checking username availability in AuthAPI:", username);
         try {
             const data = await sendRequest({
                 url: `${BACKEND_URL}/public/checkUsername?username=${encodeURIComponent(username)}`,
                 method: "GET",
             });
-            return (data as any).available;
+            return !(data as any).exists;
         } catch (err) {
             console.error("Error checking username availability:", err);
             return false;
@@ -45,7 +47,7 @@ export const authApi = () => {
                 url: `${BACKEND_URL}/public/checkEmail?email=${encodeURIComponent(email)}`,
                 method: "GET",
             });
-            return (data as any).available;
+            return !(data as any).exists;
         } catch (err) {
             console.error("Error checking email availability:", err);
             return false;
@@ -130,8 +132,11 @@ export const authApi = () => {
 
         const uid = user.uid;
 
-        await deleteUser(user); // Firebase
-        return await deleteUserFromBackend(uid); // PostgreSQL
+        // Firebase
+        await deleteUser(user);
+        
+        // PostgreSQL
+        return await deleteUserFromBackend(uid);
     };
 
     // Auth state change for context

@@ -22,17 +22,23 @@
 CHANGE LOGO COLOR
 
 <!-- AUTH -->
-- Sign up:
-    - check if username is available after user unfocuses and enters acceptable name
-    - check if email is already in use
+<!-- - Sign up: -->
+<!-- - check if username is available after user unfocuses and enters acceptable name DONE -->
+<!-- - check if email is already in use DONE -->
+
 - Login:
     -on entered username that is in db, grab profile pic and user info to display
-- Error/Success flow for sign in
-- Use functions for checking username/email availability
+    
+- Error flow for sign in
+<!-- - Success flow for sign in DONE -->
 
-- Left off with issue:
-    - username/email availability checks return 401 unauthorized
+<!-- - Use functions for checking username/email availability DONE -->
 
+<!-- - Left off with issue: FIXED -->
+<!-- - username/email availability checks return 401 unauthorized -->
+
+- Test login in and signup with google
+- Add indication for logging out
 
 
 # BACKEND

@@ -20,7 +20,8 @@ import {
     validateConfirmPassword,
 } from "@/util/input-validators";
 
-const SignupForm = () => {
+const SignupForm = ({ onAuthSuccess }: { onAuthSuccess?: () => void }) => {
+
     const {
         checkUsernameAvailability,
         checkEmailAvailability,
@@ -74,6 +75,9 @@ const SignupForm = () => {
 
         setUsernameCheck({ isLoading: true, isAvailable: null });
         const available = await checkUsernameAvailability(formData.username);
+
+        console.log("Checking username availability:", formData.username);
+        console.log("Username availability:", available);
         setUsernameCheck({ isLoading: false, isAvailable: available });
 
         if (!available) {
@@ -99,7 +103,7 @@ const SignupForm = () => {
         if (!available) {
             setErrors((prev) => ({
                 ...prev,
-                email: "Email is already in use.",
+                email: "Email is already in use. Maybe try logging in instead?",
             }));
         }
     };
@@ -127,6 +131,9 @@ const SignupForm = () => {
                 formData.password,
                 formData.username
             );
+
+            // close modal on success
+            onAuthSuccess?.();
         } catch (err) {
             // Handle error if needed
         }
@@ -244,7 +251,7 @@ const SignupForm = () => {
 
             <div className="flex items-center gap-2 text-sm text-muted-foreground">
                 <div className="flex-1 border-t border-border" />
-                <span className="shrink-0">Or continue with</span>
+                <span className="shrink-0">Or</span>
                 <div className="flex-1 border-t border-border" />
             </div>
 

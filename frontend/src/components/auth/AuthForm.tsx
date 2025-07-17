@@ -2,12 +2,18 @@ import { useState } from "react";
 import LoginForm from "./forms/LoginForm";
 import SignupForm from "./forms/SignUpForm";
 
-const AuthForm = () => {
+// type imports
+import { AuthFormProps } from "@/types/props/props-types";
+
+const AuthForm = ({ onAuthSuccess }: AuthFormProps) => {
     const [isLogin, setIsLogin] = useState(true);
 
     return (
         <div className="w-full max-w-md mx-auto space-y-4">
-            {isLogin ? <LoginForm /> : <SignupForm />}
+            {isLogin ?
+                <LoginForm onAuthSuccess={onAuthSuccess} />
+                : <SignupForm onAuthSuccess={onAuthSuccess} />
+            }
 
             <div className="text-sm text-center">
                 {isLogin ? (

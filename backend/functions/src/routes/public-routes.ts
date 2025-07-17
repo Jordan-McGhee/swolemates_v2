@@ -7,10 +7,10 @@ const router = express.Router()
 // /public
 
 // check username
-router.post("/checkUsername", publicControllers.checkUsername)
+router.get("/checkUsername", publicControllers.checkUsername)
 
 // check email
-router.post("/checkEmail", publicControllers.checkEmail)
+router.get("/checkEmail", publicControllers.checkEmail)
 
 
 // user routes

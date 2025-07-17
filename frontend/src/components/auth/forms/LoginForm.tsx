@@ -15,7 +15,8 @@ import AuthInput from "../AuthInput";
 // validation utils
 import { validateEmail, validatePassword } from "@/util/input-validators";
 
-const LoginForm = () => {
+const LoginForm = ({ onAuthSuccess }: { onAuthSuccess?: () => void }) => {
+
     const {
         handleLoginEmail,
         handleLoginGoogle,
@@ -50,6 +51,9 @@ const LoginForm = () => {
 
         try {
             await handleLoginEmail(formData.email, formData.password);
+
+            // close modal on success
+            onAuthSuccess?.();
         } catch (err) {
             // Handle error if needed
         }
@@ -116,7 +120,7 @@ const LoginForm = () => {
 
             <div className="flex items-center gap-2 text-sm text-muted-foreground">
                 <div className="flex-1 border-t border-border" />
-                <span className="shrink-0">Or continue with</span>
+                <span className="shrink-0">Or</span>
                 <div className="flex-1 border-t border-border" />
             </div>
 

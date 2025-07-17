@@ -1,4 +1,5 @@
-import React, { createContext, useContext, useEffect, useState, ReactNode } from "react";
+import { createContext, useContext, useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { User } from "firebase/auth";
 import { authApi } from "@/api/authApi";
 
@@ -12,6 +13,9 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
 
     const [user, setUser] = useState<User | null>(null);
     const [isAuthLoading, setIsAuthLoading] = useState(true);
+
+    // useNavigate hook for navigation
+    const navigate = useNavigate();
 
     // use your authApi for helpers
     const {
@@ -70,6 +74,7 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
         await logOut();
         setUser(null);
         setIsAuthLoading(false);
+        navigate("/");
     };
 
     return (

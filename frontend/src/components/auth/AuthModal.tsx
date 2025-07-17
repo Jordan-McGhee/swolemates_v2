@@ -11,7 +11,7 @@ export default function AuthModal({ onClose }: AuthModalProps) {
             isOpen={true}
         >
             <div className="flex flex-col items-center w-full max-w-md p-4">
-                <AuthForm />
+                <AuthForm onAuthSuccess={onClose} />
             </div>
         </Modal>
     );

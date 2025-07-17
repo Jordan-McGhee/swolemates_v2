@@ -1,6 +1,6 @@
 import { Handshake, Home, Dumbbell, Bell, User, Users, LogOut } from "lucide-react"
 import { useLocation, Link } from "react-router-dom"
-import { useAuth } from "@/context/AuthProvider"  // adjust import path if needed
+import { useAuth } from "@/context/AuthProvider"
 
 // types import
 import { AppSidebarProps } from "@/types/props/props-types"
@@ -35,7 +35,7 @@ export function AppSidebar({ onLoginClick }: AppSidebarProps) {
     const isActive = (url: string) => location.pathname === url
 
     // get user from auth context
-    const { user } = useAuth()
+    const { user, handleLogout } = useAuth()
 
     return (
         <Sidebar collapsible="icon">
@@ -44,7 +44,7 @@ export function AppSidebar({ onLoginClick }: AppSidebarProps) {
                     <SidebarGroupLabel>
                         <Link
                             to={"/"}
-                            className="text-xl font-bold tracking-wide"
+                            className="text-xl font-bold tracking-wide text-[var(--accent)]"
                         >
                             SWOLEMATES
                         </Link>
@@ -79,29 +79,49 @@ export function AppSidebar({ onLoginClick }: AppSidebarProps) {
             <SidebarFooter>
                 <SidebarMenu>
                     {user ? (
-                        footerItems.map((item) => {
-                            const active = isActive(item.url)
-                            return (
-                                <SidebarMenuItem key={item.title}>
-                                    <SidebarMenuButton
-                                        asChild
-                                        tooltip={item.title}
-                                        className={`group w-full ${active
-                                            ? "bg-[var(--accent-hover)] text-[var(--accent)]"
-                                            : "text-[var(--subhead-text)] hover:bg-[var(--accent-hover)] hover:text-[var(--accent)]"
-                                            }`}
-                                    >
-                                        <Link to={item.url} className="flex items-center gap-3 px-3 py-2 rounded transition-colors w-full">
-                                            <item.icon className="w-5 h-5" />
-                                            <span>{item.title}</span>
-                                        </Link>
-                                    </SidebarMenuButton>
-                                </SidebarMenuItem>
-                            )
-                        })
+                        <>
+                            {footerItems.map((item) => {
+                                if (item.title === "Logout") {
+                                    return (
+                                        <SidebarMenuItem key="Logout">
+                                            <SidebarMenuButton
+                                                tooltip="Logout"
+                                                onClick={handleLogout}
+                                                className="group w-full text-[var(--subhead-text)] hover:bg-[var(--accent-hover)] hover:text-[var(--accent)]"
+                                            >
+                                                <div className="flex items-center gap-3 px-3 py-2 rounded transition-colors w-full cursor-pointer">
+                                                    <LogOut className="w-5 h-5" />
+                                                    <span>Logout</span>
+                                                </div>
+                                            </SidebarMenuButton>
+                                        </SidebarMenuItem>
+                                    )
+                                }
+
+                                const active = isActive(item.url)
+                                return (
+                                    <SidebarMenuItem key={item.title}>
+                                        <SidebarMenuButton
+                                            asChild
+                                            tooltip={item.title}
+                                            className={`group w-full ${active
+                                                ? "bg-[var(--accent-hover)] text-[var(--accent)]"
+                                                : "text-[var(--subhead-text)] hover:bg-[var(--accent-hover)] hover:text-[var(--accent)]"
+                                                }`}
+                                        >
+                                            <Link to={item.url} className="flex items-center gap-3 px-3 py-2 rounded transition-colors w-full">
+                                                <item.icon className="w-5 h-5" />
+                                                <span>{item.title}</span>
+                                            </Link>
+                                        </SidebarMenuButton>
+                                    </SidebarMenuItem>
+                                )
+                            })}
+                        </>
                     ) : (
                         <SidebarMenuItem>
                             <SidebarMenuButton
+                                asChild
                                 tooltip="Login"
                                 className="group w-full text-[var(--subhead-text)] hover:bg-[var(--accent-hover)] hover:text-[var(--accent)]"
                                 onClick={onLoginClick}

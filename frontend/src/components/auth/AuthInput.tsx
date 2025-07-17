@@ -35,8 +35,9 @@ const AuthInput: React.FC<AuthInputProps> = ({
             {label && (
                 <label
                     htmlFor={name}
-                    className={`block text-sm font-medium ${error ? "text-[var(--danger)]" : "text-[var(--subhead-text)]"
-                        }`}
+                    className={
+                        `block text-sm font-medium
+                        ${error ? "text-[var(--danger)]" : "text-[var(--subhead-text)]"}`}
                 >
                     {label}
                 </label>
@@ -58,6 +59,7 @@ const AuthInput: React.FC<AuthInputProps> = ({
                             ? "border-[var(--danger)] focus-visible:ring-[var(--danger)]"
                             : "focus:border-[var(--accent)] focus-visible:ring-[var(--accent)]"
                         }
+                        ${!error && value.length > 0 ? "border-2 border-[var(--accent)]" : ""}
                     `}
                 />
 
@@ -81,13 +83,13 @@ const AuthInput: React.FC<AuthInputProps> = ({
                 {!isPassword && (
                     <div className="absolute inset-y-0 right-3 flex items-center">
                         {isLoading && (
-                            <Loader2 className="w-4 h-4 animate-spin text-[var(--accent-hover)]" />
+                            <Loader2 className="w-5 h-5 animate-spin text-[var(--accent-hover)]" />
                         )}
                         {!isLoading && isAvailable === true && (
-                            <CheckCircle className="w-4 h-4 text-[var(--accent)]" />
+                            <CheckCircle className="w-5 h-5 text-[var(--accent)]" />
                         )}
                         {!isLoading && isAvailable === false && (
-                            <XCircle className="w-4 h-4 text-[var(--danger)]" />
+                            <XCircle className="w-5 h-5 text-[var(--danger)]" />
                         )}
                     </div>
                 )}
