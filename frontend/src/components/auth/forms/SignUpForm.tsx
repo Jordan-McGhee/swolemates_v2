@@ -257,7 +257,17 @@ const SignupForm = ({ onAuthSuccess }: { onAuthSuccess?: () => void }) => {
 
             <Button
                 type="button"
-                onClick={handleLoginGoogle}
+                onClick={
+                    async () => {
+                        try {
+                            await handleLoginGoogle();
+                            onAuthSuccess?.();
+                        } catch (error) {
+                            // You can handle or log the error if needed
+                            console.error("Google login failed", error);
+                        }
+                    }
+                }
                 variant="outline"
                 className="w-full flex gap-2 justify-center text-[var(--accent)] hover:text-[var(--white)] hover:cursor-pointer"
             >

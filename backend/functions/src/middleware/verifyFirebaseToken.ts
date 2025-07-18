@@ -17,7 +17,11 @@ export const verifyFirebaseToken = async (
     try {
         const decodedToken = await admin.auth().verifyIdToken(idToken);
         // Attach decoded token to request for later use
-        req.user = decodedToken;
+        req.user = {
+            uid: decodedToken.uid,
+            email: decodedToken.email,
+            sign_in_provider: decodedToken.firebase.sign_in_provider,
+        };
         return next();
     } catch (err) {
         console.error("Error verifying token:", err);

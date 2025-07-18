@@ -17,6 +17,17 @@ export interface AuthModalProps {
 }
 
 // AUTH TYPES
+export interface PostgreSQLUser {
+    user_id: string;
+    username: string;
+    email: string;
+    bio?: string;
+    profile_pic?: string;
+    firebase_uid: string;
+    created_at: string;
+    updated_at: string;
+}
+
 export interface AuthInputProps {
     name: string;
     label: string;
@@ -38,7 +49,7 @@ export interface AuthFormProps {
 }
 
 export interface AuthContextValue {
-    user: User | null;
+    user: PostgreSQLUser | null;
     isAuthLoading: boolean;
     hasError: string | null;
     clearError: () => void;

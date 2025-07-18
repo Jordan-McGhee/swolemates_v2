@@ -2,6 +2,7 @@ import { useState, useEffect, useRef } from "react"
 import { motion, AnimatePresence } from "framer-motion"
 import { Bell, Home, Dumbbell, Handshake, User, Search, Plus, Pencil } from "lucide-react"
 import { useLocation, Link } from "react-router-dom"
+import { useAuth } from "@/context/AuthProvider"
 
 const MobileTop = () => {
     return (
@@ -29,6 +30,7 @@ const MobileTop = () => {
 }
 
 const MobileBottom = () => {
+    const { user } = useAuth()
     const navItems = [
         { icon: Home, label: "Home", url: "/" },
         { icon: Dumbbell, label: "Workouts", url: "/workouts" },
@@ -138,8 +140,21 @@ const MobileBottom = () => {
                                 ? "bg-[var(--accent-hover)] text-[var(--accent)]"
                                 : "text-[var(--subhead-text)]"}`}
                     >
-                        <item.icon className="w-5 h-5" />
-                        <span>{item.label}</span>
+                        {item.label === "Profile" && user?.profile_pic ? (
+                            <>
+                                <img
+                                    src={user.profile_pic}
+                                    alt="avatar"
+                                    className="w-6 h-6 rounded-full object-cover"
+                                />
+                                <span>{item.label}</span>
+                            </>
+                        ) : (
+                            <>
+                                <item.icon className="w-5 h-5" />
+                                <span>{item.label}</span>
+                            </>
+                        )}
                     </Link>
                 ))}
             </nav>

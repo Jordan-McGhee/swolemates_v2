@@ -17,6 +17,9 @@ import {
 
 import { auth } from "@/firebaseConfig";
 
+// types imports
+import { PostgreSQLUser } from "@/types/props/props-types";
+
 // auth api
 export const authApi = () => {
     const { isLoading, hasError, sendRequest, clearError } = useFetch();
@@ -53,6 +56,39 @@ export const authApi = () => {
             return false;
         }
     };
+
+    // Send request to backend to retreive user data
+    const getPostgreSQLUser = async (user: User) => {
+        const token = await user.getIdToken();
+        return await sendRequest({
+            url: `${BACKEND_URL}/auth/user`,
+            method: "GET",
+            headers: {
+                "Content-Type": "application/json",
+                Authorization: `Bearer ${token}`,
+            },
+        });
+    };
+
+    const updateUserProfile = async (updates: Partial<PostgreSQLUser>): Promise<PostgreSQLUser> => {
+        const user = auth.currentUser;
+        if (!user) throw new Error("No user is currently signed in.");
+
+        const token = await user.getIdToken();
+
+        const updatedUser = await sendRequest({
+            url: `${BACKEND_URL}/auth/user`,
+            method: "PUT",
+            headers: {
+                "Content-Type": "application/json",
+                Authorization: `Bearer ${token}`,
+            },
+            body: JSON.stringify(updates),
+        });
+
+        return updatedUser as PostgreSQLUser;
+    };
+
 
     // Sync Firebase user to backend (for signup, login, password change)
     const syncUserWithBackend = async (user: User) => {
@@ -134,7 +170,7 @@ export const authApi = () => {
 
         // Firebase
         await deleteUser(user);
-        
+
         // PostgreSQL
         return await deleteUserFromBackend(uid);
     };
@@ -147,6 +183,8 @@ export const authApi = () => {
     return {
         checkUsernameAvailability,
         checkEmailAvailability,
+        getPostgreSQLUser,
+        updateUserProfile,
         signUpWithEmail,
         syncUserWithBackend,
         logInWithEmail,

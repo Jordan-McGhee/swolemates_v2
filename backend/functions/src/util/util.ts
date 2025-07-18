@@ -119,7 +119,7 @@ export const getUserInfo = async (
     client?: any
 ): Promise<UserInfo> => {
     const getUserQuery = `
-    SELECT user_id, username, profile_pic, bio, created_at, updated_at
+    SELECT user_id, username, email, profile_pic, bio, firebase_uid, created_at, updated_at
     FROM users
     WHERE user_id = $1
 `;
@@ -157,3 +157,16 @@ export const getUserIdFromFirebaseUid = async (firebaseUid: string) => {
 
     return rows[0].user_id;
 };
+
+/**
+ * Slugifies a given name by converting it to lowercase, replacing non-alphanumeric characters with hyphens,
+ * and removing leading or trailing hyphens.
+ * @param {string} name - The name to slugify.
+ * @returns {string} - The slugified version of the name.
+ */
+export const slugify = (name: string): string => {
+    return name
+        .toLowerCase()
+        .replace(/[^a-z0-9]+/g, "-")
+        .replace(/(^-|-$)+/g, "")
+}

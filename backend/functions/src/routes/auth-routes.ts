@@ -5,6 +5,12 @@ const router = express.Router();
 
 // /auth
 
+// Get PostgreSQL user by Firebase UID
+router.get("/user", authControllers.getPostgreSQLUser);
+
+// Update user profile info (username, bio, etc.)
+router.put("/user", authControllers.updateUserProfile);
+
 // Sync account for created or updated user
 router.post("/sync", authControllers.syncFirebaseUser);
 
