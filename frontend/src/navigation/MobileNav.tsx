@@ -1,8 +1,16 @@
 import { useState, useEffect, useRef } from "react"
 import { motion, AnimatePresence } from "framer-motion"
-import { Bell, Home, Dumbbell, Handshake, User, Search, Plus, Pencil } from "lucide-react"
 import { useLocation, Link } from "react-router-dom"
 import { useAuth } from "@/context/AuthProvider"
+
+// icon imports
+import { Bell, Home, Dumbbell, Handshake, User, Search, Plus, Pencil } from "lucide-react"
+
+// ui imports
+import { Avatar, AvatarImage, AvatarFallback } from "@radix-ui/react-avatar"
+
+// types import
+import { MobileBottomProps } from "@/types/props/props-types"
 
 const MobileTop = () => {
     return (
@@ -29,7 +37,7 @@ const MobileTop = () => {
     )
 }
 
-const MobileBottom = () => {
+const MobileBottom = ({ onLoginClick }: MobileBottomProps) => {
     const { user } = useAuth()
     const navItems = [
         { icon: Home, label: "Home", url: "/" },
@@ -77,7 +85,7 @@ const MobileBottom = () => {
                         initial={{ opacity: 0, y: 20 }}
                         animate={{ opacity: 1, y: 0 }}
                         exit={{ opacity: 0, y: 20 }}
-                        className="fixed bottom-24 left-1/2 -translate-x-1/2 z-40 space-y-2 text-sm"
+                        className="fixed bottom-24 left-1/2 -translate-x-1/2 z-30 space-y-2 text-sm"
                     >
                         <motion.a
                             href="#"
@@ -102,64 +110,94 @@ const MobileBottom = () => {
             </AnimatePresence>
 
             {/* Bottom Nav */}
-            <nav className="fixed bottom-4 left-1/2 -translate-x-1/2 w-[90%] max-w-md shadow-lg rounded-xl p-2 flex items-center justify-between lg:hidden z-50 bg-[var(--white)]">
+            <nav className="fixed bottom-4 left-1/2 -translate-x-1/2 w-[90%] max-w-md shadow-lg rounded-xl p-2 grid grid-cols-5 items-stretch gap-1 lg:hidden z-50 bg-[var(--white)]">
                 {navItems.slice(0, 2).map((item) => (
                     <Link
                         key={item.label}
                         to={item.url}
-                        className={`flex flex-1 flex-col items-center justify-center text-xs py-2 rounded-md transition-colors
+                        className={`grid grid-rows-[1fr_auto] justify-items-center text-xs py-2 rounded-md transition-colors
                             ${isActive(item.url)
                                 ? "bg-[var(--accent-hover)] text-[var(--accent)]"
                                 : "text-[var(--subhead-text)]"}`}
                     >
-                        <item.icon className="w-5 h-5" />
+                        <item.icon className="size-6" />
                         <span>{item.label}</span>
                     </Link>
                 ))}
 
                 {/* FAB */}
-                <button
-                    ref={fabRef}
-                    onClick={() => setShowActions((prev) => !prev)}
-                    className="size-14 mx-2 rounded-full flex items-center justify-center shadow-lg -mt-6 bg-[var(--accent)] transition-transform"
-                >
-                    <motion.div
-                        animate={{ rotate: showActions ? 45 : 0 }}
-                        transition={{ duration: 0.2 }}
+                <div className="flex justify-center items-center">
+                    <button
+                        ref={fabRef}
+                        onClick={() => setShowActions((prev) => !prev)}
+                        className="size-14 rounded-full flex items-center justify-center shadow-lg -mt-6 bg-[var(--accent)] transition-transform"
                     >
-                        <Plus className="w-6 h-6 text-white" />
-                    </motion.div>
-                </button>
+                        <motion.div
+                            animate={{ rotate: showActions ? 45 : 0 }}
+                            transition={{ duration: 0.2 }}
+                        >
+                            <Plus className="size-7 text-white" />
+                        </motion.div>
+                    </button>
+                </div>
 
-                {navItems.slice(2).map((item) => (
-                    <Link
-                        key={item.label}
-                        to={item.url}
-                        className={`flex flex-1 flex-col items-center justify-center text-xs py-2 rounded-md transition-colors
+                {navItems.slice(2).map((item) => {
+                    if (item.label === "Profile") {
+                        if (!user) {
+                            return (
+                                <button
+                                    key="Login"
+                                    onClick={onLoginClick}
+                                    className="grid grid-rows-[1fr_auto] justify-items-center text-xs py-2 rounded-md transition-colors text-[var(--subhead-text)]"
+                                >
+                                    <User className="size-6" />
+                                    <span>Login</span>
+                                </button>
+                            );
+                        }
+
+                        return (
+                            <Link
+                                key={item.label}
+                                to={item.url}
+                                className={`grid grid-rows-[1fr_auto] justify-items-center text-xs py-2 rounded-md transition-colors
                             ${isActive(item.url)
-                                ? "bg-[var(--accent-hover)] text-[var(--accent)]"
-                                : "text-[var(--subhead-text)]"}`}
-                    >
-                        {item.label === "Profile" && user?.profile_pic ? (
-                            <>
-                                <img
-                                    src={user.profile_pic}
-                                    alt="avatar"
-                                    className="w-6 h-6 rounded-full object-cover"
-                                />
-                                <span>{item.label}</span>
-                            </>
-                        ) : (
-                            <>
-                                <item.icon className="w-5 h-5" />
-                                <span>{item.label}</span>
-                            </>
-                        )}
-                    </Link>
-                ))}
+                                        ? "bg-[var(--accent-hover)] text-[var(--accent)]"
+                                        : "text-[var(--subhead-text)]"}`}
+                            >
+                                {user.profile_pic ? (
+                                    <Avatar className="w-5 h-5 object-cover rounded-full">
+                                        <AvatarImage src={user.profile_pic ?? ""} alt={user.username} className="rounded-full" />
+                                        <AvatarFallback>
+                                            <User className="size-6" />
+                                        </AvatarFallback>
+                                    </Avatar>
+                                ) : (
+                                    <User className="size-6" />
+                                )}
+                                <span>Profile</span>
+                            </Link>
+                        );
+                    }
+
+                    return (
+                        <Link
+                            key={item.label}
+                            to={item.url}
+                            className={`grid grid-rows-[1fr_auto] justify-items-center text-xs py-2 rounded-md transition-colors
+                            ${isActive(item.url)
+                                    ? "bg-[var(--accent-hover)] text-[var(--accent)]"
+                                    : "text-[var(--subhead-text)]"}`}
+                        >
+                            <item.icon className="size-6" />
+                            <span>{item.label}</span>
+                        </Link>
+                    );
+                })}
             </nav>
         </>
     )
 }
+
 
 export { MobileTop, MobileBottom }

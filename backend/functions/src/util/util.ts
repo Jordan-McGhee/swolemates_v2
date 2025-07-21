@@ -1,6 +1,7 @@
 import jwt from "jsonwebtoken";
 import { pool } from "../index";
 import { QueryResult } from "pg";
+import admin from "firebase-admin";
 
 // types import
 import { UserInfo } from "../types/types";
@@ -158,6 +159,22 @@ export const getUserIdFromFirebaseUid = async (firebaseUid: string) => {
     return rows[0].user_id;
 };
 
+export const getViewerIdFromAuthHeader = async (authHeader?: string): Promise<string | null> => {
+    if (!authHeader || !authHeader.startsWith("Bearer ")) {
+        return null;
+    }
+
+    const idToken = authHeader.split(" ")[1];
+
+    try {
+        const decodedToken = await admin.auth().verifyIdToken(idToken);
+        return decodedToken.uid;
+    } catch (error) {
+        console.warn("Invalid or expired token:", error);
+        return null; // Don't throw — route remains public
+    }
+};
+
 /**
  * Slugifies a given name by converting it to lowercase, replacing non-alphanumeric characters with hyphens,
  * and removing leading or trailing hyphens.
@@ -169,4 +186,50 @@ export const slugify = (name: string): string => {
         .toLowerCase()
         .replace(/[^a-z0-9]+/g, "-")
         .replace(/(^-|-$)+/g, "")
+}
+
+/**
+ * Checks if a profile is private based on the user_id.
+ * @param {number} user_id - The ID of the user to check.
+ * @returns {Promise<boolean>} - Returns true if the profile is private, false otherwise.
+ * @throws {Error} - Throws an error if the user is not found.
+ */
+export const isProfilePrivate = async (user_id: number): Promise<boolean> => {
+    const query = "SELECT is_private FROM users WHERE user_id = $1";
+    const result: QueryResult = await pool.query(query, [user_id]);
+    if (result.rows.length === 0) {
+        throw new Error(`User with ID ${user_id} not found.`);
+    }
+    return result.rows[0].is_private;
+}
+
+/**
+ * Checks if two users are friends based on their user IDs.
+ * @param {number} viewer_id - The ID of the viewer.
+ * @param {number} target_user_id - The ID of the target user.
+ * @returns {Promise<boolean>} - Returns true if they are friends, false otherwise.
+ */
+export const checkIfUsersAreFriends = async (viewer_id: number, target_user_id: number): Promise<boolean> => {
+    const query = `
+        SELECT 1 FROM friend_requests
+        WHERE (user_id_1 = $1 AND user_id_2 = $2 AND status = 'accepted')
+        OR (user_id_1 = $2 AND user_id_2 = $1 AND status = 'accepted')
+    `;
+    const result: QueryResult = await pool.query(query, [viewer_id, target_user_id]);
+    return result.rows.length > 0;
+}
+
+/**
+ * Checks if a user can view another user's private profile.
+ * @param {number} viewerId - The ID of the user trying to view the profile.
+ * @param {number} targetUserId - The ID of the user whose profile is being viewed.
+ * @returns {Promise<boolean>} - Returns true if the viewer can view the profile, false otherwise.
+ */
+export const canViewPrivateProfile = async(viewerId: number, targetUserId: number): Promise<boolean> => {
+    if (viewerId === targetUserId) return true; // always allow viewing own profile
+    const [isPrivate, isFriend] = await Promise.all([
+        isProfilePrivate(targetUserId),
+        checkIfUsersAreFriends(viewerId, targetUserId),
+    ])
+    return !isPrivate || isFriend;
 }

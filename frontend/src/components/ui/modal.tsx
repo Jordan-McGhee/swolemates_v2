@@ -14,7 +14,7 @@ export const Modal: React.FC<ModalProps> = ({ isOpen, onClose, children, modalCl
                 <>
                     {/* Backdrop */}
                     <motion.div
-                        className="fixed inset-0 z-40 bg-black bg-opacity-50"
+                        className="fixed inset-0 z-999 bg-black bg-opacity-50"
                         initial={{ opacity: 0 }}
                         animate={{ opacity: .9 }}
                         exit={{ opacity: 0 }}
@@ -23,7 +23,7 @@ export const Modal: React.FC<ModalProps> = ({ isOpen, onClose, children, modalCl
 
                     {/* Modal content */}
                     <motion.div
-                        className="fixed inset-0 z-50 flex items-center justify-center p-4"
+                        className="fixed inset-0 z-9999 flex items-center justify-center p-4"
                         initial={{ opacity: 0 }}
                         animate={{ opacity: 1 }}
                         exit={{ opacity: 0 }}

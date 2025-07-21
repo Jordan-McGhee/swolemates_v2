@@ -1,7 +1,7 @@
 import { pool } from "../index"
 import { Request, Response, NextFunction } from "express"
 import { QueryResult } from "pg";
-import { checkIfUsernameExists } from "../util/util";
+import { checkIfUsernameExists, getViewerIdFromAuthHeader, getUserIdFromFirebaseUid, canViewPrivateProfile } from "../util/util";
 
 // public controllers - don't require firebaseUID
 
@@ -72,14 +72,53 @@ export const getAllUsers = async (req: Request, res: Response, next: NextFunctio
 // Get a single user
 export const getSingleUser = async (req: Request, res: Response, next: NextFunction) => {
     const { user_id } = req.params;
-    const userQuery: string = "SELECT user_id, username, profile_pic, bio, created_at, updated_at FROM users WHERE user_id = $1";
+    console.log("Fetching user:", user_id);
 
     try {
+        // Try to get viewer Firebase UID (if token exists)
+        const authHeader = req.headers.authorization;
+        const firebaseUid = await getViewerIdFromAuthHeader(authHeader);
+        console.log("Decoded Firebase UID:", firebaseUid);
+
+        let viewerId: number | null = null;
+
+        if (firebaseUid) {
+            try {
+                viewerId = await getUserIdFromFirebaseUid(firebaseUid);
+                console.log("Mapped Firebase UID to viewer user_id:", viewerId);
+            } catch (err) {
+                console.warn("Failed to map Firebase UID to user_id:", err);
+                // Still allow public viewing if mapping fails
+            }
+        } else {
+            console.log("No valid token found; treating request as unauthenticated.");
+        }
+
+        // Privacy check
+        const canView = await canViewPrivateProfile(viewerId ?? -1, Number(user_id));
+        console.log(`Viewer (user_id: ${viewerId}) can view target user (${user_id})?`, canView);
+
+        if (!canView) {
+            console.log("Access denied due to privacy settings.");
+            return res.status(403).json({ message: "This profile is private." });
+        }
+
+        // Fetch user info
+        const userQuery = `
+            SELECT user_id, username, profile_pic, bio, created_at, updated_at 
+            FROM users 
+            WHERE user_id = $1
+        `;
         const userResponse: QueryResult = await pool.query(userQuery, [user_id]);
+
         if (userResponse.rows.length === 0) {
+            console.log("User not found with ID:", user_id);
             return res.status(404).json({ message: "User not found." });
         }
+
+        console.log("User found. Returning data.");
         return res.status(200).json({ message: "Got user.", user: userResponse.rows[0] });
+
     } catch (error) {
         console.error("Error getting user:", error);
         return res.status(500).json({ message: `Error getting user: ${error}` });

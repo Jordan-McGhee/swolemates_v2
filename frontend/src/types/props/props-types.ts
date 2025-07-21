@@ -16,6 +16,10 @@ export interface AuthModalProps {
     onAuthSuccess?: () => void;
 }
 
+export interface MobileBottomProps {
+    onLoginClick: () => void;
+}
+
 // AUTH TYPES
 export interface PostgreSQLUser {
     user_id: string;

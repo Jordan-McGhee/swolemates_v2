@@ -1,6 +1,5 @@
-import { createContext, useContext, useEffect, useState } from "react";
+import { createContext, useContext, useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
-// import { User } from "firebase/auth";
 import { authApi } from "@/api/authApi";
 
 // type imports
@@ -12,6 +11,7 @@ const AuthContext = createContext<AuthContextValue | undefined>(undefined);
 export const AuthProvider = ({ children }: AuthProviderProps) => {
     const [user, setUser] = useState<PostgreSQLUser | null>(null);
     const [isAuthLoading, setIsAuthLoading] = useState(true);
+    const justAuthenticatedRef = useRef(false);
 
     const navigate = useNavigate();
 
@@ -33,35 +33,37 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
     useEffect(() => {
         const unsubscribe = onAuthChange(async (firebaseUser) => {
             setIsAuthLoading(true);
-            if (firebaseUser) {
-                try {
-                    // Add a 1-second delay to allow backend user creation
-                    await new Promise((resolve) => setTimeout(resolve, 1000));
+            try {
+                if (firebaseUser) {
+                    if (justAuthenticatedRef.current) {
+                        justAuthenticatedRef.current = false;
+                        return;
+                    }
 
                     console.log("Fetching PostgreSQL user for:", firebaseUser.uid);
                     const pgUser = await getPostgreSQLUser(firebaseUser);
-                    setUser(pgUser.user ?? pgUser);  // Depending on backend response structure
-                } catch (error) {
-                    console.error("Error fetching PostgreSQL user on auth change:", error);
+                    setUser(pgUser.user ?? pgUser);
+                } else {
                     setUser(null);
                 }
-            } else {
+            } catch (error) {
+                console.error("Error fetching PostgreSQL user on auth change:", error);
                 setUser(null);
+            } finally {
+                setIsAuthLoading(false);
             }
-            setIsAuthLoading(false);
         });
 
         return unsubscribe;
     }, []);
 
-
     const handleSignUp = async (email: string, password: string, username: string) => {
         setIsAuthLoading(true);
         try {
             const credentials = await signUpWithEmail(email, password, username);
-            // Sync backend user and get postgres user
             const pgUser = await syncUserWithBackend(credentials.user);
             setUser(pgUser.user ?? pgUser);
+            justAuthenticatedRef.current = true;
         } catch (error) {
             console.error("Sign up error:", error);
             throw error;
@@ -76,6 +78,7 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
             const credentials = await logInWithEmail(email, password);
             const pgUser = await syncUserWithBackend(credentials.user);
             setUser(pgUser.user ?? pgUser);
+            justAuthenticatedRef.current = true;
         } catch (error) {
             console.error("Login error:", error);
             throw error;
@@ -90,6 +93,7 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
             const credentials = await logInWithGoogle();
             const pgUser = await syncUserWithBackend(credentials.user);
             setUser(pgUser.user ?? pgUser);
+            justAuthenticatedRef.current = true;
         } catch (error) {
             console.error("Google login error:", error);
             throw error;

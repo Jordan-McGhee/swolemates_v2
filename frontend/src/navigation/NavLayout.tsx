@@ -62,7 +62,7 @@ export default function Layout() {
                     </main>
 
                     {/* Bottom Navigation */}
-                    <MobileBottom />
+                    <MobileBottom  onLoginClick={() => setAuthModalOpen(true)} />
                 </div>
             </SidebarProvider>
         </div>

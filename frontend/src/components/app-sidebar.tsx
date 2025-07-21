@@ -27,12 +27,6 @@ const items = [
     { title: "Groups", url: "/groups", icon: Handshake },
 ]
 
-const footerItems = [
-    { title: "Profile", url: "/profile", icon: User },
-    { title: "Notifications", url: "#", icon: Bell },
-    { title: "Logout", url: "#", icon: LogOut },
-]
-
 export function AppSidebar({ onLoginClick }: AppSidebarProps) {
     const location = useLocation()
     const isActive = (url: string) => location.pathname === url
@@ -97,10 +91,10 @@ export function AppSidebar({ onLoginClick }: AppSidebarProps) {
                                         to="/profile"
                                         className="flex items-center gap-3 px-3 py-2 rounded transition-colors w-full"
                                     >
-                                        <Avatar className="w-5 h-5">
+                                        <Avatar className="w-5 h-5 object-cover">
                                             <AvatarImage src={user.profile_pic ?? ""} alt={user.username} />
                                             <AvatarFallback>
-                                                {user.username?.charAt(0).toUpperCase() ?? "U"}
+                                                <User className="w-5 h-5" />
                                             </AvatarFallback>
                                         </Avatar>
                                         <span>{user.username}</span>

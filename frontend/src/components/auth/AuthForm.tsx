@@ -22,7 +22,7 @@ const AuthForm = ({ onAuthSuccess }: AuthFormProps) => {
                         <button
                             type="button"
                             onClick={() => setIsLogin(false)}
-                            className="italic hover:underline hover:cursor-pointer"
+                            className="italic underline underline-offset-2 hover:underline hover:cursor-pointer"
                         >
                             Sign Up
                         </button>
@@ -33,7 +33,7 @@ const AuthForm = ({ onAuthSuccess }: AuthFormProps) => {
                         <button
                             type="button"
                             onClick={() => setIsLogin(true)}
-                            className="italic hover:underline hover:cursor-pointer"
+                            className="italic underline underline-offset-2 hover:underline hover:cursor-pointer"
                         >
                             Log In
                         </button>
