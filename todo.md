@@ -37,7 +37,7 @@ CHANGE LOGO COLOR
 <!-- - Left off with issue: FIXED -->
 <!-- - username/email availability checks return 401 unauthorized -->
 
-- Test login in and signup with google
+<!-- - Test login in and signup with google DONE -->
 - Add indication for logging out
 
 
@@ -82,6 +82,7 @@ CHANGE LOGO COLOR
 
 <!-- GROUPS -->
     - TEST ALL ROUTES
+    - Check if I need duplicate routes as some are accessible without authenticating
 <!-- - Make it where group names are unique? DONE -->
     - Revisit getAllGroups and its search capabilites
 <!-- - delete join requests after denied request or left group? DONE -->

@@ -116,6 +116,8 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
         }
     };
 
+    // console.log("AuthProvider rendered with user:", user);
+
     return (
         <AuthContext.Provider
             value={{

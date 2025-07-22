@@ -51,6 +51,11 @@ export const useFetch = <T = any>(): UseFetchResult<T> => {
             return responseData
 
         } catch (err: any) {
+            if (err.name === "AbortError") {
+                // Request was aborted, do not set error or throw
+                setIsLoading(false)
+                return Promise.reject(err)
+            }
             console.error(err)
             setHasError(err.message || "Something went wrong. Please try again!")
             setIsLoading(false)

@@ -43,7 +43,7 @@ const MobileBottom = ({ onLoginClick }: MobileBottomProps) => {
         { icon: Home, label: "Home", url: "/" },
         { icon: Dumbbell, label: "Workouts", url: "/workouts" },
         { icon: Handshake, label: "Groups", url: "/groups" },
-        { icon: User, label: "Profile", url: "/profile" },
+        { icon: User, label: "Profile", url: `/user/${user?.username}` },
     ]
 
     const [showActions, setShowActions] = useState(false)

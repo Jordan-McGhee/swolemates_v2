@@ -16,6 +16,11 @@ export interface AuthModalProps {
     onAuthSuccess?: () => void;
 }
 
+export interface ErrorModalProps {
+    error?: string | null;
+    onClear: () => void;
+}
+
 export interface MobileBottomProps {
     onLoginClick: () => void;
 }
@@ -27,6 +32,7 @@ export interface PostgreSQLUser {
     email: string;
     bio?: string;
     profile_pic?: string;
+    is_private?: boolean;
     firebase_uid: string;
     created_at: string;
     updated_at: string;

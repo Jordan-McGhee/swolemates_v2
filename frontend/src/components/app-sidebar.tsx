@@ -12,10 +12,10 @@ import {
     SidebarFooter,
     SidebarGroup,
     SidebarGroupContent,
-    SidebarGroupLabel,
     SidebarMenu,
     SidebarMenuButton,
     SidebarMenuItem,
+    SidebarTrigger,
 } from "@/components/ui/sidebar"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 
@@ -38,16 +38,20 @@ export function AppSidebar({ onLoginClick }: AppSidebarProps) {
         <Sidebar collapsible="icon">
             <SidebarContent>
                 <SidebarGroup>
-                    <SidebarGroupLabel>
-                        <Link
-                            to={"/"}
-                            className="text-xl font-bold tracking-wide text-[var(--accent)]"
-                        >
-                            SWOLEMATES
-                        </Link>
-                    </SidebarGroupLabel>
                     <SidebarGroupContent>
                         <SidebarMenu>
+                            <SidebarMenuItem key={"swolemates"}>
+                                <SidebarMenuButton
+                                    asChild
+                                    tooltip="Toggle Sidebar"
+                                    className={`group w-full`}
+                                >
+                                    <Link to="/" className="flex items-center gap-3 px-3 py-2 rounded transition-colors w-full">
+                                        <SidebarTrigger className="size-4 text-[var(--subhead-text)] hover:bg-[var(--accent-hover)] hover:text-[var(--accent)] hover:cursor-pointer" />
+                                        <span className="text-[var(--subhead-text)] font-semibold">SWOLEMATES</span>
+                                    </Link>
+                                </SidebarMenuButton>
+                            </SidebarMenuItem>
                             {items.map((item) => {
                                 const active = isActive(item.url)
                                 return (
@@ -88,7 +92,7 @@ export function AppSidebar({ onLoginClick }: AppSidebarProps) {
                                         }`}
                                 >
                                     <Link
-                                        to="/profile"
+                                        to={`/user/${user.username}`}
                                         className="flex items-center gap-3 px-3 py-2 rounded transition-colors w-full"
                                     >
                                         <Avatar className="w-5 h-5 object-cover">
