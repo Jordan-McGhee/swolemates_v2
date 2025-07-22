@@ -14,7 +14,7 @@ export default function App() {
     <Routes>
       <Route element={<Layout />}>
         <Route path="/" element={<Home />} />
-        <Route path="/profile" element={<Profile />} />
+        <Route path="/user/:username?" element={<Profile />} />
         <Route path="/workouts" element={<Workouts />} />
         <Route path="/groups" element={<Groups />} />
       </Route>
