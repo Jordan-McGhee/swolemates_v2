@@ -3,12 +3,12 @@ import { useState } from "react"
 
 // component imports
 import { AppSidebar } from "@/components/app-sidebar"
-import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar"
+import { SidebarProvider } from "@/components/ui/sidebar"
 import { MobileTop, MobileBottom } from "@/navigation/MobileNav"
 import AuthModal from "@/components/auth/AuthModal"
 
 export default function Layout() {
-    const [useDarkMode, setUseDarkMode] = useState(false)
+    // const [useDarkMode, setUseDarkMode] = useState(false)
     const [authModalOpen, setAuthModalOpen] = useState(false)
 
 
