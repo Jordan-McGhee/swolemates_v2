@@ -20,6 +20,7 @@
 ### NPM RUN BUILD AND DEPLOY TO FIREBASE
 
 CHANGE LOGO COLOR
+- Add ability to change profile pics
 
 <!-- AUTH -->
 <!-- - Sign up: -->

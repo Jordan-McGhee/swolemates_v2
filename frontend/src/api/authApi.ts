@@ -70,11 +70,10 @@ export const authApi = () => {
         });
     };
 
-    const updateUserProfile = async (updates: Partial<PostgreSQLUser>): Promise<PostgreSQLUser> => {
-        const user = auth.currentUser;
-        if (!user) throw new Error("No user is currently signed in.");
+    const updateUserProfile = async (firebaseUser: User, updates: Partial<PostgreSQLUser>): Promise<PostgreSQLUser> => {
+        if (!firebaseUser) throw new Error("No user is currently signed in.");
 
-        const token = await user.getIdToken();
+        const token = await firebaseUser.getIdToken();
 
         const updatedUser = await sendRequest({
             url: `${BACKEND_URL}/auth/user`,

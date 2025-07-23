@@ -18,6 +18,7 @@ module.exports = {
                 "light-subhead-text": "#616a73",
                 "light-black": "#000000",
                 "light-danger": "#c15052",
+                "light-danger-hover": "#e69ea0",
 
                 // Dark theme colors
                 "dark-accent": "#4cd1cb",
@@ -27,6 +28,7 @@ module.exports = {
                 "dark-subhead-text": "#9ca3af",
                 "dark-black": "#000000",
                 "dark-danger": "#e63c4d",
+                "dark-danger-hover": "#e06571",
             },
         },
     },

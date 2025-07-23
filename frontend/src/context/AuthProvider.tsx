@@ -4,12 +4,14 @@ import { authApi } from "@/api/authApi";
 
 // type imports
 import { AuthContextValue, AuthProviderProps, PostgreSQLUser } from "@/types/props/props-types";
+import { User as FirebaseUser } from "firebase/auth"; // Adjust import if needed
 
 // Create AuthContext
 const AuthContext = createContext<AuthContextValue | undefined>(undefined);
 
 export const AuthProvider = ({ children }: AuthProviderProps) => {
     const [user, setUser] = useState<PostgreSQLUser | null>(null);
+    const [firebaseUser, setFirebaseUser] = useState<FirebaseUser | null>(null);
     const [isAuthLoading, setIsAuthLoading] = useState(true);
     const justAuthenticatedRef = useRef(false);
 
@@ -18,10 +20,12 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
     const {
         checkUsernameAvailability,
         checkEmailAvailability,
+        updateUserProfile,
         signUpWithEmail,
         logInWithEmail,
         logInWithGoogle,
         logOut,
+        deleteAccount,
         syncUserWithBackend,
         getPostgreSQLUser,
         onAuthChange,
@@ -33,6 +37,7 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
     useEffect(() => {
         const unsubscribe = onAuthChange(async (firebaseUser) => {
             setIsAuthLoading(true);
+            setFirebaseUser(firebaseUser ?? null);
             try {
                 if (firebaseUser) {
                     if (justAuthenticatedRef.current) {
@@ -61,6 +66,7 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
         setIsAuthLoading(true);
         try {
             const credentials = await signUpWithEmail(email, password, username);
+            setFirebaseUser(credentials.user);
             const pgUser = await syncUserWithBackend(credentials.user);
             setUser(pgUser.user ?? pgUser);
             justAuthenticatedRef.current = true;
@@ -76,6 +82,7 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
         setIsAuthLoading(true);
         try {
             const credentials = await logInWithEmail(email, password);
+            setFirebaseUser(credentials.user);
             const pgUser = await syncUserWithBackend(credentials.user);
             setUser(pgUser.user ?? pgUser);
             justAuthenticatedRef.current = true;
@@ -91,6 +98,7 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
         setIsAuthLoading(true);
         try {
             const credentials = await logInWithGoogle();
+            setFirebaseUser(credentials.user);
             const pgUser = await syncUserWithBackend(credentials.user);
             setUser(pgUser.user ?? pgUser);
             justAuthenticatedRef.current = true;
@@ -102,11 +110,27 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
         }
     };
 
+    const handleUpdateUserProfile = async (profileUpdates: Partial<PostgreSQLUser>): Promise<PostgreSQLUser> => {
+        setIsAuthLoading(true);
+        try {
+            if (!firebaseUser) throw new Error("No authenticated user");
+            const updatedUser = await updateUserProfile(firebaseUser, profileUpdates);
+            setUser(updatedUser ?? updatedUser);
+            return updatedUser ?? updatedUser;
+        } catch (error) {
+            console.error("Update profile error:", error);
+            throw error;
+        } finally {
+            setIsAuthLoading(false);
+        }
+    };
+
     const handleLogout = async () => {
         setIsAuthLoading(true);
         try {
             await logOut();
             setUser(null);
+            setFirebaseUser(null);
             navigate("/");
         } catch (error) {
             console.error("Logout error:", error);
@@ -116,12 +140,30 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
         }
     };
 
-    // console.log("AuthProvider rendered with user:", user);
+    const handleDeleteAccount = async () => {
+        setIsAuthLoading(true);
+        try {
+            await deleteAccount();
+            setUser(null);
+            setFirebaseUser(null);
+
+             // Navigate to home screen after successful delete
+            navigate("/");
+        } catch (error) {
+            console.error("Delete account error:", error);
+            throw error;
+        } finally {
+            setIsAuthLoading(false);
+        }
+    };
+
+    console.log("AuthProvider rendered with user:", user, "firebaseUser:", firebaseUser);
 
     return (
         <AuthContext.Provider
             value={{
                 user,
+                firebaseUser,
                 isAuthLoading: isAuthLoading || isLoadingAuth,
                 hasError,
                 clearError,
@@ -130,7 +172,9 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
                 handleSignUp,
                 handleLoginEmail,
                 handleLoginGoogle,
+                handleUpdateUserProfile,
                 handleLogout,
+                handleDeleteAccount,
                 syncUserWithBackend,
             }}
         >

@@ -162,10 +162,12 @@ const SignupForm = ({ onAuthSuccess }: { onAuthSuccess?: () => void }) => {
                             "invert(42%) sepia(84%) saturate(542%) hue-rotate(134deg) brightness(94%) contrast(94%)",
                     }}
                 />
-                <h2 className="text-2xl font-semibold text-[var(--accent)]">
-                    Welcome to Swolemates!
-                </h2>
+                <p className="text-2xl font-semibold text-[var(--accent)]">Welcome to Swolemates!</p>
             </div>
+
+            {hasError && (
+                <p className="text-sm text-[var(--danger)]">{hasError}</p>
+            )}
 
             <AuthInput
                 name="username"
@@ -232,10 +234,6 @@ const SignupForm = ({ onAuthSuccess }: { onAuthSuccess?: () => void }) => {
                 }}
                 error={errors.confirmPassword}
             />
-
-            {hasError && (
-                <p className="text-sm text-[var(--danger)]">{hasError}</p>
-            )}
 
             <Button
                 variant="outline"

@@ -15,7 +15,7 @@ import { MobileBottomProps } from "@/types/props/props-types"
 const MobileTop = () => {
     return (
         <header className="lg:hidden fixed top-0 w-full h-16 bg-[var(--accent)] z-40">
-            <div className="h-full px-4 flex items-center justify-between relative text-[var(--white)]">
+            <div className="h-full px-2 flex items-center justify-between relative text-[var(--white)]">
                 <button className="w-10 h-10 flex items-center justify-center">
                     <Search className="w-6 h-6" />
                 </button>

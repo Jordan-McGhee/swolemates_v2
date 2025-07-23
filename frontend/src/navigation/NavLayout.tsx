@@ -21,11 +21,8 @@ export default function Layout() {
 
                     {/* Main Content */}
                     <main className="flex-1 flex flex-col relative -mt-1.5 w-full">
-                        {/* <div className="p-4">
-                            <SidebarTrigger className="text-[var(--subhead-text)] hover:bg-[var(--accent-hover)] hover:text-[var(--accent)] hover:cursor-pointer" />
-                        </div> */}
 
-                        <div className="pt-4 pb-24 w-full max-w-[120rem] mx-auto px-4 flex-1">
+                        <div className="pt-8 pb-24 w-full max-w-[120rem] mx-auto px-4 flex-1">
                             {/* light/dark toggle */}
                             {/* <button
                                 className="mb-4 px-4 py-2 rounded bg-[var(--accent)] text-[var(--white)] hover:bg-[var(--accent-hover)] hover:text-[var(--accent)]"
@@ -44,8 +41,8 @@ export default function Layout() {
                     <AuthModal onClose={() => setAuthModalOpen(false)} isOpen={authModalOpen} />
                 )}
 
-                {/* 📱 Mobile Layout */}
-                <div className="md:hidden flex flex-col bg-[var(--off-bg)] transition-colors duration-300">
+                {/* Mobile Layout */}
+                <div className="md:hidden flex flex-col bg-[#f4f4f4] w-full transition-colors duration-300">
                     {/* Top Navigation */}
                     <div className="fixed top-0 w-full z-40">
                         <MobileTop />

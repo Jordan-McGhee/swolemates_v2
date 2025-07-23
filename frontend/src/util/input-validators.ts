@@ -7,6 +7,25 @@ export function validateUsername(value: string): string | undefined {
     if (value.trim().length < 6) {
         return "Username must be at least 6 characters.";
     }
+
+    if (value.trim().length > 15) {
+        return "Username cannot exceed 15 characters.";
+    }
+
+    // Allow alphanumeric characters, underscores, and hyphens
+    const usernameRegex = /^[a-zA-Z0-9_-]+$/;
+    if (!usernameRegex.test(value.trim())) {
+        return "Username can only contain letters, numbers, underscores, and hyphens.";
+    }
+
+    return undefined;
+}
+
+// bio validator
+export function validateBio(value: string): string | undefined {
+    if (value.length > 200) {
+        return "Bio cannot exceed 200 characters.";
+    }
     return undefined;
 }
 

@@ -36,7 +36,7 @@ export function AppSidebar({ onLoginClick }: AppSidebarProps) {
 
     return (
         <Sidebar collapsible="icon">
-            <SidebarContent>
+            <SidebarContent className="mt-4">
                 <SidebarGroup>
                     <SidebarGroupContent>
                         <SidebarMenu>
@@ -46,10 +46,10 @@ export function AppSidebar({ onLoginClick }: AppSidebarProps) {
                                     tooltip="Toggle Sidebar"
                                     className={`group w-full`}
                                 >
-                                    <Link to="/" className="flex items-center gap-3 px-3 py-2 rounded transition-colors w-full">
+                                    <div className="flex items-center gap-3 px-3 py-2 rounded transition-colors w-full">
                                         <SidebarTrigger className="size-4 text-[var(--subhead-text)] hover:bg-[var(--accent-hover)] hover:text-[var(--accent)] hover:cursor-pointer" />
                                         <span className="text-[var(--subhead-text)] font-semibold">SWOLEMATES</span>
-                                    </Link>
+                                    </div>
                                 </SidebarMenuButton>
                             </SidebarMenuItem>
                             {items.map((item) => {

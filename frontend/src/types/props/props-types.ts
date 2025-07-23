@@ -60,6 +60,7 @@ export interface AuthFormProps {
 
 export interface AuthContextValue {
     user: PostgreSQLUser | null;
+    firebaseUser: User | null;
     isAuthLoading: boolean;
     hasError: string | null;
     clearError: () => void;
@@ -68,7 +69,9 @@ export interface AuthContextValue {
     handleSignUp: (email: string, password: string, username: string) => Promise<void>;
     handleLoginEmail: (email: string, password: string) => Promise<void>;
     handleLoginGoogle: () => Promise<void>;
+    handleUpdateUserProfile: (updates: Partial<PostgreSQLUser>) => Promise<PostgreSQLUser>;
     handleLogout: () => Promise<void>;
+    handleDeleteAccount: () => Promise<void>;
     syncUserWithBackend: (user: User) => Promise<any>;
 }
 
@@ -79,4 +82,37 @@ export interface AuthProviderProps {
 // SIDEBAR TYPES
 export interface AppSidebarProps {
     onLoginClick: () => void;
+}
+
+// PROFILE TYPES
+export interface ProfileHeaderProps {
+    user: PostgreSQLUser | null;
+    isLoading: boolean;
+    isOwnProfile?: boolean;
+}
+
+export type ProfileMenuItem = "feed" | "posts" | "workouts" | "friends" | "groups";
+
+export interface ProfileMenuBarProps {
+    selectedMenuItem: ProfileMenuItem;
+    onMenuItemClick: (item: ProfileMenuItem) => void;
+}
+
+export interface ProfileViewProps {
+    user: PostgreSQLUser | null;
+    isLoading: boolean;
+    isOwnProfile?: boolean;
+}
+
+export interface ProfileEditModalProps {
+    isOpen: boolean;
+    onClose: () => void;
+    // onLogout: () => void;
+    // onProfileUpdate: (data: { username: string; bio: string; privacy: boolean }) => void;
+    // onDeleteAccount: () => void;
+}
+
+export interface ProfileEditFormProps {
+    onClose?: () => void;
+    onBack: () => void;
 }

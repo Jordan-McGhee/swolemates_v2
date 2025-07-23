@@ -20,7 +20,7 @@
 
 ## Tue Jul 22
 To do:
-- Question for tomorrow: does it make sense to have a user state in my main profile page and pass that to any components in my profile page or manage the state in each component separately?
+- Question for tomorrow: does it make sense to have a user state in my main profile page and pass that to any components in my profile page or manage the state in each component separately? Best to have user state in main and pass down to components, then query for additional info in them if necessary
 <!-- - Work on error modal DONE -->
 <!-- - Finish adding privacy in public routes and push to firebase cloud functions DONE -->
 
@@ -28,11 +28,17 @@ Working On:
 <!-- - Changed public routes to work with username rather than user_id DONE -->
 <!-- - Changed group routes to work with group name instead of group_id DONE -->
 <!-- - Added helper function for group name availability on backend DONE -->
-- Building out profile page
-    - header
 
 ## Wed Jul 23
 To do:
-    - Add views for profile page?
-    - Figure out rendering error with ProfileHeader - initial render works as expect, on page reload, it's like auth user disappears?
-    - Figure out why tailwind variables aren't working all the time?
+<!-- - Add views for profile page? DONE -->
+<!-- - Figure out rendering error with ProfileHeader - initial render works as expect, on page reload, it's like auth user disappears? DONE -->
+<!-- - Add limits to length of username and bio DONE -->
+- Figure out why tailwind variables aren't working all the time?
+- Update get single user query to pull amount of friends, workouts, posts by user
+
+Working On:
+<!-- - Adding edit profile modal to profile header DONE -->
+<!-- - Added editmodal form DONE -->
+<!-- - Added firebase user to context for sitewide access to token DONE -->
+<!-- - Adding menu and views (Feed, Posts, Workouts, Friends, Groups) DONE -->
