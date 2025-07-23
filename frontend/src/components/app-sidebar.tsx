@@ -1,4 +1,4 @@
-import { Handshake, Home, Dumbbell, Bell, User, Users, LogOut } from "lucide-react"
+import { Handshake, Home, Dumbbell, Bell, User, Users, LogOut, Search } from "lucide-react"
 import { useLocation, Link } from "react-router-dom"
 import { useAuth } from "@/context/AuthProvider"
 
@@ -25,6 +25,7 @@ const items = [
     { title: "Friends", url: "#", icon: Users },
     { title: "Workouts", url: "/workouts", icon: Dumbbell },
     { title: "Groups", url: "/groups", icon: Handshake },
+    { title: "Search", url: "/search", icon: Search }
 ]
 
 export function AppSidebar({ onLoginClick }: AppSidebarProps) {
@@ -86,7 +87,7 @@ export function AppSidebar({ onLoginClick }: AppSidebarProps) {
                                 <SidebarMenuButton
                                     asChild
                                     tooltip="Profile"
-                                    className={`group w-full ${isActive("/profile")
+                                    className={`group w-full ${isActive(`/user/${user.username}`)
                                         ? "bg-[var(--accent-hover)] text-[var(--accent)]"
                                         : "text-[var(--subhead-text)] hover:bg-[var(--accent-hover)] hover:text-[var(--accent)]"
                                         }`}
@@ -95,7 +96,7 @@ export function AppSidebar({ onLoginClick }: AppSidebarProps) {
                                         to={`/user/${user.username}`}
                                         className="flex items-center gap-3 px-3 py-2 rounded transition-colors w-full"
                                     >
-                                        <Avatar className="w-5 h-5 object-cover">
+                                        <Avatar className="-ml-0.5 w-5 h-5 object-cover flex items-center justify-center">
                                             <AvatarImage src={user.profile_pic ?? ""} alt={user.username} />
                                             <AvatarFallback>
                                                 <User className="w-5 h-5" />
@@ -111,7 +112,7 @@ export function AppSidebar({ onLoginClick }: AppSidebarProps) {
                                 <SidebarMenuButton
                                     asChild
                                     tooltip="Notifications"
-                                    className={`group w-full ${isActive("#")
+                                    className={`group w-full ${isActive("/notifications")
                                         ? "bg-[var(--accent-hover)] text-[var(--accent)]"
                                         : "text-[var(--subhead-text)] hover:bg-[var(--accent-hover)] hover:text-[var(--accent)]"
                                         }`}

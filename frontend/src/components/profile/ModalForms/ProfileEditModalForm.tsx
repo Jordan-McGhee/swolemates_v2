@@ -1,4 +1,4 @@
-import React, { use, useState } from 'react';
+import React, { useState } from 'react';
 
 // icon/asset imports
 import { Loader2 } from 'lucide-react';

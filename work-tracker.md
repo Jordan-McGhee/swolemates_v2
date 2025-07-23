@@ -42,3 +42,8 @@ Working On:
 <!-- - Added editmodal form DONE -->
 <!-- - Added firebase user to context for sitewide access to token DONE -->
 <!-- - Adding menu and views (Feed, Posts, Workouts, Friends, Groups) DONE -->
+
+## Thu July 24
+To do:
+- Add view to tie user info together in profile view (number of workouts, posts, friends, groups)
+- View for user posts/workouts in order with ability to remove either for different views on frontend 
