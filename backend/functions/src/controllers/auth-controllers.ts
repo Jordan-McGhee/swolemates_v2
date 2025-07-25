@@ -25,7 +25,7 @@ export const getPostgreSQLUser = async (req: Request, res: Response, next: NextF
         return res.status(200).json({ user: userInfo });
     } catch (error) {
         console.error("Error getting PostgreSQL user:", error);
-        return res.status(500).json({ message: "Failed to retrieve user.", error});
+        return res.status(500).json({ message: "Failed to retrieve user.", error });
     }
 
 }
@@ -33,7 +33,7 @@ export const getPostgreSQLUser = async (req: Request, res: Response, next: NextF
 // Update user profile info (username, bio, etc.)
 export const updateUserProfile = async (req: Request, res: Response, next: NextFunction) => {
     const firebase_uid = req.user.uid;
-    const { username, bio, profile_pic } = req.body;
+    const { username, bio, is_private } = req.body;
 
     try {
         // Check user exists
@@ -48,7 +48,7 @@ export const updateUserProfile = async (req: Request, res: Response, next: NextF
             UPDATE users
             SET username = $1,
                 bio = $2,
-                profile_pic = $3,
+                is_private = $3,
                 updated_at = NOW()
             WHERE firebase_uid = $4
             RETURNING *;
@@ -57,7 +57,7 @@ export const updateUserProfile = async (req: Request, res: Response, next: NextF
         const updatedResult = await pool.query(updateQuery, [
             username,
             bio ?? null,
-            profile_pic ?? null,
+            is_private ?? false,
             firebase_uid,
         ]);
 
@@ -138,7 +138,7 @@ export const syncFirebaseUser = async (req: Request, res: Response, next: NextFu
 
 // delete user from database after they delete their account on the frontend
 export const deleteUserByFirebaseUID = async (req: Request, res: Response, next: NextFunction) => {
-    const firebase_uid = req.user.uid;
+    const { firebase_uid } = req.params;
 
     try {
         const deleteQuery = "DELETE FROM users WHERE firebase_uid = $1";

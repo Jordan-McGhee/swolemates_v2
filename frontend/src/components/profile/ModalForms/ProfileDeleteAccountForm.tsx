@@ -69,7 +69,7 @@ const ProfileDeleteAccountForm = ({ onBack }: ProfileEditFormProps) => {
             />
             {deleteError && <p className="text-sm text-[var(--danger)]">{deleteError}</p>}
             <Button
-                className="w-full text-white bg-[#e69ea0] hover:bg-[var(--danger)] hover:cursor-pointer font-semibold text-base py-3 shadow transition-colors"
+                className="w-full text-white bg-[var(--danger)] hover:bg-[#e69ea0] hover:cursor-pointer font-semibold text-base py-3 shadow transition-colors"
                 onClick={handleDelete}
                 disabled={isAuthLoading || confirmUsername !== user?.username}
                 type="button"

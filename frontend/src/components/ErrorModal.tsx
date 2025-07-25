@@ -14,7 +14,7 @@ const ErrorModal: React.FC<ErrorModalProps> = ({ error, onClear }) => {
                     Something went wrong!
                 </h2>
                 <div className="text-[var(--subhead-text)] mb-4">{error}</div>
-                <Button className="w-full text-white bg-[var(--danger)]" onClick={onClear}>
+                <Button className="w-full rounded-md bg-[var(--danger)] hover:bg-[#e69ea0] text-white font-semibold text-base py-3 shadow  hover:text-[var(--white)] hover:cursor-pointer transition-colors" onClick={onClear}>
                     Close
                 </Button>
             </div>

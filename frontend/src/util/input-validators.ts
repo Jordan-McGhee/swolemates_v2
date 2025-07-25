@@ -22,9 +22,10 @@ export function validateUsername(value: string): string | undefined {
 }
 
 // bio validator
+
 export function validateBio(value: string): string | undefined {
-    if (value.length > 200) {
-        return "Bio cannot exceed 200 characters.";
+    if (value.length > 100) {
+        return "Bio cannot exceed 100 characters.";
     }
     return undefined;
 }

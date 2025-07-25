@@ -15,6 +15,6 @@ router.put("/user", authControllers.updateUserProfile);
 router.post("/sync", authControllers.syncFirebaseUser);
 
 // Delete user by firebase UID
-router.delete("/", authControllers.deleteUserByFirebaseUID);
+router.delete("/:firebase_uid", authControllers.deleteUserByFirebaseUID);
 
 module.exports = router;

@@ -43,7 +43,13 @@ Working On:
 <!-- - Added firebase user to context for sitewide access to token DONE -->
 <!-- - Adding menu and views (Feed, Posts, Workouts, Friends, Groups) DONE -->
 
-## Thu July 24
+## Fri July 25
+<!-- - test edit and delete profile functionality (edit profile removes profile pic for some reason. Delete deletes from firebase, but not from supabase) DONE -->
+
+## Sat July 26
 To do:
+- Users can still access private profile despite backend supposed to block it. FIX THIS!!!!
+- Sometimes firebase throws error saying the user needs a recent login? FIX THIS!!!!
+    - Deleting account doesn't work because of this
 - Add view to tie user info together in profile view (number of workouts, posts, friends, groups)
-- View for user posts/workouts in order with ability to remove either for different views on frontend 
+- View for user posts/workouts in order with ability to remove either for different views on frontend

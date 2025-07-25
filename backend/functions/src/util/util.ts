@@ -131,7 +131,7 @@ export const getUserInfo = async (
     client?: any
 ): Promise<UserInfo> => {
     const getUserQuery = `
-    SELECT user_id, username, email, profile_pic, bio, firebase_uid, created_at, updated_at
+    SELECT user_id, username, email, profile_pic, bio, is_private, firebase_uid, created_at, updated_at
     FROM users
     WHERE user_id = $1
 `;

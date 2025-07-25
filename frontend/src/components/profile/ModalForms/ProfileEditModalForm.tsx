@@ -35,12 +35,27 @@ const ProfileEditModalForm = ({ onBack }: ProfileEditFormProps) => {
         clearError
     } = useAuth();
 
+    // Store initial values to compare changes and prevent unnecessary updates
+    const initialFormData = {
+        username: `${user?.username || ''}`,
+        bio: `${user?.bio || ''}`,
+        is_private: user?.is_private || false
+    };
+
+    // console.log("Initial form data:", initialFormData);
+
     // state for form data
     const [formData, setFormData] = useState({
         username: `${user?.username || ''}`,
         bio: `${user?.bio || ''}`,
         is_private: user?.is_private || false
     });
+
+    // Check if any field has changed
+    const hasChanges =
+        formData.username !== initialFormData.username ||
+        formData.bio !== initialFormData.bio ||
+        formData.is_private !== initialFormData.is_private;
 
     // other states
     const [errors, setErrors] = useState<Record<string, string>>({});
@@ -115,7 +130,7 @@ const ProfileEditModalForm = ({ onBack }: ProfileEditFormProps) => {
         }
     };
 
-    const isFormValid = formData.username.trim() && !errors.username && !errors.bio
+    const isFormValid = formData.username.trim() && !errors.username && !errors.bio && hasChanges
 
     return (
         <form onSubmit={handleSubmit} className="flex flex-col gap-4 p-6">
@@ -133,7 +148,7 @@ const ProfileEditModalForm = ({ onBack }: ProfileEditFormProps) => {
                     <ArrowLeft className="w-6 h-6" />
                 </Button>
             </div>
-            
+
             <div className='flex flex-col items-center mb-4'>
                 <Avatar className="w-16 h-16 mb-2">
                     <AvatarImage src={user?.profile_pic || ""} alt={user?.username || "profile"} />
@@ -163,27 +178,36 @@ const ProfileEditModalForm = ({ onBack }: ProfileEditFormProps) => {
             />
 
             {/* Bio Input */}
-            <AuthInput
-                name="bio"
-                label="Bio"
-                type="textarea"
-                placeholder="Tell us about yourself..."
-                value={formData.bio}
-                onChange={handleChange}
-                onBlur={handleBioBlur}
-                validate={(value) => {
-                    const error = validateBio(value);
-                    setErrors((prev) => ({ ...prev, bio: error || "" }));
-                    return error;
-                }}
-                error={errors.bio}
-            />
+            <div className="flex flex-col gap-1">
+                <AuthInput
+                    name="bio"
+                    label="Bio"
+                    type="textarea"
+                    placeholder="Tell us about yourself..."
+                    value={formData.bio}
+                    onChange={handleChange}
+                    onBlur={handleBioBlur}
+                    validate={(value) => {
+                        const error = validateBio(value);
+                        setErrors((prev) => ({ ...prev, bio: error || "" }));
+                        return error;
+                    }}
+                    error={errors.bio}
+                />
+                <p
+                    className={`text-xs text-right ${formData.bio.length > 150
+                        ? "text-[var(--danger)]"
+                        : "text-[var(--subhead-text)]"
+                        }`}
+                >
+                    {formData.bio.length}/100 characters
+                </p>
+            </div>
 
             {/* Privacy Setting */}
             <div className="flex flex-col gap-2">
-                <Label htmlFor="profile-privacy-switch">Profile Privacy</Label>
-                <div className="flex items-center gap-3">
-                    <span>Public</span>
+                <div className="flex items-center justify-between min-h-[40px]">
+                    <Label htmlFor="profile-privacy-switch">Profile Privacy</Label>
                     <Switch
                         id="profile-privacy-switch"
                         checked={formData.is_private}
@@ -193,8 +217,12 @@ const ProfileEditModalForm = ({ onBack }: ProfileEditFormProps) => {
                                 is_private: checked,
                             }))
                         }
+                        
                     />
-                    <span>Private</span>
+                </div>
+                <div className="text-xs text-[var(--subhead-text)] mt-1">
+                    When your account is public, your profile, posts, and workouts can be seen by anyone.<br /><br />
+                    When your account is private, only approved friend requests can see your content. Everyone else will see only your profile picture, username, and bio.
                 </div>
             </div>
 

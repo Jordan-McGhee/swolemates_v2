@@ -85,7 +85,7 @@ export const authApi = () => {
             body: JSON.stringify(updates),
         });
 
-        return updatedUser as PostgreSQLUser;
+        return updatedUser.user as PostgreSQLUser;
     };
 
 

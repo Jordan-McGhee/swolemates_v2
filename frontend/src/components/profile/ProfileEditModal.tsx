@@ -44,7 +44,7 @@ const ProfileEditModal: React.FC<ProfileEditModalProps> = ({
                     {/* Display username */}
                     <p className="text-xl font-medium mb-1">{user?.username}</p>
                     {/* Modal title */}
-                    <p className="text-3xl font-bold mb-2">Profile Settings</p>
+                    <p className="text-xl font-bold mb-2">Profile Settings</p>
                     {/* Button to switch to edit profile step */}
                     <Button
                         onClick={() => setStep("edit")}
