@@ -13,6 +13,7 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
     const [user, setUser] = useState<PostgreSQLUser | null>(null);
     const [firebaseUser, setFirebaseUser] = useState<FirebaseUser | null>(null);
     const [isAuthLoading, setIsAuthLoading] = useState(true);
+    const [token, setToken] = useState<string | null>(null);
     const justAuthenticatedRef = useRef(false);
 
     const navigate = useNavigate();
@@ -33,13 +34,16 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
         hasError,
         clearError,
     } = authApi();
-
     useEffect(() => {
         const unsubscribe = onAuthChange(async (firebaseUser) => {
             setIsAuthLoading(true);
             setFirebaseUser(firebaseUser ?? null);
             try {
                 if (firebaseUser) {
+                    // Get token string and set it in state
+                    const idToken = await firebaseUser.getIdToken();
+                    setToken(idToken);
+
                     if (justAuthenticatedRef.current) {
                         justAuthenticatedRef.current = false;
                         return;
@@ -50,10 +54,12 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
                     setUser(pgUser.user ?? pgUser);
                 } else {
                     setUser(null);
+                    setToken(null);
                 }
             } catch (error) {
                 console.error("Error fetching PostgreSQL user on auth change:", error);
                 setUser(null);
+                setToken(null);
             } finally {
                 setIsAuthLoading(false);
             }
@@ -157,25 +163,24 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
         }
     };
 
-    console.log("AuthProvider rendered with user:", user, "firebaseUser:", firebaseUser);
-
     return (
         <AuthContext.Provider
             value={{
-                user,
-                firebaseUser,
-                isAuthLoading: isAuthLoading || isLoadingAuth,
-                hasError,
-                clearError,
-                checkUsernameAvailability,
-                checkEmailAvailability,
-                handleSignUp,
-                handleLoginEmail,
-                handleLoginGoogle,
-                handleUpdateUserProfile,
-                handleLogout,
-                handleDeleteAccount,
-                syncUserWithBackend,
+            user,
+            firebaseUser,
+            token,
+            isAuthLoading: isAuthLoading || isLoadingAuth,
+            hasError,
+            clearError,
+            checkUsernameAvailability,
+            checkEmailAvailability,
+            handleSignUp,
+            handleLoginEmail,
+            handleLoginGoogle,
+            handleUpdateUserProfile,
+            handleLogout,
+            handleDeleteAccount,
+            syncUserWithBackend,
             }}
         >
             {children}

@@ -12,9 +12,10 @@ import { getSingleUserURL } from "@/api/profileApi";
 import ProfileHeader from "@/components/profile/ProfileHeader"
 import { ProfileMenuBar } from "@/components/profile/ProfileMenuBar";
 import ErrorModal from "@/components/ErrorModal";
+import CreatePost from "@/components/posts/CreatePost";
 
 // types imports
-import { ProfileMenuItem, PostgreSQLUser } from "@/types/props/props-types";
+import { ProfileMenuItem, PostgreSQLUser, Feed, Post, Workout } from "@/types/props/props-types";
 
 // view imports
 import { ProfileFeed } from "@/components/profile/ProfileFeed";
@@ -27,11 +28,17 @@ import { ProfileGroups } from "@/components/profile/ProfileGroups";
 export default function Profile() {
     // consts needed for profile
     const { username } = useParams<{ username?: string }>();
-    const { user: authUser, firebaseUser } = useAuth();
+    const { user: authUser, token } = useAuth();
     const { sendRequest, isLoading, hasError, clearError } = useFetch();
 
     // state for current profile user
     const [profileUser, setProfileUser] = useState<PostgreSQLUser | null>(null);
+    const [feed, setFeed] = useState<Feed>([]);
+
+    // divide feed into posts and workouts for different views
+    const posts: Post[] = feed.filter((item): item is Post => "content" in item);
+    const workouts: Workout[] = feed.filter((item): item is Workout => !("content" in item) && "title" in item && "exercises" in item);
+
 
     // fetch profile user data
     useEffect(() => {
@@ -42,20 +49,9 @@ export default function Profile() {
             return;
         }
 
-        // Only run fetch if not viewing own profile
-        if (authUser?.username?.toLowerCase() === username.toLowerCase()) {
-            console.log("Viewing own profile, setting profileUser to authUser");
-            setProfileUser(authUser);
-            return;
-        }
-
-        // Else, fetch the profile from backend
         const fetchUser = async () => {
             console.log("Fetching user from backend...");
             try {
-                // Use firebaseUser?.token for Authorization
-                const token = firebaseUser?.getIdToken ? await firebaseUser.getIdToken() : null;
-                console.log("Token acquired:", token ? "Yes" : "No");
                 const data = await sendRequest({
                     url: getSingleUserURL(username),
                     method: "GET",
@@ -80,7 +76,7 @@ export default function Profile() {
 
         fetchUser();
 
-    }, [username, authUser, firebaseUser]);
+    }, [username, authUser, token]);
 
     // isOwnProfile to see if authUser is viewing their own profile
     const isOwnProfile = authUser?.username?.toLowerCase() === profileUser?.username?.toLowerCase();
@@ -100,35 +96,46 @@ export default function Profile() {
             <ErrorModal error={hasError} onClear={clearError} />
 
 
-            <div className="flex flex-row gap-4 w-full">
-                {/* left side */}
-                <div className="w-full lg:w-[65%] flex flex-col gap-4">
-                    <ProfileHeader
-                        user={profileUser}
-                        isLoading={isLoading}
-                        isOwnProfile={isOwnProfile}
-                    />
-                    <ProfileMenuBar
-                        selectedMenuItem={selectedMenuItem}
-                        onMenuItemClick={(item) => handleMenuItemClick(item)}
-                    />
+            {
+                !isLoading &&
+                <div className="flex flex-row gap-4 w-full">
+                    {/* left side */}
+                    <div className="w-full lg:w-[65%] flex flex-col gap-4">
+                        <ProfileHeader
+                            user={profileUser}
+                            isLoading={isLoading}
+                            isOwnProfile={isOwnProfile}
+                        />
 
-                    {selectedMenuItem === "feed" && <ProfileFeed />}
-                    {/* {selectedMenuItem === "feed" && <ProfileFeed user={profileUser} isLoading={isLoading}isOwnProfile={isOwnProfile} />} */}
-                    {selectedMenuItem === "posts" && <ProfilePosts />}
-                    {selectedMenuItem === "workouts" && <ProfileWorkouts />}
-                    {selectedMenuItem === "friends" && <ProfileFriends />}
-                    {selectedMenuItem === "groups" && <ProfileGroups />}
-                </div>
+                        {/* Create Post Component */}
+                        {isOwnProfile && (
+                            <CreatePost
+                                workouts={workouts || []}
+                            />
+                        )}
 
-                {/* right side */}
-                <div className="w-[35%] hidden lg:block">
-                    <div className="bg-[var(--off-bg)] border border-[var(--accent)] rounded-xl p-4">
-                        <h3 className="text-lg font-semibold mb-2">Friends</h3>
-                        <p className="text-[var(--subhead-text)]">No friends yet.</p>
+                        <ProfileMenuBar
+                            selectedMenuItem={selectedMenuItem}
+                            onMenuItemClick={(item) => handleMenuItemClick(item)}
+                        />
+
+                        {selectedMenuItem === "feed" && <ProfileFeed />}
+                        {/* {selectedMenuItem === "feed" && <ProfileFeed user={profileUser} isLoading={isLoading}isOwnProfile={isOwnProfile} />} */}
+                        {selectedMenuItem === "posts" && <ProfilePosts />}
+                        {selectedMenuItem === "workouts" && <ProfileWorkouts />}
+                        {selectedMenuItem === "friends" && <ProfileFriends />}
+                        {selectedMenuItem === "groups" && <ProfileGroups />}
+                    </div>
+
+                    {/* right side */}
+                    <div className="w-[35%] hidden lg:block">
+                        <div className="bg-[var(--off-bg)] border border-[var(--accent)] rounded-xl p-4">
+                            <h3 className="text-lg font-semibold mb-2">Friends</h3>
+                            <p className="text-[var(--subhead-text)]">No friends yet.</p>
+                        </div>
                     </div>
                 </div>
-            </div>
+            }
         </>
 
     );

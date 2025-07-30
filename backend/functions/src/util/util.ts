@@ -170,7 +170,14 @@ export const getUserIdFromFirebaseUid = async (firebaseUid: string) => {
     return rows[0].user_id;
 };
 
-export const getViewerIdFromAuthHeader = async (authHeader?: string): Promise<string | null> => {
+
+/**
+ * Extracts and verifies a Firebase user ID from a Bearer authorization header.
+ *
+ * @param authHeader - The HTTP Authorization header containing the Bearer token.
+ * @returns A promise that resolves to the user's UID if the token is valid, or `null` if the header is missing, malformed, or the token is invalid/expired.
+ */
+export const getIdFromAuthHeader = async (authHeader?: string): Promise<string | null> => {
     if (!authHeader || !authHeader.startsWith("Bearer ")) {
         return null;
     }

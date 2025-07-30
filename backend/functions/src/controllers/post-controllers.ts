@@ -2,18 +2,24 @@ import { pool } from "../index";
 import { Request, Response, NextFunction } from "express";
 // import { QueryResult } from "pg";
 import { createNotification, getUserInfo } from "../util/util";
-import { getUserIdFromFirebaseUid } from "../util/util";
+import { getUserIdFromFirebaseUid, getIdFromAuthHeader } from "../util/util";
 
 // create post
 export const createPost = async (req: Request, res: Response, next: NextFunction) => {
 
-    // Grab Firebase UID from request
-    const firebase_uid = req.user?.uid;
+    // Grab Firebase UID from auth header
+    console.log("Creating post...");
+    console.log("Request body:", req.body);
+
+    const authHeader = req.headers.authorization;
+    const firebase_uid = await getIdFromAuthHeader(authHeader);
+    console.log("Decoded Firebase UID:", firebase_uid);
+
     const { content, image_url, workout_id } = req.body;
 
     // Validations
     if (!firebase_uid) {
-        return res.status(401).json({ message: "Unauthorized." });
+        return res.status(401).json({ message: "Unauthorized. You must be signed in to post." });
     }
 
     if (!content || typeof content !== "string" || content.trim().length === 0) {
@@ -22,6 +28,10 @@ export const createPost = async (req: Request, res: Response, next: NextFunction
 
     try {
         const user_id = await getUserIdFromFirebaseUid(firebase_uid);
+        if (!user_id) {
+            return res.status(404).json({ message: "User not found." });
+        }
+        console.log("User ID from Firebase UID:", user_id);
 
         if (workout_id) {
             if (isNaN(Number(workout_id))) {
@@ -59,7 +69,14 @@ export const createPost = async (req: Request, res: Response, next: NextFunction
 
 // edit post
 export const editPost = async (req: Request, res: Response, next: NextFunction) => {
-    const firebase_uid = req.user?.uid;
+    console.log("Editing post...");
+    console.log("Request body:", req.body);
+    
+    // Grab Firebase UID from auth header
+    const authHeader = req.headers.authorization;
+    const firebase_uid = await getIdFromAuthHeader(authHeader);
+    console.log("Decoded Firebase UID:", firebase_uid);
+
     const { post_id } = req.params;
     const { content, image_url, workout_id } = req.body;
 
@@ -77,6 +94,11 @@ export const editPost = async (req: Request, res: Response, next: NextFunction) 
 
     try {
         const user_id = await getUserIdFromFirebaseUid(firebase_uid);
+
+        if (!user_id) {
+            return res.status(404).json({ message: "User not found." });
+        }
+        console.log("User ID from Firebase UID:", user_id);
 
         const checkPostQuery = `SELECT * FROM posts WHERE post_id = $1`;
         const checkPostResponse = await pool.query(checkPostQuery, [post_id]);
@@ -125,7 +147,14 @@ export const editPost = async (req: Request, res: Response, next: NextFunction) 
 
 // comment on post
 export const commentOnPost = async (req: Request, res: Response, next: NextFunction) => {
-    const firebase_uid = req.user?.uid;
+    console.log("Commenting on post...");
+    console.log("Request body:", req.body);
+
+    // Grab Firebase UID from auth header
+    const authHeader = req.headers.authorization;
+    const firebase_uid = await getIdFromAuthHeader(authHeader);
+    console.log("Decoded Firebase UID:", firebase_uid);
+
     const { post_id } = req.params;
     const { content } = req.body;
 
@@ -145,6 +174,10 @@ export const commentOnPost = async (req: Request, res: Response, next: NextFunct
 
     try {
         const user_id = await getUserIdFromFirebaseUid(firebase_uid);
+        if (!user_id) {
+            return res.status(404).json({ message: "User not found." });
+        }
+        console.log("User ID from Firebase UID:", user_id);
 
         await client.query("BEGIN");
 
@@ -200,7 +233,15 @@ export const commentOnPost = async (req: Request, res: Response, next: NextFunct
 
 // edit comment
 export const editCommentOnPost = async (req: Request, res: Response, next: NextFunction) => {
-    const firebase_uid = req.user?.uid;
+    
+    console.log("Editing comment on post...");
+    console.log("Request body:", req.body);
+
+    // Grab Firebase UID from auth header
+    const authHeader = req.headers.authorization;
+    const firebase_uid = await getIdFromAuthHeader(authHeader);
+    console.log("Decoded Firebase UID:", firebase_uid);
+
     const { post_id, comment_id } = req.params;
     const { content } = req.body;
 
@@ -220,6 +261,11 @@ export const editCommentOnPost = async (req: Request, res: Response, next: NextF
 
     try {
         const user_id = await getUserIdFromFirebaseUid(firebase_uid);
+
+        if (!user_id) {
+            return res.status(404).json({ message: "User not found." });
+        }
+        console.log("User ID from Firebase UID:", user_id);
 
         const checkCommentQuery = `SELECT user_id FROM comments WHERE comment_id = $1;`;
         const checkCommentResponse = await pool.query(checkCommentQuery, [comment_id]);
@@ -249,7 +295,15 @@ export const editCommentOnPost = async (req: Request, res: Response, next: NextF
 
 // delete comment
 export const deletePostComment = async (req: Request, res: Response, next: NextFunction) => {
-    const firebase_uid = req.user?.uid;
+    
+    console.log("Deleting comment on post...");
+    console.log("Request params:", req.params);
+    
+    // Grab Firebase UID from auth header
+    const authHeader = req.headers.authorization;
+    const firebase_uid = await getIdFromAuthHeader(authHeader);
+    console.log("Decoded Firebase UID:", firebase_uid);
+
     const { post_id, comment_id } = req.params;
 
     if (!firebase_uid) {
@@ -265,6 +319,10 @@ export const deletePostComment = async (req: Request, res: Response, next: NextF
 
     try {
         const user_id = await getUserIdFromFirebaseUid(firebase_uid);
+        if (!user_id) {
+            return res.status(404).json({ message: "User not found." });
+        }
+        console.log("User ID from Firebase UID:", user_id);
 
         const getCommentQuery = `
             SELECT c.user_id AS comment_owner, p.user_id AS post_owner
@@ -299,7 +357,15 @@ export const deletePostComment = async (req: Request, res: Response, next: NextF
 
 // like post
 export const likePost = async (req: Request, res: Response, next: NextFunction) => {
-    const firebase_uid = req.user?.uid;
+    
+    console.log("Liking post...");
+    console.log("Request params:", req.params);
+
+    // Grab Firebase UID from auth header
+    const authHeader = req.headers.authorization;
+    const firebase_uid = await getIdFromAuthHeader(authHeader);
+    console.log("Decoded Firebase UID:", firebase_uid);
+
     const { post_id } = req.params;
 
     if (!firebase_uid) {
@@ -313,9 +379,15 @@ export const likePost = async (req: Request, res: Response, next: NextFunction) 
     const client = await pool.connect();
 
     try {
+        // start transaction
         await client.query("BEGIN");
 
         const user_id = await getUserIdFromFirebaseUid(firebase_uid);
+        if (!user_id) {
+            await client.query("ROLLBACK");
+            return res.status(404).json({ message: "User not found." });
+        }
+        console.log("User ID from Firebase UID:", user_id);
 
         const checkPostQuery = `SELECT * FROM posts WHERE post_id = $1`;
         const checkPostRes = await client.query(checkPostQuery, [post_id]);
@@ -373,7 +445,15 @@ export const likePost = async (req: Request, res: Response, next: NextFunction) 
 
 // unlike post
 export const unlikePost = async (req: Request, res: Response, next: NextFunction) => {
-    const firebase_uid = req.user?.uid;
+    
+    console.log("Unliking post...");
+    console.log("Request params:", req.params);
+
+    // Grab Firebase UID from auth header
+    const authHeader = req.headers.authorization;
+    const firebase_uid = await getIdFromAuthHeader(authHeader);
+    console.log("Decoded Firebase UID:", firebase_uid);
+
     const { post_id } = req.params;
 
     if (!firebase_uid) {
@@ -386,6 +466,10 @@ export const unlikePost = async (req: Request, res: Response, next: NextFunction
 
     try {
         const user_id = await getUserIdFromFirebaseUid(firebase_uid);
+        if (!user_id) {
+            return res.status(404).json({ message: "User not found." });
+        }
+        console.log("User ID from Firebase UID:", user_id);
 
         const checkPostQuery = `SELECT * FROM posts WHERE post_id = $1`;
         const checkPostRes = await pool.query(checkPostQuery, [post_id]);
@@ -413,7 +497,15 @@ export const unlikePost = async (req: Request, res: Response, next: NextFunction
 
 // delete post
 export const deletePost = async (req: Request, res: Response, next: NextFunction) => {
-    const firebase_uid = req.user?.uid;
+    
+    console.log("Deleting post...");
+    console.log("Request params:", req.params);
+
+    // Grab Firebase UID from auth header
+    const authHeader = req.headers.authorization;
+    const firebase_uid = await getIdFromAuthHeader(authHeader);
+    console.log("Decoded Firebase UID:", firebase_uid);
+
     const { post_id } = req.params;
 
     if (!firebase_uid) {
@@ -427,9 +519,15 @@ export const deletePost = async (req: Request, res: Response, next: NextFunction
     const client = await pool.connect();
 
     try {
+        // start transaction
         await client.query("BEGIN");
 
         const user_id = await getUserIdFromFirebaseUid(firebase_uid);
+        if (!user_id) {
+            await client.query("ROLLBACK");
+            return res.status(404).json({ message: "User not found." });
+        }
+        console.log("User ID from Firebase UID:", user_id);
 
         const checkPostQuery = `SELECT user_id FROM posts WHERE post_id = $1`;
         const checkPostResponse = await client.query(checkPostQuery, [post_id]);

@@ -1,7 +1,7 @@
 import { pool } from "../index"
 import { Request, Response, NextFunction } from "express"
 import { QueryResult } from "pg";
-import { checkIfUsernameExists, checkIfGroupNameExists, getViewerIdFromAuthHeader, getUserIdFromFirebaseUid, canViewPrivateProfile, canViewPrivateGroup } from "../util/util";
+import { checkIfUsernameExists, checkIfGroupNameExists, getIdFromAuthHeader, getUserIdFromFirebaseUid, canViewPrivateProfile, canViewPrivateGroup } from "../util/util";
 
 // public controllers - don't require firebaseUID
 
@@ -100,7 +100,7 @@ export const getSingleUser = async (req: Request, res: Response, next: NextFunct
     try {
         // Try to get viewer Firebase UID (if token exists)
         const authHeader = req.headers.authorization;
-        const firebaseUid = await getViewerIdFromAuthHeader(authHeader);
+        const firebaseUid = await getIdFromAuthHeader(authHeader);
         console.log("Decoded Firebase UID:", firebaseUid);
 
         let viewerId: number | null = null;
@@ -166,7 +166,7 @@ export const getUserFriends = async (req: Request, res: Response, next: NextFunc
 
         // Try to get viewer Firebase UID (if token exists)
         const authHeader = req.headers.authorization;
-        const firebaseUid = await getViewerIdFromAuthHeader(authHeader);
+        const firebaseUid = await getIdFromAuthHeader(authHeader);
         console.log("Decoded Firebase UID:", firebaseUid);
 
         let viewerId: number | null = null;
@@ -262,7 +262,7 @@ export const getAllUserPosts = async (req: Request, res: Response, next: NextFun
 
         // Try to get viewer Firebase UID (if token exists)
         const authHeader = req.headers.authorization;
-        const firebaseUid = await getViewerIdFromAuthHeader(authHeader);
+        const firebaseUid = await getIdFromAuthHeader(authHeader);
 
         let viewerId: number | null = null;
 
@@ -393,7 +393,7 @@ export const getWorkoutsByUser = async (req: Request, res: Response, next: NextF
 
         // Try to get viewer Firebase UID (if token exists)
         const authHeader = req.headers.authorization;
-        const firebaseUid = await getViewerIdFromAuthHeader(authHeader);
+        const firebaseUid = await getIdFromAuthHeader(authHeader);
 
         let viewerId: number | null = null;
 
@@ -454,7 +454,7 @@ export const getSingleWorkout = async (req: Request, res: Response, next: NextFu
 
         // Try to get viewer Firebase UID (if token exists)
         const authHeader = req.headers.authorization;
-        const firebaseUid = await getViewerIdFromAuthHeader(authHeader);
+        const firebaseUid = await getIdFromAuthHeader(authHeader);
 
         let viewerId: number | null = null;
 
@@ -535,7 +535,7 @@ export const getSingleGroup = async (req: Request, res: Response, next: NextFunc
         if (group.is_private) {
             // Check if user is a member or the group is public
             const authHeader = req.headers.authorization;
-            const firebaseUid = await getViewerIdFromAuthHeader(authHeader);
+            const firebaseUid = await getIdFromAuthHeader(authHeader);
             let viewerId: number | null = null;
 
             if (firebaseUid) {
@@ -590,7 +590,7 @@ export const getGroupPosts = async (req: Request, res: Response, next: NextFunct
         if (group.is_private) {
             // Check if user is a member or the group is public
             const authHeader = req.headers.authorization;
-            const firebaseUid = await getViewerIdFromAuthHeader(authHeader);
+            const firebaseUid = await getIdFromAuthHeader(authHeader);
             let viewerId: number | null = null;
 
             if (firebaseUid) {
@@ -654,7 +654,7 @@ export const getGroupMembers = async (req: Request, res: Response, next: NextFun
         if (group.is_private) {
             // Check if user is a member or the group is public
             const authHeader = req.headers.authorization;
-            const firebaseUid = await getViewerIdFromAuthHeader(authHeader);
+            const firebaseUid = await getIdFromAuthHeader(authHeader);
             let viewerId: number | null = null;
 
             if (firebaseUid) {

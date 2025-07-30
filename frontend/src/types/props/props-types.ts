@@ -2,6 +2,82 @@
 import { User } from "firebase/auth";
 import { ReactNode } from "react";
 
+// APP DATA TYPES
+export interface PostgreSQLUser {
+    user_id: number;
+    username: string;
+    email: string;
+    bio?: string;
+    profile_pic?: string;
+    is_private?: boolean;
+    firebase_uid: string;
+    created_at: Date;
+    updated_at: Date;
+}
+
+export interface Post {
+    post_id: number;
+    user_id: number;
+    username: string;
+    profile_pic?: string;
+    content: string;
+    image_url?: string;
+    workout_id?: number;
+    workout_title?: string;
+    group_id?: number;
+    group_name?: string;
+    group_profile_pic?: string;
+    created_at: Date;
+    updated_at: Date;
+    likes?: Like[];
+    likes_count?: number;
+    comments?: Comment[];
+    comments_count?: number;
+}
+
+export interface Comment {
+    comment_id: number;
+    user_id: number;
+    post_id?: number;
+    workout_id?: number;
+    // username: string;
+    // profile_pic?: string;
+    content: string;
+    created_at: Date;
+    updated_at: Date;
+}
+
+export interface Like {
+    like_id: number;
+    user_id: number;
+    post_id?: number;
+    workout_id?: number;
+    comment_id?: number;
+    created_at: Date;
+}
+
+
+export interface Workout {
+    workout_id: number;
+    user_id: string;
+    title: string;
+    description?: string;
+    exercises: Exercise[];
+    created_at: Date;
+    updated_at: Date;
+}
+export interface Exercise {
+    exercise_id: number;
+    title: string;
+    weight_used: number;
+    set_count: number;
+    rep_count: number;
+    duration?: number; // Optional for cardio exercises
+    created_at: Date;
+}
+
+export interface Group {}
+
 // modal props
 export interface ModalProps {
     isOpen: boolean;
@@ -26,18 +102,6 @@ export interface MobileBottomProps {
 }
 
 // AUTH TYPES
-export interface PostgreSQLUser {
-    user_id: string;
-    username: string;
-    email: string;
-    bio?: string;
-    profile_pic?: string;
-    is_private?: boolean;
-    firebase_uid: string;
-    created_at: string;
-    updated_at: string;
-}
-
 export interface AuthInputProps {
     name: string;
     label: string;
@@ -61,6 +125,7 @@ export interface AuthFormProps {
 export interface AuthContextValue {
     user: PostgreSQLUser | null;
     firebaseUser: User | null;
+    token?: string | null;
     isAuthLoading: boolean;
     hasError: string | null;
     clearError: () => void;
@@ -98,6 +163,10 @@ export interface ProfileMenuBarProps {
     onMenuItemClick: (item: ProfileMenuItem) => void;
 }
 
+export type FeedItem = Post | Workout;
+
+export type Feed = FeedItem[];
+
 export interface ProfileViewProps {
     user: PostgreSQLUser | null;
     isLoading: boolean;
@@ -115,4 +184,9 @@ export interface ProfileEditModalProps {
 export interface ProfileEditFormProps {
     onClose?: () => void;
     onBack: () => void;
+}
+
+// POST TYPES
+export interface CreatePostProps {
+    workouts?: Workout[];
 }

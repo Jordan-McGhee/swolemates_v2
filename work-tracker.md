@@ -46,10 +46,17 @@ Working On:
 ## Fri July 25
 <!-- - test edit and delete profile functionality (edit profile removes profile pic for some reason. Delete deletes from firebase, but not from supabase) DONE -->
 
-## Sat July 26
+## Wed July 30
 To do:
 - Users can still access private profile despite backend supposed to block it. FIX THIS!!!!
 - Sometimes firebase throws error saying the user needs a recent login? FIX THIS!!!!
     - Deleting account doesn't work because of this
 - Add view to tie user info together in profile view (number of workouts, posts, friends, groups)
 - View for user posts/workouts in order with ability to remove either for different views on frontend
+
+Working On:
+- Adding create post component that allows user to attach workouts and images
+    - Placeholder for now, will add workout and image functionality after users can create a workout
+<!-- - Updating post routes to pull id from auth header rather than the req and using the token to then authenticate the user and pull their id from my db DONE -->
+<!-- - Updated postApi DONE -->
+<!-- - Adding toasts to provide users feedback on successful submits DONE -->
