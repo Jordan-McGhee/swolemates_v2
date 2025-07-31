@@ -51,8 +51,7 @@ To do:
 - Users can still access private profile despite backend supposed to block it. FIX THIS!!!!
 - Sometimes firebase throws error saying the user needs a recent login? FIX THIS!!!!
     - Deleting account doesn't work because of this
-- Add view to tie user info together in profile view (number of workouts, posts, friends, groups)
-- View for user posts/workouts in order with ability to remove either for different views on frontend
+
 
 Working On:
 - Adding create post component that allows user to attach workouts and images
@@ -60,3 +59,15 @@ Working On:
 <!-- - Updating post routes to pull id from auth header rather than the req and using the token to then authenticate the user and pull their id from my db DONE -->
 <!-- - Updated postApi DONE -->
 <!-- - Adding toasts to provide users feedback on successful submits DONE -->
+
+## Thu July 31
+To do:
+<!-- - Add view to tie user info together in profile view (number of workouts, posts, friends) DONE -->
+<!-- - View for user posts/workouts in order with ability to remove either for different views on frontend DONE -->
+
+Working On:
+<!-- - querying for user's feed of posts and workouts DONE -->
+<!-- - adding feed query to profile feed component and making it work as profile post and profile workout component instead of having 3 separate ones DONE -->
+<!-- - updating profile query to query for post/workout/friend counts DONE -->
+- Adding loading page for profile
+- Adding workout and post items to view feed

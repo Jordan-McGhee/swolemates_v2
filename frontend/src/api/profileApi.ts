@@ -5,6 +5,9 @@ const BACKEND_URL = import.meta.env.VITE_BACKEND_URL as string;
 // Single user URL
 export const getSingleUserURL = (username: string) => `${BACKEND_URL}/public/user/${username}`;
 
+// User's feed URL
+export const getSingleUserFeed = (username: string, limit: number, offset: number) => `${BACKEND_URL}/public/user/${username}/feed?limit=${limit}&offset=${offset}`;
+
 // User's friends URL
 export const getUserFriendsURL = (username: string) => `${BACKEND_URL}/public/user/${username}/friends`;
 

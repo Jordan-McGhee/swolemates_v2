@@ -24,6 +24,9 @@ router.get("/user/", publicControllers.getAllUsers)
 // get single user
 router.get("/user/:username", publicControllers.getSingleUser)
 
+// get single user feed
+router.get("/user/:username/feed", publicControllers.getSingleUserFeed)
+
 // get user's friends
 router.get("/user/:username/friends", publicControllers.getUserFriends)
 

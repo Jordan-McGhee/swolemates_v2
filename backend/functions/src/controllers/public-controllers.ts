@@ -128,10 +128,66 @@ export const getSingleUser = async (req: Request, res: Response, next: NextFunct
 
         // Fetch user info
         const userQuery = `
-            SELECT user_id, username, profile_pic, bio, is_private, created_at, updated_at 
-            FROM users 
-            WHERE LOWER(username) = LOWER($1)
-        `;
+    SELECT 
+        u.user_id, 
+        u.username, 
+        u.profile_pic, 
+        u.bio, 
+        u.is_private, 
+        u.created_at, 
+        u.updated_at,
+        
+        -- Post count (excluding posts with non-null group_id)
+        COALESCE(pc.post_count, 0) AS post_count,
+        
+        -- Workout count
+        COALESCE(wc.workout_count, 0) AS workout_count,
+        
+        -- Friend count (accepted requests where user is sender or receiver)
+        COALESCE(fc.friend_count, 0) AS friend_count
+        
+    FROM users u
+    
+    -- Left join for post counts (excluding group posts)
+    LEFT JOIN (
+        SELECT 
+            user_id,
+            COUNT(*) AS post_count
+        FROM posts
+        WHERE group_id IS NULL
+        GROUP BY user_id
+    ) pc ON u.user_id = pc.user_id
+    
+    -- Left join for workout counts
+    LEFT JOIN (
+        SELECT 
+            user_id,
+            COUNT(*) AS workout_count
+        FROM workouts
+        GROUP BY user_id
+    ) wc ON u.user_id = wc.user_id
+    
+    -- Left join for friend counts
+    LEFT JOIN (
+        SELECT 
+            user_id,
+            COUNT(*) AS friend_count
+        FROM (
+            SELECT sender_id AS user_id
+            FROM friend_requests_view
+            WHERE status = 'accepted'
+            
+            UNION ALL
+            
+            SELECT receiver_id AS user_id  
+            FROM friend_requests_view
+            WHERE status = 'accepted'
+        ) friends
+        GROUP BY user_id
+    ) fc ON u.user_id = fc.user_id
+    
+    WHERE LOWER(u.username) = LOWER($1)
+`;
         const userResponse: QueryResult = await pool.query(userQuery, [username]);
 
         if (userResponse.rows.length === 0) {
@@ -147,6 +203,41 @@ export const getSingleUser = async (req: Request, res: Response, next: NextFunct
         return res.status(500).json({ message: `Error getting user: ${error}` });
     }
 };
+
+// Get single user feed (paginated for endless scroll)
+export const getSingleUserFeed = async (req: Request, res: Response, next: NextFunction) => {
+    const { username } = req.params;
+    // Optional query params for pagination
+    const limit = Math.min(Number(req.query.limit) || 30, 100); // max 100 per page
+    const offset = Number(req.query.offset) || 0;
+
+    console.log("Fetching feed for user:", username, "limit:", limit, "offset:", offset);
+
+    try {
+        // query for feed from user_feeds with pagination
+        const feedQuery = `
+            SELECT * FROM user_feeds 
+            WHERE LOWER(username) = LOWER($1)
+            LIMIT $2 OFFSET $3
+        `;
+        const feedResponse: QueryResult = await pool.query(feedQuery, [username, limit, offset]);
+
+        // Optionally, you can return a flag if there are more items
+        const hasMore = feedResponse.rows.length === limit;
+
+        return res.status(200).json({
+            message: `Retrieved feed for user '${username}'`,
+            feed: feedResponse.rows,
+            username,
+            limit,
+            offset,
+            hasMore
+        });
+    } catch (error) {
+        console.error(`Error retrieving feed for user '${username}':`, error);
+        return res.status(500).json({ message: `Error retrieving feed for user '${username}'. Please try again later.` });
+    }
+}
 
 // Get user's friends (with privacy check)
 export const getUserFriends = async (req: Request, res: Response, next: NextFunction) => {

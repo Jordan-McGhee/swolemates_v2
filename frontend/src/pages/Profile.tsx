@@ -15,7 +15,7 @@ import ErrorModal from "@/components/ErrorModal";
 import CreatePost from "@/components/posts/CreatePost";
 
 // types imports
-import { ProfileMenuItem, PostgreSQLUser, Feed, Post, Workout } from "@/types/props/props-types";
+import { ProfileMenuItem, PostgreSQLUser } from "@/types/props/props-types";
 
 // view imports
 import { ProfileFeed } from "@/components/profile/ProfileFeed";
@@ -33,11 +33,12 @@ export default function Profile() {
 
     // state for current profile user
     const [profileUser, setProfileUser] = useState<PostgreSQLUser | null>(null);
-    const [feed, setFeed] = useState<Feed>([]);
-
-    // divide feed into posts and workouts for different views
-    const posts: Post[] = feed.filter((item): item is Post => "content" in item);
-    const workouts: Workout[] = feed.filter((item): item is Workout => !("content" in item) && "title" in item && "exercises" in item);
+    const [headerCounts, setHeaderCounts] = useState<{ post_count: number; workout_count: number, friend_count: number }>({
+        post_count: 0,
+        workout_count: 0,
+        friend_count: 0
+    });
+    const [ canViewProfile, setCanViewProfile ] = useState<boolean>(true);
 
 
     // fetch profile user data
@@ -64,13 +65,23 @@ export default function Profile() {
                 if (!data) {
                     console.log("No data returned from backend, setting profileUser to null");
                     setProfileUser(null);
+                    setHeaderCounts({ post_count: 0, workout_count: 0, friend_count: 0 });
+                    setCanViewProfile(false);
                     return;
                 }
                 console.log("User data received:", data.user);
                 setProfileUser(data.user as PostgreSQLUser);
+                setHeaderCounts({
+                    post_count: data.user.post_count || 0,
+                    workout_count: data.user.workout_count || 0,
+                    friend_count: data.user.friend_count || 0,
+                });
+                setCanViewProfile(data.canView)
+
             } catch (err) {
                 console.error("Error fetching user:", err);
                 setProfileUser(null);
+                setHeaderCounts({ post_count: 0, workout_count: 0, friend_count: 0 });
             }
         };
 
@@ -95,6 +106,7 @@ export default function Profile() {
             {/* Error Modal */}
             <ErrorModal error={hasError} onClear={clearError} />
 
+            { isLoading && <div className="flex items-center justify-center h-screen">Loading...</div> }
 
             {
                 !isLoading &&
@@ -105,12 +117,14 @@ export default function Profile() {
                             user={profileUser}
                             isLoading={isLoading}
                             isOwnProfile={isOwnProfile}
+                            headerCounts={headerCounts}
+                            changeMenuItem={handleMenuItemClick}
                         />
 
                         {/* Create Post Component */}
                         {isOwnProfile && (
                             <CreatePost
-                                workouts={workouts || []}
+                                // workouts={workouts || []}
                             />
                         )}
 
@@ -119,10 +133,10 @@ export default function Profile() {
                             onMenuItemClick={(item) => handleMenuItemClick(item)}
                         />
 
-                        {selectedMenuItem === "feed" && <ProfileFeed />}
-                        {/* {selectedMenuItem === "feed" && <ProfileFeed user={profileUser} isLoading={isLoading}isOwnProfile={isOwnProfile} />} */}
-                        {selectedMenuItem === "posts" && <ProfilePosts />}
-                        {selectedMenuItem === "workouts" && <ProfileWorkouts />}
+{}
+                        {selectedMenuItem === "feed" && <ProfileFeed user={profileUser} feedType="default" />}
+                        {selectedMenuItem === "posts" && <ProfileFeed user={profileUser} feedType="posts" />}
+                        {selectedMenuItem === "workouts" && <ProfileFeed user={profileUser} feedType="workouts" />}
                         {selectedMenuItem === "friends" && <ProfileFriends />}
                         {selectedMenuItem === "groups" && <ProfileGroups />}
                     </div>

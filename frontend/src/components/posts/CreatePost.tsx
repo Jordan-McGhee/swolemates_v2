@@ -70,8 +70,8 @@ const CreatePost: React.FC<CreatePostProps> = ({ workouts }) => {
                         selectedImage: null,
                     });
 
-                    const newPostId = response?.post.post_id || response?.id;
-                    console.log("New post ID:", newPostId);
+                    const new_post_id = response?.post.post_id || response?.id;
+                    console.log("New post ID:", new_post_id);
 
                     toast.success(
                         <>

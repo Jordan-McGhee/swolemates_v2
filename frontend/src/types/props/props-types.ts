@@ -16,6 +16,7 @@ export interface PostgreSQLUser {
 }
 
 export interface Post {
+    type?: 'post';
     post_id: number;
     user_id: number;
     username: string;
@@ -33,6 +34,11 @@ export interface Post {
     likes_count?: number;
     comments?: Comment[];
     comments_count?: number;
+}
+
+export interface PostItemProps {
+    user: PostgreSQLUser | null;
+    post: Post;
 }
 
 export interface Comment {
@@ -58,6 +64,7 @@ export interface Like {
 
 
 export interface Workout {
+    type?: 'workout';
     workout_id: number;
     user_id: string;
     title: string;
@@ -76,7 +83,7 @@ export interface Exercise {
     created_at: Date;
 }
 
-export interface Group {}
+export interface Group { }
 
 // modal props
 export interface ModalProps {
@@ -154,6 +161,12 @@ export interface ProfileHeaderProps {
     user: PostgreSQLUser | null;
     isLoading: boolean;
     isOwnProfile?: boolean;
+    headerCounts?: {
+        post_count: number;
+        workout_count: number;
+        friend_count: number;
+    };
+    changeMenuItem?: (item: ProfileMenuItem) => void | undefined;
 }
 
 export type ProfileMenuItem = "feed" | "posts" | "workouts" | "friends" | "groups";
@@ -171,6 +184,26 @@ export interface ProfileViewProps {
     user: PostgreSQLUser | null;
     isLoading: boolean;
     isOwnProfile?: boolean;
+}
+
+export interface ProfileFeedProps {
+    user: PostgreSQLUser | null;
+    feedType?: "default" | "posts" | "workouts";
+}
+
+export interface UserFeedResponse {
+    message: string;
+    feed: Array<{
+        user_id: number;
+        username: string;
+        profile_pic: string;
+        feed_items: FeedItem[];
+        post_count: number;
+        workout_count: number;
+    }>;
+    username: string;
+    limit: number;
+    offset: number;
 }
 
 export interface ProfileEditModalProps {
