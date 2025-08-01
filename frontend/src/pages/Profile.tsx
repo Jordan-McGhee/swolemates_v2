@@ -110,7 +110,7 @@ export default function Profile() {
 
             {
                 !isLoading &&
-                <div className="flex flex-row gap-4 w-full">
+                <div className="flex flex-row gap-4 w-full overflow-y-auto">
                     {/* left side */}
                     <div className="w-full lg:w-[65%] flex flex-col gap-4">
                         <ProfileHeader

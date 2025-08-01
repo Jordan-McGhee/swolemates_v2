@@ -54,7 +54,8 @@ export const postApi = () => {
             url: `${BACKEND_URL}/post/${post_id}`,
             method: "PATCH",
             headers: {
-                'Content-Type': 'application/json'
+                'Content-Type': 'application/json',
+                Authorization: `Bearer ${token}`
             },
             body: JSON.stringify(postData)
         })
@@ -66,7 +67,8 @@ export const postApi = () => {
             url: `${BACKEND_URL}/post/${post_id}/comment`,
             method: "POST",
             headers: {
-                'Content-Type': 'application/json'
+                'Content-Type': 'application/json',
+                Authorization: `Bearer ${token}`
             },
             body: JSON.stringify(commentData)
         })
@@ -78,7 +80,8 @@ export const postApi = () => {
             url: `${BACKEND_URL}/post/${post_id}/comment/${comment_id}`,
             method: "PATCH",
             headers: {
-                'Content-Type': 'application/json'
+                'Content-Type': 'application/json',
+                Authorization: `Bearer ${token}`
             },
             body: JSON.stringify(comment_data)
         })
@@ -89,6 +92,10 @@ export const postApi = () => {
         return await sendRequest({
             url: `${BACKEND_URL}/post/${post_id}/comment/${comment_id}`,
             method: "DELETE",
+            headers: {
+                'Content-Type': 'application/json',
+                Authorization: `Bearer ${token}`
+            },
             body: JSON.stringify(user_id)
         })
     }
@@ -99,7 +106,8 @@ export const postApi = () => {
             url: `${BACKEND_URL}/post/${post_id}/like`,
             method: "POST",
             headers: {
-                'Content-Type': 'application/json'
+                'Content-Type': 'application/json',
+                Authorization: `Bearer ${token}`
             },
             body: JSON.stringify(user_id)
         })
@@ -110,6 +118,10 @@ export const postApi = () => {
         return await sendRequest({
             url: `${BACKEND_URL}/post/${post_id}/unlike`,
             method: "DELETE",
+            headers: {
+                'Content-Type': 'application/json',
+                Authorization: `Bearer ${token}`
+            },
             body: JSON.stringify(user_id)
         })
     }
@@ -119,6 +131,10 @@ export const postApi = () => {
         return await sendRequest({
             url: `${BACKEND_URL}/post/${post_id}`,
             method: "DELETE",
+            headers: {
+                'Content-Type': 'application/json',
+                Authorization: `Bearer ${token}`
+            },
             body: JSON.stringify(user_id)
         })
     }

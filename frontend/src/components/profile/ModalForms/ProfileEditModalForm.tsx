@@ -195,7 +195,7 @@ const ProfileEditModalForm = ({ onBack }: ProfileEditFormProps) => {
                     error={errors.bio}
                 />
                 <p
-                    className={`text-xs text-right ${formData.bio.length > 150
+                    className={`text-xs text-right ${formData.bio.length > 100
                         ? "text-[var(--danger)]"
                         : "text-[var(--subhead-text)]"
                         }`}

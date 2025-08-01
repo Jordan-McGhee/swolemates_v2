@@ -18,7 +18,7 @@ const CreatePost: React.FC<CreatePostProps> = ({ workouts }) => {
 
     // hook destructuring
     const { token, user } = useAuth();
-    const { sendRequest, isLoading, hasError, clearError } = useFetch();
+    const { isLoading } = useFetch();
     const { createPost, isLoadingPost } = postApi();
 
     // state for form data
@@ -32,6 +32,8 @@ const CreatePost: React.FC<CreatePostProps> = ({ workouts }) => {
         selectedImage: null,
     });
 
+    const [hasError, setHasError] = useState<string | null>(null);
+
     const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
         const { name, value, files } = e.target as HTMLInputElement;
         if (name === "selectedImage" && files && files[0]) {
@@ -40,6 +42,11 @@ const CreatePost: React.FC<CreatePostProps> = ({ workouts }) => {
                 selectedImage: files[0],
             }));
         } else {
+            if (name === "content" && value.length > 1000) {
+                setHasError("Post cannot be longer than 1,000 characters!");
+            } else {
+                setHasError(null);
+            }
             setFormData((prev) => ({
                 ...prev,
                 [name]: value,
@@ -96,7 +103,7 @@ const CreatePost: React.FC<CreatePostProps> = ({ workouts }) => {
         }
     };
 
-    const isFormValid = formData.content.length > 0 && formData.content.length <= 1000
+    const isFormValid = formData.content.length > 0 && formData.content.length <= 1000 && !hasError;
 
     return (
         <>
@@ -112,6 +119,20 @@ const CreatePost: React.FC<CreatePostProps> = ({ workouts }) => {
                             name="content"
                             value={formData.content}
                         />
+
+                        <div className="flex items-center">
+                            {hasError && (
+                                <p className="text-[var(--danger)] text-xs italic mt-1.5">{hasError}</p>
+                            )}
+                            <p
+                                className={`ml-auto mt-1.5 text-xs text-right ${formData.content.length > 1000
+                                    ? "text-[var(--danger)]"
+                                    : "text-[var(--subhead-text)]"
+                                    }`}
+                            >
+                                {formData.content.length}/1000 characters
+                            </p>
+                        </div>
 
                         <div className="flex items-center justify-between mt-2">
                             <div className="flex items-center gap-2">

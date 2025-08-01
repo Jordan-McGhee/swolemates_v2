@@ -262,7 +262,7 @@ LEFT JOIN users cu ON c.user_id = cu.user_id
 
 GROUP BY w.workout_id, w.user_id, u.username, u.profile_pic, w.title, w.description, w.created_at;
 
--- user feed view with posts, workouts, and friend count
+
 -- user feed view with posts (excluding group posts) and workouts
 CREATE VIEW user_feeds AS
 SELECT 
@@ -288,6 +288,9 @@ FROM (
         json_build_object(
             'type', 'post',
             'post_id', p.post_id,
+            'user_id', p.user_id,
+            'username', p.username,
+            'profile_pic', p.profile_pic,
             'content', p.content,
             'image_url', p.image_url,
             'workout_id', p.workout_id,
@@ -313,6 +316,9 @@ FROM (
             'workout_id', w.workout_id,
             'workout_title', w.workout_title,
             'workout_description', w.workout_description,
+            'user_id', w.user_id,
+            'username', w.username,
+            'profile_pic', w.profile_pic,
             'created_at', w.workout_created_at,
             'exercises', w.exercises,
             'likes', w.likes,

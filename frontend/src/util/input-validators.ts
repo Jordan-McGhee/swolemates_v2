@@ -22,7 +22,6 @@ export function validateUsername(value: string): string | undefined {
 }
 
 // bio validator
-
 export function validateBio(value: string): string | undefined {
     if (value.length > 100) {
         return "Bio cannot exceed 100 characters.";
@@ -70,6 +69,17 @@ export function validateConfirmPassword(password: string, confirm: string): stri
     }
     if (password !== confirm) {
         return "Passwords do not match.";
+    }
+    return undefined;
+}
+
+// comment content validator
+export function validateCommentContent(value: string): string | undefined {
+    if (!value.trim()) {
+        return "Comment cannot be empty.";
+    }
+    if (value.length > 250) {
+        return "Comment cannot exceed 250 characters.";
     }
     return undefined;
 }

@@ -53,6 +53,11 @@ export interface Comment {
     updated_at: Date;
 }
 
+export interface AddCommentFormProps {
+    postId: number;
+    onCommentAdded?: (comment: Comment) => void;
+}
+
 export interface Like {
     like_id: number;
     user_id: number;

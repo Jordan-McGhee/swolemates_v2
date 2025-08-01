@@ -69,5 +69,26 @@ Working On:
 <!-- - querying for user's feed of posts and workouts DONE -->
 <!-- - adding feed query to profile feed component and making it work as profile post and profile workout component instead of having 3 separate ones DONE -->
 <!-- - updating profile query to query for post/workout/friend counts DONE -->
+
+
+## Fri Aug 1
+To do:
+
+Working On:
+<!-- - Adding comment form component for posts/workouts in feed DONE -->
+<!-- - Added error handling to create post DONE -->
+<!-- - Changed view to add more info about post/workout user for auth and edit/delete checks DONE -->
+
+##
+To do:
 - Adding loading page for profile
 - Adding workout and post items to view feed
+- Comment/Liking Posts:
+    - Sync front and backend up to accept comments on posts
+        - verify backend route is protected
+        - add to comment api on frontend
+    - sync to accept likes/unlikes on post
+        - have like count update without refreshing whole page
+        - CORS Error on liking post in PostItem.tsx
+    - Change like icon to be filled in if auth user has liked a post (add catch for if unauth user tries to like or comment)
+    - Show top 3 comments - add workflow to see more

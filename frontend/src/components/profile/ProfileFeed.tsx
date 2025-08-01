@@ -114,7 +114,7 @@ export const ProfileFeed = ({ user, feedType }: ProfileFeedProps) => {
 
     return (
         <>
-            <div className="flex flex-col items-center justify-center p-4 w-full border border-black">
+            <div className="flex flex-col items-center justify-center w-full">
                 {/* Refresh Button */}
                 <div className="mb-4 text-center">
                     <Button
@@ -127,7 +127,7 @@ export const ProfileFeed = ({ user, feedType }: ProfileFeedProps) => {
                 </div>
 
                 {/* Feed Items */}
-                <div className="space-y-4">
+                <div className="space-y-4 w-full">
                     {displayFeed.map((item, index) => {
                         const isLast = index === feed.length - 1;
                         const itemKey = item.type === 'post' ? `post-${item.post_id}` : `workout-${item.workout_id}`;
@@ -136,10 +136,12 @@ export const ProfileFeed = ({ user, feedType }: ProfileFeedProps) => {
                             <div
                                 key={itemKey}
                                 ref={isLast ? lastItemRef : null}
-                                className="bg-white rounded-lg shadow-sm border p-6 hover:shadow-md transition-shadow"
                             >
                                 {item.type === 'post' ? (
-                                    <PostItem user={user} post={item} />
+                                    <PostItem
+                                        user={user}
+                                        post={item}
+                                    />
                                 ) : (
                                     <div>
                                         <div className="flex items-center justify-between mb-3">
