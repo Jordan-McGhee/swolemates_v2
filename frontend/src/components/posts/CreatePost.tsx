@@ -59,7 +59,6 @@ const CreatePost: React.FC<CreatePostProps> = ({ workouts }) => {
 
         try {
             const postData = {
-                user_id: user?.user_id || 0,
                 content: formData.content,
                 image_url: formData.selectedImage ? URL.createObjectURL(formData.selectedImage) : undefined,
                 workout_id: formData.selectedWorkout ? formData.selectedWorkout.workout_id : undefined,

@@ -79,16 +79,21 @@ Working On:
 <!-- - Added error handling to create post DONE -->
 <!-- - Changed view to add more info about post/workout user for auth and edit/delete checks DONE -->
 
-##
+## Mon Aug 4
 To do:
 - Adding loading page for profile
 - Adding workout and post items to view feed
 - Comment/Liking Posts:
-    - Sync front and backend up to accept comments on posts
-        - verify backend route is protected
-        - add to comment api on frontend
-    - sync to accept likes/unlikes on post
-        - have like count update without refreshing whole page
-        - CORS Error on liking post in PostItem.tsx
-    - Change like icon to be filled in if auth user has liked a post (add catch for if unauth user tries to like or comment)
+    <!-- - Sync front and backend up to accept comments on posts DONE -->
+    <!-- - verify backend route is protected DONE -->
+    <!-- - add to comment api on frontend DONE -->
+    <!-- - sync to accept likes/unlikes on post DONE -->
+    <!-- - have like count update without refreshing whole page DONE -->
+    <!-- - CORS Error on liking post in PostItem.tsx DONE -->
+    <!-- - Change like icon to be filled in if auth user has liked a post DONE -->
+        - (add catch for if unauth user tries to like or comment)
     - Show top 3 comments - add workflow to see more
+
+Working On:
+<!-- - Updating postApi functions to work with what backend expects. No need to pass user_id in body if I pass token to back in DONE -->
+<!-- - Adding auth checks to interact with posts DONE -->

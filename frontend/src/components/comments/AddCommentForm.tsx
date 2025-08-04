@@ -1,13 +1,16 @@
 import React, { useState, useEffect } from "react";
+import { Link } from "react-router-dom";
 
 // hook imports
 import { useAuth } from "@/context/AuthProvider";
 import { useFetch } from "@/hooks/useFetch";
+import { postApi } from "@/api/postApi";
 
-// component imports
+// ui imports
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Input } from "@/components/ui/input";
+import { toast } from "sonner";
 
 // type imports
 import { AddCommentFormProps } from "@/types/props/props-types";
@@ -15,9 +18,12 @@ import { AddCommentFormProps } from "@/types/props/props-types";
 // util imports
 import { validateCommentContent } from "@/util/input-validators";
 
-const AddCommentForm: React.FC<AddCommentFormProps> = ({ postId, onCommentAdded }) => {
+const AddCommentForm: React.FC<AddCommentFormProps> = ({ post_id, onCommentAdded }) => {
+    
+    // hook destructuring
     const { user, token } = useAuth();
-    const { sendRequest, isLoading, hasError, clearError } = useFetch();
+    const { isLoading, hasError, clearError } = useFetch();
+    const { commentOnPost } = postApi();
 
     const [commentContent, setCommentContent] = useState("");
 
@@ -43,26 +49,25 @@ const AddCommentForm: React.FC<AddCommentFormProps> = ({ postId, onCommentAdded 
         }
 
         try {
-            const newComment = {
-                post_id: postId,
-                user_id: user?.user_id || 0,
-                content: commentContent,
-            };
 
-            const response = await sendRequest({
-                url: `/api/posts/${postId}/comments`,
-                method: "POST",
-                headers: {
-                    "Content-Type": "application/json",
-                    Authorization: `Bearer ${token}`,
-                },
-                body: JSON.stringify(newComment),
-            });
+            const response = await commentOnPost(post_id, commentContent)
 
             if (response) {
                 // onCommentAdded(response);
+                onCommentAdded?.(response.comment);
                 setCommentContent("");
-            }
+                toast.success(
+                    <>
+                        Your comment was posted!
+                        <Link
+                            to={'/'}
+                            className="text-[var(--accent)] hover:underline ml-2"
+                        >
+                            View post.
+                        </Link>
+                    </>
+                );
+            } else {}
         } catch (error) {
             console.error("Failed to add comment:", error);
         }
@@ -91,7 +96,7 @@ const AddCommentForm: React.FC<AddCommentFormProps> = ({ postId, onCommentAdded 
                     placeholder="Add a comment..."
                     value={commentContent}
                     onChange={handleChange}
-                    className="h-8 border-none bg-[#f4f4f4] focus:ring-none shadow-sm text-xs placeholder:text-xs" 
+                    className="h-8 border-none bg-[#f4f4f4] focus:ring-none shadow-sm text-xs placeholder:text-xs"
                 />
             </div>
             <Button

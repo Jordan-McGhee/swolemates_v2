@@ -28,16 +28,19 @@ export const PostItem: React.FC<PostItemProps> = ({ user, post }) => {
     const { likePost, unlikePost } = postApi();
     
     // Like functionality
-    const [likesCount, setLikesCount] = React.useState(post.likes_count ?? 0);
+    const [likesCount, setLikesCount] = React.useState(post.likes?.length ?? 0);
     const [liked, setLiked] = React.useState(
         post.likes?.some((like: Like) => like.user_id === authUser?.user_id) ?? false
     );
+
+    // comment functionality
+    const [ commentsCount, setCommentsCount ] = React.useState(post.comments?.length ?? 0);
 
     const handleLikeToggle = async () => {
         if (!authUser || !token) return;
         if (liked) {
             try {
-                await unlikePost(post.post_id, authUser.user_id);
+                await unlikePost(post.post_id);
                 setLikesCount((count) => count - 1);
                 setLiked(false);
                 toast(
@@ -50,7 +53,7 @@ export const PostItem: React.FC<PostItemProps> = ({ user, post }) => {
             }
         } else {
             try {
-                await likePost(post.post_id, authUser.user_id);
+                await likePost(post.post_id);
                 setLikesCount((count) => count + 1);
                 setLiked(true);
                 toast.success(
@@ -63,7 +66,11 @@ export const PostItem: React.FC<PostItemProps> = ({ user, post }) => {
             }
         }
     };
-    // const hasImage = !!post.image_url;
+    
+    // comment handlers
+    const handleCommentAdded = () => {
+        setCommentsCount((count) => count + 1);
+    };
 
     return (
         <Card className={`bg-[var(--white)] shadow-sm`}>
@@ -127,7 +134,13 @@ export const PostItem: React.FC<PostItemProps> = ({ user, post }) => {
                 <div className="flex items-center gap-4 mt-3">
                     <div
                         className={`flex items-center gap-2 pr-2 text-sm hover:text-[var(--accent)] hover:cursor-pointer`}
-                        onClick={handleLikeToggle}
+                        onClick={() => {
+                            if (!authUser) {
+                                toast.error("You must log in to interact with posts.");
+                                return;
+                            }
+                            handleLikeToggle();
+                        }}
                     >
                         <ThumbsUp
                             size={18}
@@ -138,7 +151,7 @@ export const PostItem: React.FC<PostItemProps> = ({ user, post }) => {
                     </div>
                     <div className="flex items-center gap-2 pr-2 text-sm hover:text-[var(--accent)] hover:cursor-pointer">
                         <MessageCircle size={18} />
-                        {post.comments_count ?? 0}
+                        {commentsCount}
                     </div>
                 </div>
             </CardContent>
@@ -146,14 +159,16 @@ export const PostItem: React.FC<PostItemProps> = ({ user, post }) => {
             <div className="flex-1 border-t border-[#f4f4f4]" />
 
             <CardFooter className="">
-                <AddCommentForm
-                    postId={post.post_id}
-                    onCommentAdded={(comment: Comment) => {
-                        // Handle comment added logic here, e.g., update state or notify parent component
-                        console.log("Comment added:", comment);
-                    }
-                    }
-                />
+                {authUser ? (
+                    <AddCommentForm
+                        post_id={post.post_id}
+                        onCommentAdded={handleCommentAdded}
+                    />
+                ) : (
+                    <div className="italic text-sm text-[var(--subhead-text)]">
+                        You must log in to comment.
+                    </div>
+                )}
             </CardFooter>
         </Card>
     );

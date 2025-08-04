@@ -54,7 +54,7 @@ export interface Comment {
 }
 
 export interface AddCommentFormProps {
-    postId: number;
+    post_id: number;
     onCommentAdded?: (comment: Comment) => void;
 }
 
