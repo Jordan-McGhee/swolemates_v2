@@ -83,7 +83,7 @@ const AddCommentForm: React.FC<AddCommentFormProps> = ({ post_id, onCommentAdded
 
     return (
         <form onSubmit={handleSubmit} className="flex items-center gap-x-4 w-full">
-            <Avatar className="size-8 rounded-md">
+            <Avatar className="size-7 rounded-md">
                 {user?.profile_pic ? (
                     <AvatarImage src={user.profile_pic} alt={user.username} />
                 ) : (

@@ -6,12 +6,13 @@ import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuTrigger } from "../ui/dropdown-menu";
 import { ThumbsUp, MessageCircle, EllipsisVertical, Dumbbell } from "lucide-react";
 import { toast } from "sonner";
+import { Button } from "../ui/button";
 
 // component imports
 import AddCommentForm from "@/components/comments/AddCommentForm";
 
 // type imports
-import { Post, PostItemProps, Comment, Like } from "@/types/props/props-types";
+import { PostItemProps, Like } from "@/types/props/props-types";
 
 // util imports
 import { formatDate } from "@/util/general-util";
@@ -132,8 +133,11 @@ export const PostItem: React.FC<PostItemProps> = ({ user, post }) => {
                 <p className="text-left">{post.content}</p>
 
                 <div className="flex items-center gap-4 mt-3">
-                    <div
-                        className={`flex items-center gap-2 pr-2 text-sm hover:text-[var(--accent)] hover:cursor-pointer`}
+                    <Button
+                        variant="outline"
+                        className={`group flex items-center gap-2 px-3 py-1 border border-[var(--accent-hover)] text-sm hover:text-[var(--white)] hover:border-[var(--white)] ${
+                            liked ? "bg-[var(--accent-hover)] text-[var(--accent)] border border-[var(--accent)] hover:text-[var(--white)] hover:border-[var(--white)]" : ""
+                        }`}
                         onClick={() => {
                             if (!authUser) {
                                 toast.error("You must log in to interact with posts.");
@@ -144,15 +148,18 @@ export const PostItem: React.FC<PostItemProps> = ({ user, post }) => {
                     >
                         <ThumbsUp
                             size={18}
-                            fill={liked ? "var(--accent)" : "none"}
-                            color={liked ? "var(--accent)" : "currentColor"}
+                            className="transition-colors"
                         />
                         {likesCount}
-                    </div>
-                    <div className="flex items-center gap-2 pr-2 text-sm hover:text-[var(--accent)] hover:cursor-pointer">
+                    </Button>
+                    <Button
+                        variant="outline"
+                        className="flex items-center gap-2 px-3 py-1 border border-[var(--accent-hover)] text-sm hover:text-[var(--white)] hover:border-[var(--white)]"
+                    >
                         <MessageCircle size={18} />
                         {commentsCount}
-                    </div>
+                    </Button>
+                
                 </div>
             </CardContent>
 

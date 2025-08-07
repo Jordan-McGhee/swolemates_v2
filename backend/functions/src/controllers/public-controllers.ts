@@ -578,6 +578,122 @@ export const getSingleWorkout = async (req: Request, res: Response, next: NextFu
     }
 };
 
+// sessions
+// get all sessions by user
+export const getSessionsByUser = async (req: Request, res: Response, next: NextFunction) => {
+    const { username } = req.params;
+
+    // Validate username
+    if (!username || typeof username !== "string") {
+        return res.status(400).json({ message: "Invalid username." });
+    }
+
+    try {
+        // Get user_id from username
+        const userIdQuery = "SELECT user_id FROM users WHERE LOWER(username) = LOWER($1)";
+        const userIdRes: QueryResult = await pool.query(userIdQuery, [username]);
+
+        if (userIdRes.rows.length === 0) {
+            return res.status(404).json({ message: `User '${username}' not found.` });
+        }
+
+        const user_id = userIdRes.rows[0].user_id;
+
+        // Try to get viewer Firebase UID (if token exists)
+        const authHeader = req.headers.authorization;
+        const firebaseUid = await getIdFromAuthHeader(authHeader);
+
+        let viewerId: number | null = null;
+
+        if (firebaseUid) {
+            try {
+                viewerId = await getUserIdFromFirebaseUid(firebaseUid);
+            } catch (err) {
+                console.warn("Failed to map Firebase UID to user_id:", err);
+            }
+        }
+
+        // Privacy check
+        const canView = await canViewPrivateProfile(viewerId ?? -1, username);
+        if (!canView) {
+            return res.status(403).json({ message: "This user's sessions are private.", canView });
+        }
+
+        // Fetch user's sessions
+        const getSessionsByUserQuery = "SELECT * FROM sessions_with_likes_comments WHERE user_id = $1 ORDER BY session_created_at DESC";
+        const getSessionsByUserRes: QueryResult = await pool.query(getSessionsByUserQuery, [user_id]);
+
+        return res.status(200).json({
+            message: `Got all sessions created by user '${username}'`,
+            sessions: getSessionsByUserRes.rows,
+            username,
+            user_id,
+            canView
+        });
+    } catch (error) {
+        console.error(`Error retrieving sessions created by user '${username}':`, error);
+        return res.status(500).json({ message: `Error retrieving sessions created by user '${username}'. Please try again later.` });
+    }
+};
+
+// get single session
+export const getSingleSession = async (req: Request, res: Response, next: NextFunction) => {
+    const { session_id } = req.params;
+
+    // Validate session_id
+    if (!session_id || isNaN(Number(session_id))) {
+        return res.status(400).json({ message: "Invalid session ID." });
+    }
+
+    // Query for the session
+    const getSingleSessionQuery = `SELECT * FROM sessions_with_likes_comments WHERE session_id = $1`;
+
+    try {
+        // Get the session
+        const sessionResponse: QueryResult = await pool.query(getSingleSessionQuery, [session_id]);
+
+        // Check that session exists
+        if (sessionResponse.rows.length === 0) {
+            return res.status(404).json({ message: "Session not found." });
+        }
+
+        const session = sessionResponse.rows[0];
+
+        // Try to get viewer Firebase UID (if token exists)
+        const authHeader = req.headers.authorization;
+        const firebaseUid = await getIdFromAuthHeader(authHeader);
+
+        let viewerId: number | null = null;
+
+        if (firebaseUid) {
+            try {
+                viewerId = await getUserIdFromFirebaseUid(firebaseUid);
+            } catch (err) {
+                console.warn("Failed to map Firebase UID to user_id:", err);
+            }
+        }
+
+        // Privacy check
+        const canView = await canViewPrivateProfile(viewerId ?? -1, session.username);
+        if (!canView) {
+            return res.status(403).json({ message: "This user's sessions are private.", canView });
+        }
+
+        return res.status(200).json({
+            message: "Got session!",
+            session,
+            session_user_id: session.user_id,
+            likes: session.likes,
+            comments: session.comments,
+            canView
+        });
+
+    } catch (error) {
+        console.error(`Error retrieving session #${session_id}:`, error);
+        return res.status(500).json({ message: `Error retrieving session #${session_id}. Please try again later.` });
+    }
+};
+
 // groups
 
 // Get all groups (optional: with search, pagination)

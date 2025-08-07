@@ -132,8 +132,6 @@ export const ProfileFeed = ({ user, feedType }: ProfileFeedProps) => {
                         const isLast = index === feed.length - 1;
                         const itemKey = item.type === 'post' ? `post-${item.post_id}` : `workout-${item.workout_id}`;
 
-                        console.log("Rendering item:", itemKey, "Type:", item);
-
                         return (
                             <div
                                 key={itemKey}

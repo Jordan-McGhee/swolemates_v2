@@ -9,10 +9,10 @@ import { postApi } from "@/api/postApi";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Dumbbell, Loader2, Image as ImageIcon, User as UserIcon } from "lucide-react";
+import { toast } from "sonner";
 
 // types imports
 import { CreatePostProps, Workout } from "@/types/props/props-types";
-import { toast } from "sonner";
 
 const CreatePost: React.FC<CreatePostProps> = ({ workouts }) => {
 

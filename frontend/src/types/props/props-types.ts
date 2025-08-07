@@ -67,24 +67,71 @@ export interface Like {
     created_at: Date;
 }
 
+// Enums for workout and exercise types
+export type WorkoutType = 'strength' | 'cardio' | 'hiit' | 'run' | 'yoga' | 'stretching' | 'swimming' | 'cycling' | 'crossfit' | 'bodyweight' | 'other';
+export type ExerciseType = 'strength' | 'cardio' | 'stretch' | 'plyometric' | 'balance' | 'flexibility' | 'endurance' | 'other';
+export type MeasurementType = 'reps' | 'duration' | 'distance';
 
-export interface Workout {
-    type?: 'workout';
-    workout_id: number;
-    user_id: string;
-    title: string;
-    description?: string;
-    exercises: Exercise[];
-    created_at: Date;
-    updated_at: Date;
-}
+// Exercise library/database
 export interface Exercise {
     exercise_id: number;
     title: string;
-    weight_used: number;
-    set_count: number;
-    rep_count: number;
-    duration?: number; // Optional for cardio exercises
+    exercise_type: ExerciseType;
+    measurement_type: MeasurementType;
+    created_at: Date;
+    updated_at: Date;
+}
+
+// Core workout template
+export interface Workout {
+    type?: 'workout';
+    workout_id: number;
+    user_id: number;
+    title: string;
+    description?: string;
+    workout_type: WorkoutType;
+    exercises: WorkoutExercise[]; // Junction table
+    created_at: Date;
+    updated_at: Date;
+}
+
+// Junction table for workout templates
+export interface WorkoutExercise {
+    workout_id: number;
+    exercise_id: number;
+    exercise?: Exercise;
+    sets?: number;
+    reps?: number;
+    duration_seconds?: number;
+    distance_miles?: number;
+    created_at: Date;
+}
+
+// Completed workout session
+export interface WorkoutSession {
+    session_id: number;
+    workout_id: number;
+    user_id: number;
+    duration_minutes?: number;
+    total_distance_miles?: number;
+    notes?: string;
+    difficulty?: number; // 1-5
+    created_at: Date;
+    exercises: SessionExercise[];
+}
+
+// Actual exercise performance in a session
+export interface SessionExercise {
+    session_exercise_id: number;
+    session_id: number;
+    exercise_id: number;
+    exercise?: Exercise;
+    weight_used?: number;
+    sets_completed?: number;
+    reps_completed?: number;
+    duration_seconds?: number;
+    distance_miles?: number;
+    pace_minutes_per_mile?: string;
     created_at: Date;
 }
 

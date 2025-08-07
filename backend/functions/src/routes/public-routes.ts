@@ -44,6 +44,13 @@ router.get("/workout/user/:username", publicControllers.getWorkoutsByUser)
 // get single workout
 router.get("/workout/:workout_id", publicControllers.getSingleWorkout)
 
+// session routes
+// get all sessions by user
+router.get("/session/user/:username", publicControllers.getSessionsByUser);
+
+// get single session
+router.get("/session/:session_id", publicControllers.getSingleSession);
+
 // group routes
 // get all groups (public)
 router.get("/group", publicControllers.getAllGroups);

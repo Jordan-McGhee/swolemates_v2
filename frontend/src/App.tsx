@@ -10,6 +10,7 @@ import { Toaster } from "@/components/ui/sonner"
 import Home from "./pages/Home"
 import Profile from "./pages/Profile"
 import Workouts from "./pages/workouts/Workouts"
+import CreateWorkout from "./pages/workouts/CreateWorkout"
 import Groups from "./pages/groups/Groups"
 
 export default function App() {
@@ -20,7 +21,8 @@ export default function App() {
         <Route element={<Layout />}>
           <Route path="/" element={<Home />} />
           <Route path="/user/:username?" element={<Profile />} />
-          <Route path="/workouts" element={<Workouts />} />
+          <Route path="/workouts/:workout_id?" element={<Workouts />} />
+          <Route path="/workouts/create" element={<CreateWorkout />} />
           <Route path="/groups" element={<Groups />} />
         </Route>
       </Routes>

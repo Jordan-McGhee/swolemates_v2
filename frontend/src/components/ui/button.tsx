@@ -12,14 +12,14 @@ const buttonVariants = cva(
         default:
           "shadow-xs bg-[var(--accent)] text-white font-semibold text-base py-2 px-4 rounded-lg hover:bg-[var(--accent-hover)] hover:text-[var(--accent)] hover:cursor-pointer transition-colors",
         destructive:
-          "shadow-xs bg-[#e69ea0] hover:bg-[var(--danger)] text-white font-semibold text-base py-3 shadow  hover:text-[var(--white)] hover:cursor-pointer transition-colors",
+          "shadow-xs bg-[#e69ea0] hover:bg-[var(--danger)] text-white font-semibold text-base py-3 shadow  hover:text-[var(--white)] hover:cursor-pointer transition-colors hover:cursor-pointer",
         outline:
-          "border bg-background shadow-xs hover:bg-accent hover:text-accent-foreground dark:bg-input/30 dark:border-input dark:hover:bg-input/50",
+          "border bg-background shadow-xs hover:bg-accent hover:text-accent-foreground dark:bg-input/30 dark:border-input dark:hover:bg-input/50 hover:cursor-pointer",
         secondary:
-          "bg-secondary text-secondary-foreground shadow-xs hover:bg-secondary/80",
+          "bg-secondary text-secondary-foreground shadow-xs hover:bg-secondary/80 hover:cursor-pointer",
         ghost:
-          "hover:bg-accent hover:text-accent-foreground dark:hover:bg-accent/50",
-        link: "text-primary underline-offset-4 hover:underline",
+          "hover:bg-accent hover:text-accent-foreground dark:hover:bg-accent/50 hover:cursor-pointer",
+        link: "text-primary underline-offset-4 hover:underline hover:cursor-pointer",
       },
       size: {
         default: "h-9 px-4 py-2 has-[>svg]:px-3",
