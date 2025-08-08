@@ -78,8 +78,8 @@ export interface Exercise {
     title: string;
     exercise_type: ExerciseType;
     measurement_type: MeasurementType;
-    created_at: Date;
-    updated_at: Date;
+    created_at?: Date;
+    updated_at?: Date;
 }
 
 // Core workout template
@@ -91,8 +91,8 @@ export interface Workout {
     description?: string;
     workout_type: WorkoutType;
     exercises: WorkoutExercise[]; // Junction table
-    created_at: Date;
-    updated_at: Date;
+    created_at?: Date;
+    updated_at?: Date;
 }
 
 // Junction table for workout templates
@@ -104,7 +104,18 @@ export interface WorkoutExercise {
     reps?: number;
     duration_seconds?: number;
     distance_miles?: number;
-    created_at: Date;
+    created_at?: Date;
+}
+
+// For creating/editing workouts
+export interface WorkoutFormExercise {
+    title: string;
+    exercise_type: ExerciseType;
+    measurement_type: MeasurementType;
+    sets?: number;
+    reps?: number;
+    duration_seconds?: number;
+    distance_miles?: number;
 }
 
 // Completed workout session
@@ -274,4 +285,14 @@ export interface ProfileEditFormProps {
 // POST TYPES
 export interface CreatePostProps {
     workouts?: Workout[];
+}
+
+// WORKOUT TYPES
+
+// WORKOUT FORM TYPES
+export interface ExerciseInputProps {
+    exerciseIndex: number;
+    handleExerciseChange: (index: number, updatedExercise: WorkoutFormExercise) => void;
+    handleDeleteExercise: () => void;
+    handleExerciseError: (index: number, hasError: boolean) => void;
 }

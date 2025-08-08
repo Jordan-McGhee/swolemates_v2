@@ -98,9 +98,6 @@ Working On:
 ## Thu Aug 7
 To do:
 <!-- - change buttons for liking/commenting DONE -->
-- Adding loading page for profile
-- Adding workout and post items to view feed
-- Add hover card to workout for desktop version
 <!-- - Add new tables to track completed workouts DONE -->
 <!-- - update enums as well ^ DONE -->
 
@@ -110,3 +107,17 @@ Working On:
         - List of workouts created by user
         - ability to look exercises up by name and add them
 <!-- - Update backend routes/controllers for new sessions table DONE -->
+
+## Fri Aug 8
+Working On:
+<!-- - Adding exercise inputs to createWorkoutForm DONE -->
+<!-- - Adding create workout submission DONE -->
+<!-- - Updating workoutApi functions DONE -->
+
+##
+To do:
+- Adding loading page for profile
+- Adding workout and post items to view feed
+- Add hover card to workout for desktop version
+- Fix error with feed not loading
+- Create single post, workout, group, session routes and placeholders

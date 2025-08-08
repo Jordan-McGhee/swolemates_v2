@@ -73,6 +73,104 @@ export function validateConfirmPassword(password: string, confirm: string): stri
     return undefined;
 }
 
+// CREATE WORKOUT INPUT VALIDATORS
+// workout name validator
+export function validateWorkoutName(value: string): string | undefined {
+    if (!value.trim()) {
+        return "Workout name is required.";
+    }
+    if (value.trim().length < 3) {
+        return "Workout name must be at least 3 characters.";
+    }
+    if (value.trim().length > 50) {
+        return "Workout name cannot exceed 50 characters.";
+    }
+    return undefined;
+}
+
+// workout description validator
+export function validateWorkoutDescription(value: string): string | undefined {
+    if (value.trim().length > 75) {
+        return "Description cannot exceed 75 characters.";
+    }
+    return undefined;
+}
+
+// exercise title validator
+export function validateExerciseTitle(value: string): string | undefined {
+    if (!value.trim()) {
+        return "Exercise title is required.";
+    }
+    if (value.trim().length < 3) {
+        return "Exercise title must be at least 3 characters.";
+    }
+    if (value.trim().length > 50) {
+        return "Exercise title cannot exceed 50 characters.";
+    }
+    return undefined;
+}
+
+// set input validator
+export function validateSets(value: string): string | undefined {
+    const num = Number(value);
+    if (!value.trim()) {
+        return "Set count is required.";
+    }
+    if (isNaN(num) || !Number.isInteger(num) || num < 1) {
+        return "Sets must be a positive integer.";
+    }
+    if (num > 25) {
+        return "Sets cannot exceed 25.";
+    }
+    return undefined;
+}
+
+// rep input validator
+export function validateReps(value: string): string | undefined {
+    const num = Number(value);
+    if (!value.trim()) {
+        return "Rep count is required.";
+    }
+    if (isNaN(num) || !Number.isInteger(num) || num < 1) {
+        return "Reps must be a positive integer.";
+    }
+    if (num > 50) {
+        return "Reps cannot exceed 50.";
+    }
+    return undefined;
+}
+
+// duration input validator
+export function validateDuration(value: string): string | undefined {
+    const num = Number(value);
+    if (!value.trim()) {
+        return "Duration is required.";
+    }
+    if (isNaN(num) || !Number.isInteger(num) || num < 1) {
+        return "Duration must be a positive integer.";
+    }
+    if (num > 300) {
+        return "Duration cannot exceed 300 minutes.";
+    }
+    return undefined;
+}
+
+// distance input validator
+export function validateDistance(value: string): string | undefined {
+    const num = Number(value);
+    if (!value.trim()) {
+        return "Distance is required.";
+    }
+    if (isNaN(num) || num <= 0) {
+        return "Distance must be a positive number.";
+    }
+    if (num > 100) {
+        return "Distance cannot exceed 100 miles.";
+    }
+    return undefined;
+}
+
+// INTERACTION INPUT VALIDATORS
 // comment content validator
 export function validateCommentContent(value: string): string | undefined {
     if (!value.trim()) {

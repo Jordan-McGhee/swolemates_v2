@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { Link } from 'react-router-dom';
 
 // hook imports
 import { useAuth } from '@/context/AuthProvider';
@@ -12,34 +13,167 @@ import { Label } from '@/components/ui/label';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Loader2 } from 'lucide-react';
 import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from '@/components/ui/select';
+import { toast } from 'sonner';
 
 // component imports
 import ExerciseInput from './ExerciseInput';
 
 // type imports
-import { WorkoutType } from '@/types/props/props-types';
+import { WorkoutType, WorkoutFormExercise } from '@/types/props/props-types';
+
+// validation imports
+import { validateWorkoutName, validateWorkoutDescription } from '@/util/input-validators';
 
 const WORKOUT_TYPES: WorkoutType[] = ['strength', 'cardio', 'hiit', 'run', 'yoga', 'stretching', 'swimming', 'cycling', 'crossfit', 'bodyweight', 'other'];
 
 const CreateWorkoutForm: React.FC = () => {
-    const { user, token } = useAuth();
+    const { user } = useAuth();
     const { isLoading } = useFetch();
     const { createWorkout } = workoutApi();
 
+    // form field states
     const [workoutName, setWorkoutName] = useState('');
     const [description, setDescription] = useState('');
     const [workoutType, setWorkoutType] = useState<WorkoutType | undefined>(undefined);
-    const [formError, setFormError] = useState<string | null>(null);
+    const [formError, setFormError] = useState<Record<string, string> | null>(null);
+    const [exerciseInputs, setExerciseInputs] = useState<WorkoutFormExercise[]>(
+        Array.from({ length: 3 }, () => ({
+            title: '',
+            exercise_type: 'strength',
+            measurement_type: 'reps',
+            sets: undefined,
+            reps: undefined,
+            duration_seconds: undefined,
+            distance_miles: undefined
+        }))
+    );
+    // input errors
+    const [exerciseErrors, setExerciseErrors] = useState<boolean[]>(Array(exerciseInputs.length).fill(false));
 
-    const handleSubmit = (e: React.FormEvent) => {
-        e.preventDefault();
-        // Submit logic here
+    // workout blur handlers
+    const handleWorkoutNameBlur = () => {
+        const error = validateWorkoutName(workoutName);
+        setFormError(prev => ({
+            ...prev,
+            workoutName: error || ''
+        }));
     };
+
+    const handleDescriptionBlur = () => {
+        const error = validateWorkoutDescription(description);
+        setFormError(prev => ({
+            ...prev,
+            description: error || ''
+        }));
+    };
+
+    // exercise handlers
+    const handleExerciseChange = (index: number, updatedExercise: WorkoutFormExercise) => {
+        setExerciseInputs(prevInputs =>
+            prevInputs.map((exercise, idx) =>
+                idx === index ? updatedExercise : exercise
+            )
+        );
+        // console.log(exerciseInputs);
+    };
+
+    const handleDeleteExercise = (index: number) => {
+        if (exerciseInputs.length === 3) {
+            toast.error('A workout must have at least 3 exercises.');
+            return;
+        }
+        setExerciseInputs(prevInputs => prevInputs.filter((_, idx) => idx !== index));
+    };
+
+    // Handler to update error state for a specific exercise input
+    const handleExerciseError = (index: number, hasError: boolean) => {
+        setExerciseErrors(prevErrors => {
+            const updated = [...prevErrors];
+            updated[index] = hasError;
+            return updated;
+        });
+    };
+
+    // Keep error state array in sync with exerciseInputs length
+    React.useEffect(() => {
+        if (exerciseErrors.length !== exerciseInputs.length) {
+            setExerciseErrors(Array(exerciseInputs.length).fill(false));
+        }
+    }, [exerciseInputs.length]);
+
 
     const isFormValid =
         workoutName.trim().length > 5 && workoutName.trim().length <= 25 &&
         description.trim().length > 0 && description.trim().length <= 75 &&
-        workoutType !== undefined;
+        workoutType !== undefined &&
+        (!formError?.workoutName && !formError?.description) &&
+        exerciseInputs.length >= 3 &&
+        exerciseInputs.length <= 10 &&
+        exerciseErrors.every(err => !err) &&
+        exerciseInputs.every(ex => ex.title.trim().length > 0);
+
+    // form submission handler
+    const handleSubmit = async (e: React.FormEvent) => {
+        e.preventDefault();
+        try {
+            const workoutData = {
+                title: workoutName.trim(),
+                description: description.trim(),
+                workout_type: workoutType as WorkoutType,
+                exercises: exerciseInputs
+            };
+            const response = await createWorkout(workoutData);
+            if (response?.workout_id) {
+                toast.success(
+                    <>
+                        Workout created successfully!{' '}
+                        <Link
+                            to={`/workouts/${response.workout_id}`}
+                            className='underline hover:text-[var(--accent)] italic'
+                        >
+                            View workout
+                        </Link>
+                    </>
+                );
+                // Reset form fields
+                setWorkoutName('');
+                setDescription('');
+                setWorkoutType(undefined);
+                setExerciseInputs(Array.from({ length: 3 }, () => ({
+                    title: '',
+                    exercise_type: 'strength',
+                    measurement_type: 'reps',
+                    sets: undefined,
+                    reps: undefined,
+                    duration_seconds: undefined,
+                    distance_miles: undefined
+                })));
+                setFormError(null);
+                setExerciseErrors(Array(3).fill(false));
+            } else {
+                toast.error(response?.message || 'Failed to create workout.');
+            }
+        } catch (error: any) {
+            toast.error(error?.message || 'An error occurred while creating workout.');
+        }
+    };
+
+    // console.log({
+    //     workoutNameValid: workoutName.trim().length > 5 && workoutName.trim().length <= 25,
+    //     workoutNameValue: workoutName,
+    //     descriptionValid: description.trim().length > 0 && description.trim().length <= 75,
+    //     descriptionValue: description,
+    //     workoutTypeValid: workoutType !== undefined,
+    //     workoutTypeValue: workoutType,
+    //     formErrorValid: !formError?.workoutName && !formError?.description,
+    //     formErrorValue: formError,
+    //     exerciseCountValid: exerciseInputs.length >= 3 && exerciseInputs.length <= 10,
+    //     exerciseCountValue: exerciseInputs.length,
+    //     exerciseErrorsValid: exerciseErrors.every(err => !err),
+    //     exerciseErrorsValue: exerciseErrors,
+    //     exerciseTitlesValid: exerciseInputs.every(ex => ex.title.trim().length > 0),
+    //     exerciseTitlesValue: exerciseInputs.map(ex => ex.title)
+    // });
 
     return (
         <form onSubmit={handleSubmit} className="space-y-4 text-left">
@@ -66,9 +200,27 @@ const CreateWorkoutForm: React.FC = () => {
                         type="text"
                         value={workoutName}
                         onChange={e => setWorkoutName(e.target.value)}
+                        onBlur={handleWorkoutNameBlur}
                         placeholder="Enter workout name"
                         className="w-full"
                     />
+                    <div className="flex justify-between items-center mt-1">
+                        <div>
+                            {formError?.workoutName && (
+                                <p className="text-sm text-[var(--danger)]">
+                                    {formError.workoutName}
+                                </p>
+                            )}
+                        </div>
+                        <p
+                            className={`text-xs text-right ${workoutName.length > 25
+                                ? "text-[var(--danger)]"
+                                : "text-[var(--subhead-text)]"
+                                }`}
+                        >
+                            {workoutName.length}/25 characters
+                        </p>
+                    </div>
                 </div>
                 <div className="flex-2 min-w-[120px]">
                     <Label className="block mb-2 font-medium">Workout Type:</Label>
@@ -95,13 +247,68 @@ const CreateWorkoutForm: React.FC = () => {
                     type="text"
                     value={description}
                     onChange={e => setDescription(e.target.value)}
+                    onBlur={handleDescriptionBlur}
                     placeholder="Enter description"
                     className="w-full"
                 />
+                <div className="flex justify-between items-center mt-1">
+                    {formError?.description && (
+                        <p className="text-sm mt-1 text-[var(--danger)]">
+                            {formError.description}
+                        </p>
+                    )}
+                    <p
+                        className={`ml-auto mt-1.5 text-xs text-right ${description.length > 75
+                            ? "text-[var(--danger)]"
+                            : "text-[var(--subhead-text)]"
+                            }`}
+                    >
+                        {description.length}/75 characters
+                    </p>
+                </div>
             </div>
 
+            {/* EXERCISES */}
+            <p className='text-lg font-semibold text-[var(--accent)] bg-[var(--accent-hover)] px-6 py-2 -ml-6 -mr-6 my-6'>Add Exercises</p>
+
             {/* exercise inputs */}
-            <ExerciseInput onErrorChange={() => {}} />
+            {Array.from({ length: exerciseInputs.length }).map((_, idx) => (
+                <ExerciseInput
+                    key={idx}
+                    exerciseIndex={idx + 1}
+                    handleExerciseChange={(idx: number, updatedExercise: WorkoutFormExercise) => handleExerciseChange((idx - 1), updatedExercise)}
+                    handleDeleteExercise={() => handleDeleteExercise(idx)}
+                    handleExerciseError={(idx: number, hasError: boolean) => handleExerciseError(idx, hasError)}
+                />
+            ))}
+
+            {
+                exerciseInputs.length <= 10 && (
+                    <Button
+                        type="button"
+                        onClick={() => {
+                            if (exerciseInputs.length < 10) {
+                                setExerciseInputs([
+                                    ...exerciseInputs,
+                                    {
+                                        title: '',
+                                        exercise_type: 'strength',
+                                        measurement_type: 'reps',
+                                        sets: undefined,
+                                        reps: undefined,
+                                        duration_seconds: undefined,
+                                        distance_miles: undefined
+                                    }
+                                ]);
+                            }
+                        }}
+                        variant="outline"
+                    >
+                        Add Exercise
+                    </Button>
+                )
+            }
+
 
             <div className="flex justify-end mt-4">
                 <Button

@@ -7,7 +7,7 @@ const CreateWorkout: React.FC = () => {
             <div className="flex flex-row gap-4 w-full overflow-y-auto min-h-screen">
                 {/* Left side */}
                 <div className="w-full lg:w-[65%] flex flex-col gap-4">
-                    <div className="bg-[var(--white)] border border-[var(--accent)] rounded-xl p-6">
+                    <div className="bg-[var(--white)] rounded-xl p-6">
                         <CreateWorkoutForm />
                     </div>
                 </div>
