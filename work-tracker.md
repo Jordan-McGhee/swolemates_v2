@@ -114,10 +114,15 @@ Working On:
 <!-- - Adding create workout submission DONE -->
 <!-- - Updating workoutApi functions DONE -->
 
-##
+## Mon Aug 11
 To do:
 - Adding loading page for profile
-- Adding workout and post items to view feed
+<!-- - Adding workout and post items to view feed DONE -->
 - Add hover card to workout for desktop version
-- Fix error with feed not loading
-- Create single post, workout, group, session routes and placeholders
+<!-- - Fix error with feed not loading DONE -->
+<!-- - Create single post, workout, group, session routes and placeholders DONE -->
+
+Working On:
+- Workout and session items for feed
+<!-- - Add sessions to profile menu items DONE -->
+<!-- - updating workout and session apis DONE -->

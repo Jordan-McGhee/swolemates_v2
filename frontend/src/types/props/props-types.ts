@@ -28,24 +28,22 @@ export interface Post {
     group_id?: number;
     group_name?: string;
     group_profile_pic?: string;
-    created_at: Date;
-    updated_at: Date;
     likes?: Like[];
     likes_count?: number;
     comments?: Comment[];
     comments_count?: number;
-}
-
-export interface PostItemProps {
-    user: PostgreSQLUser | null;
-    post: Post;
+    created_at: Date;
+    updated_at: Date;
 }
 
 export interface Comment {
     comment_id: number;
     user_id: number;
+    username: string;
+    profile_pic?: string;
     post_id?: number;
     workout_id?: number;
+    session_id?: number;
     // username: string;
     // profile_pic?: string;
     content: string;
@@ -54,7 +52,9 @@ export interface Comment {
 }
 
 export interface AddCommentFormProps {
-    post_id: number;
+    post_id?: number;
+    workout_id?: number;
+    session_id?: number;
     onCommentAdded?: (comment: Comment) => void;
 }
 
@@ -87,12 +87,16 @@ export interface Workout {
     type?: 'workout';
     workout_id: number;
     user_id: number;
-    title: string;
-    description?: string;
+    workout_title: string;
+    workout_description?: string;
     workout_type: WorkoutType;
-    exercises: WorkoutExercise[]; // Junction table
-    created_at?: Date;
-    updated_at?: Date;
+    exercises: WorkoutFormExercise[];
+    likes?: Like[];
+    likes_count?: number;
+    comments?: Comment[];
+    comments_count?: number;
+    created_at: Date;
+    updated_at: Date;
 }
 
 // Junction table for workout templates
@@ -120,6 +124,7 @@ export interface WorkoutFormExercise {
 
 // Completed workout session
 export interface WorkoutSession {
+    type?: 'session';
     session_id: number;
     workout_id: number;
     user_id: number;
@@ -127,6 +132,10 @@ export interface WorkoutSession {
     total_distance_miles?: number;
     notes?: string;
     difficulty?: number; // 1-5
+    likes?: Like[];
+    likes_count?: number;
+    comments?: Comment[];
+    comments_count?: number;
     created_at: Date;
     exercises: SessionExercise[];
 }
@@ -232,14 +241,14 @@ export interface ProfileHeaderProps {
     changeMenuItem?: (item: ProfileMenuItem) => void | undefined;
 }
 
-export type ProfileMenuItem = "feed" | "posts" | "workouts" | "friends" | "groups";
+export type ProfileMenuItem = "feed" | "posts" | "workouts" | "sessions" | "friends" | "groups";
 
 export interface ProfileMenuBarProps {
     selectedMenuItem: ProfileMenuItem;
     onMenuItemClick: (item: ProfileMenuItem) => void;
 }
 
-export type FeedItem = Post | Workout;
+export type FeedItem = Post | Workout | WorkoutSession;
 
 export type Feed = FeedItem[];
 
@@ -251,7 +260,31 @@ export interface ProfileViewProps {
 
 export interface ProfileFeedProps {
     user: PostgreSQLUser | null;
-    feedType?: "default" | "posts" | "workouts";
+    feedType?: "default" | "posts" | "workouts" | "sessions";
+}
+
+export interface LikeCommentButtonsProps {
+    liked: boolean;
+    likesCount: number;
+    commentsCount: number;
+    onLikeToggle: () => void;
+    onCommentClick?: () => void;
+    disabled?: boolean;
+};
+
+export interface PostItemProps {
+    user: PostgreSQLUser | null;
+    post: Post;
+}
+
+export interface WorkoutItemProps {
+    user: PostgreSQLUser | null;
+    workout: Workout;
+}
+
+export interface SessionItemProps {
+    user: PostgreSQLUser | null;
+    session: WorkoutSession;
 }
 
 export interface UserFeedResponse {

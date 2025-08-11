@@ -450,8 +450,6 @@ export const getSinglePost = async (req: Request, res: Response, next: NextFunct
             message: "Got post!",
             post,
             post_user_id: post.user_id,
-            likes: post.likes,
-            comments: post.comments,
             workout
         });
 

@@ -4,7 +4,7 @@ import * as React from "react";
 import { Menubar, MenubarMenu, MenubarTrigger } from "@/components/ui/menubar";
 
 // icon imports
-import { Home, FileText, Dumbbell, Users, Handshake } from "lucide-react";
+import { Home, FileText, Dumbbell, CircleCheck, Users, Handshake } from "lucide-react";
 
 // types import
 import { ProfileMenuBarProps, ProfileMenuItem } from "@/types/props/props-types";
@@ -13,6 +13,7 @@ const menuItems: { key: ProfileMenuItem; label: string; icon: React.ReactNode }[
     { key: "feed", label: "Feed", icon: <Home size={24} className="mr-1" /> },
     { key: "posts", label: "Posts", icon: <FileText size={24} className="mr-1" /> },
     { key: "workouts", label: "Workouts", icon: <Dumbbell size={24} className="mr-1" /> },
+    { key: "sessions", label: "Sessions", icon: <CircleCheck size={24} className="mr-1" /> },
     { key: "friends", label: "Friends", icon: <Users size={24} className="mr-1" /> },
     { key: "groups", label: "Groups", icon: <Handshake size={24} className="mr-1" /> },
 ];

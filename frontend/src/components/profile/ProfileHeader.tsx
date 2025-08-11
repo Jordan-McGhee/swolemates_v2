@@ -68,12 +68,12 @@ export default function ProfileHeader({ user, isLoading, isOwnProfile, headerCou
                     </div>
                     <div className="flex items-center gap-x-2 hover:cursor-pointer" onClick={() => changeMenuItem && changeMenuItem("workouts")}>
                         <Dumbbell className="w-5 h-5 text-[var(--accent)]" />
-                        <span className="font-bold text-[var(--accent)]">{headerCounts?.workout_count|| 0}</span>
+                        <span className="font-bold text-[var(--accent)]">{headerCounts?.workout_count || 0}</span>
                         <span className="text-sm text-[var(--subhead-text)]">Workouts</span>
                     </div>
                     <div className="flex items-center gap-x-2 hover:cursor-pointer" onClick={() => changeMenuItem && changeMenuItem("posts")}>
                         <MessageSquareText className="w-5 h-5 text-[var(--accent)]" />
-                        <span className="font-bold text-[var(--accent)]">{headerCounts?.post_count|| 0}</span>
+                        <span className="font-bold text-[var(--accent)]">{headerCounts?.post_count || 0}</span>
                         <span className="text-sm text-[var(--subhead-text)]">Posts</span>
                     </div>
                 </div>
@@ -122,17 +122,17 @@ export default function ProfileHeader({ user, isLoading, isOwnProfile, headerCou
                     <div className="flex gap-x-2 mt-1">
                         <div className="flex items-center gap-x-1 hover:cursor-pointer" onClick={() => changeMenuItem && changeMenuItem("friends")}>
                             <Users className="size-4 text-[var(--accent)]" />
-                            <span className="font-semibold text-[var(--accent)] text-xs">0</span>
+                            <span className="font-semibold text-[var(--accent)] text-xs">{headerCounts?.friend_count || 0}</span>
                             <span className="text-[10px] text-[var(--subhead-text)]">Friends</span>
                         </div>
                         <div className="flex items-center gap-x-1 hover:cursor-pointer" onClick={() => changeMenuItem && changeMenuItem("workouts")}>
                             <Dumbbell className="size-4 text-[var(--accent)]" />
-                            <span className="font-semibold text-[var(--accent)] text-xs">0</span>
+                            <span className="font-semibold text-[var(--accent)] text-xs">{headerCounts?.workout_count || 0}</span>
                             <span className="text-[10px] text-[var(--subhead-text)]">Workouts</span>
                         </div>
                         <div className="flex items-center gap-x-1 hover:cursor-pointer" onClick={() => changeMenuItem && changeMenuItem("posts")}>
                             <MessageSquareText className="size-4 text-[var(--accent)]" />
-                            <span className="font-semibold text-[var(--accent)] text-xs">0</span>
+                            <span className="font-semibold text-[var(--accent)] text-xs">{headerCounts?.post_count || 0}</span>
                             <span className="text-[10px] text-[var(--subhead-text)]">Posts</span>
                         </div>
                     </div>

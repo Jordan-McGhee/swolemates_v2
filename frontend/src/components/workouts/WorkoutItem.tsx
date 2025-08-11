@@ -1,0 +1,189 @@
+import React, { useState } from "react";
+import { Link, useNavigate } from "react-router-dom";
+
+// ui imports
+import { Card, CardHeader, CardContent, CardFooter } from "@/components/ui/card";
+import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuTrigger } from "../ui/dropdown-menu";
+import { EllipsisVertical } from "lucide-react";
+import { toast } from "sonner";
+
+// component imports
+import LikeCommentButtons from "../ui/like-comment-buttons";
+import AddCommentForm from "@/components/comments/AddCommentForm";
+
+// type imports
+import { WorkoutItemProps, Like } from "@/types/props/props-types";
+
+// util imports
+import { formatDate } from "@/util/general-util";
+
+// hook import
+import { useAuth } from "@/context/AuthProvider";
+import { workoutApi } from "@/api/workoutApi";
+
+export const WorkoutItem: React.FC<WorkoutItemProps> = ({ user, workout }) => {
+
+    // hook destructuring
+    const { user: authUser, token } = useAuth();
+    const { likeWorkout, unlikeWorkout } = workoutApi();
+    const navigate = useNavigate();
+
+    // Like functionality
+    const [likesCount, setLikesCount] = useState<number>(workout.likes?.length ?? 0);
+    const [liked, setLiked] = useState<boolean>(
+        workout.likes?.some((like: Like) => like.user_id === authUser?.user_id) ?? false
+    );
+
+    // comment functionality
+    const [commentsCount, setCommentsCount] = useState<number>(workout.comments?.length ?? 0);
+
+    const handleLikeToggle = async () => {
+        if (!authUser || !token) return;
+        if (liked) {
+            try {
+                await unlikeWorkout(workout.workout_id);
+                setLikesCount((count) => count - 1);
+                setLiked(false);
+                toast(
+                    <>
+                        You unliked that workout - nice!
+                    </>
+                );
+            } catch (error) {
+                console.error("Failed to unlike workout:", error);
+            }
+        } else {
+            try {
+                await likeWorkout(workout.workout_id);
+                setLikesCount((count) => count + 1);
+                setLiked(true);
+                toast.success(
+                    <>
+                        You liked that workout - nice!
+                    </>
+                );
+            } catch (error) {
+                console.error("Failed to like workout:", error);
+            }
+        }
+    };
+
+    // comment handlers
+    const handleCommentAdded = () => {
+        setCommentsCount((count) => count + 1);
+    };
+
+    return (
+        <Card className="bg-[var(--white)] shadow-sm">
+            <CardHeader className="flex flex-row items-start justify-between gap-4">
+                <div className="flex items-center gap-3">
+                    <Avatar className="size-7 rounded-md">
+                        {user?.profile_pic ? (
+                            <AvatarImage src={user.profile_pic} alt={user.username} />
+                        ) : (
+                            <AvatarFallback>
+                                {user?.username}
+                            </AvatarFallback>
+                        )}
+                    </Avatar>
+                    <div className="text-left">
+                        <p className="text-sm"><span className="font-semibold text-[var(--accent)]">{user?.username}</span> created a new <span className="font-semibold text-[var(--accent)]">{workout.workout_type.toUpperCase()}</span> workout!</p>
+                        <p className="text-xs text-[var(--subhead-text)]">
+                            {formatDate(workout.created_at, "relative")}
+                        </p>
+                    </div>
+                </div>
+                <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                        <EllipsisVertical className="w-5 h-5 text-[var(--subhead-text)] hover:cursor-pointer hover:text-[var(--accent)] -mr-2" />
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="end" className="w-40">
+                        <DropdownMenuLabel className="text-[var(--subhead-text)] text-xs font-bold">Workout Actions</DropdownMenuLabel>
+                        <DropdownMenuItem>
+                            View Workout
+                        </DropdownMenuItem>
+                        {user?.user_id === workout.user_id && (
+                            <>
+                                <DropdownMenuItem>
+                                    Create Session
+                                </DropdownMenuItem>
+                                <DropdownMenuItem>
+                                    Edit Workout
+                                </DropdownMenuItem>
+                                <DropdownMenuItem variant="destructive">
+                                    Delete Workout
+                                </DropdownMenuItem>
+                            </>
+                        )}
+                    </DropdownMenuContent>
+                </DropdownMenu>
+            </CardHeader>
+            <CardContent className="flex flex-col justify-start">
+                <div className="">
+                    <p className="font-bold text-xl text-[var(--accent)]">{workout.workout_title}</p>
+                    {workout.workout_description && (
+                        <p className="text-[var(--subhead-text)] mt-1">{workout.workout_description}</p>
+                    )}
+                </div>
+                {workout.exercises && workout.exercises.length > 0 && (
+                    <details className="mt-2">
+                        <summary className="cursor-pointer text-xs text-[var(--accent)]">
+                            View Exercises ({workout.exercises.length})
+                        </summary>
+                        <ul className="mt-2 space-y-1">
+                            {workout.exercises.map((exercise, idx) => {
+                                const type = exercise.exercise_type?.toLowerCase();
+                                if (["strength", "plyometric", "other"].includes(type)) {
+                                    return (
+                                        <li key={idx} className="text-[var(--subhead-text)]">
+                                            • <span className="font-semibold text-[var(--accent)]">{exercise.title}</span>: {exercise.sets} sets x {exercise.reps} reps
+                                        </li>
+                                    );
+                                } else if (["cardio", "flexibility", "stretch", "balance"].includes(type)) {
+                                    const minutes = exercise.duration_seconds ? Math.round(exercise.duration_seconds / 60) : 0;
+                                    return (
+                                        <li key={idx} className="text-[var(--subhead-text)]">
+                                            • <span className="font-semibold text-[var(--accent)]">{exercise.title}</span>: {minutes} minutes
+                                        </li>
+                                    );
+                                } else {
+                                    return (
+                                        <li key={idx} className="text-[var(--subhead-text)]">
+                                            • <span className="font-semibold text-[var(--accent)]">{exercise.title}</span>: {exercise.distance_miles} miles
+                                        </li>
+                                    );
+                                }
+                            })}
+                        </ul>
+                    </details>
+                )}
+                <LikeCommentButtons
+                    liked={liked}
+                    likesCount={likesCount}
+                    commentsCount={commentsCount}
+                    onLikeToggle={handleLikeToggle}
+                    onCommentClick={() => {
+                        navigate(`/workouts/${workout.workout_id}`);
+                    }}
+                    disabled={!authUser}
+                />
+            </CardContent>
+            <div className="flex-1 border-t border-[#f4f4f4]" />
+            <CardFooter>
+                {authUser ? (
+                    <AddCommentForm
+                        workout_id={workout.workout_id}
+                        onCommentAdded={handleCommentAdded}
+                    />
+                ) : (
+                    <div className="italic text-sm text-[var(--subhead-text)]">
+                        You must log in to comment.
+                    </div>
+                )}
+            </CardFooter>
+        </Card>
+    )
+}
+
+export default WorkoutItem;

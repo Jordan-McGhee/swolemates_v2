@@ -369,3 +369,132 @@ GROUP BY
     ws.session_id, ws.workout_id, ws.user_id, u.username, u.profile_pic, 
     w.title, w.description, w.workout_type, ws.duration_minutes, 
     ws.total_distance_miles, ws.notes, ws.difficulty, ws.created_at;
+
+
+-- Updated user feed view with posts (excluding group posts), workout templates, and workout sessions
+CREATE VIEW user_feeds AS
+SELECT 
+    cf.user_id,
+    cf.username,
+    cf.profile_pic,
+    json_agg(
+        cf.feed_item ORDER BY cf.created_at DESC
+    ) AS feed_items,
+    
+    -- Count posts for this user (excluding posts with non-null group_id)
+    COALESCE(pc.post_count, 0) AS post_count,
+    
+    -- Count workout templates for this user  
+    COALESCE(wc.workout_count, 0) AS workout_count,
+    
+    -- Count workout sessions for this user
+    COALESCE(wsc.workout_session_count, 0) AS workout_session_count
+FROM (
+    -- Posts (excluding group posts)
+    SELECT 
+        p.user_id,
+        p.username,
+        p.profile_pic,
+        p.created_at,
+        json_build_object(
+            'type', 'post',
+            'post_id', p.post_id,
+            'user_id', p.user_id,
+            'username', p.username,
+            'profile_pic', p.profile_pic,
+            'content', p.content,
+            'image_url', p.image_url,
+            'workout_id', p.workout_id,
+            'group_id', p.group_id,
+            'created_at', p.created_at,
+            'updated_at', p.updated_at,
+            'likes', p.likes,
+            'comments', p.comments
+        ) AS feed_item
+    FROM post_with_likes_comments p
+    WHERE p.group_id IS NULL
+    
+    UNION ALL
+    
+    -- Workout Templates
+    SELECT 
+        w.user_id,
+        w.username,
+        w.profile_pic,
+        w.workout_created_at AS created_at,
+        json_build_object(
+            'type', 'workout',
+            'workout_id', w.workout_id,
+            'workout_title', w.workout_title,
+            'workout_type', w.workout_type,
+            'workout_description', w.workout_description,
+            'user_id', w.user_id,
+            'username', w.username,
+            'profile_pic', w.profile_pic,
+            'created_at', w.workout_created_at,
+            'exercises', w.exercises,
+            'likes', w.likes,
+            'comments', w.comments
+        ) AS feed_item
+    FROM workout_with_likes_comments w
+    
+    UNION ALL
+    
+    -- Workout Sessions
+    SELECT 
+        ws.user_id,
+        ws.username,
+        ws.profile_pic,
+        ws.session_created_at AS created_at,
+        json_build_object(
+            'type', 'session',
+            'session_id', ws.session_id,
+            'workout_id', ws.workout_id,
+            'workout_title', ws.workout_title,
+            'workout_description', ws.workout_description,
+            'workout_type', ws.workout_type,
+            'user_id', ws.user_id,
+            'username', ws.username,
+            'profile_pic', ws.profile_pic,
+            'duration_minutes', ws.duration_minutes,
+            'total_distance_miles', ws.total_distance_miles,
+            'session_notes', ws.session_notes,
+            'difficulty', ws.difficulty,
+            'created_at', ws.session_created_at,
+            'completed_exercises', ws.completed_exercises,
+            'likes', ws.likes,
+            'comments', ws.comments
+        ) AS feed_item
+    FROM workout_session_with_likes_comments ws
+) AS cf
+
+-- Left join to get post counts (excluding posts with non-null group_id)
+LEFT JOIN (
+    SELECT 
+        user_id,
+        COUNT(*) AS post_count
+    FROM posts
+    WHERE group_id IS NULL
+    GROUP BY user_id
+) pc ON cf.user_id = pc.user_id
+
+-- Left join to get workout template counts  
+LEFT JOIN (
+    SELECT 
+        user_id,
+        COUNT(*) AS workout_count
+    FROM workouts
+    GROUP BY user_id
+) wc ON cf.user_id = wc.user_id
+
+-- Left join to get workout session counts
+LEFT JOIN (
+    SELECT 
+        user_id,
+        COUNT(*) AS workout_session_count
+    FROM workout_sessions
+    GROUP BY user_id
+) wsc ON cf.user_id = wsc.user_id
+
+GROUP BY cf.user_id, cf.username, cf.profile_pic, pc.post_count, wc.workout_count, wsc.workout_session_count
+ORDER BY cf.user_id;

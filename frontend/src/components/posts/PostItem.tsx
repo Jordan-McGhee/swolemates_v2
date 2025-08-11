@@ -1,12 +1,12 @@
-import React from "react";
+import React, { useState } from "react";
+import { Link, useNavigate } from "react-router-dom";
 
 // ui imports
 import { Card, CardHeader, CardContent, CardFooter } from "@/components/ui/card";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuTrigger } from "../ui/dropdown-menu";
-import { ThumbsUp, MessageCircle, EllipsisVertical, Dumbbell } from "lucide-react";
+import { EllipsisVertical, Dumbbell } from "lucide-react";
 import { toast } from "sonner";
-import { Button } from "../ui/button";
 
 // component imports
 import AddCommentForm from "@/components/comments/AddCommentForm";
@@ -20,22 +20,22 @@ import { formatDate } from "@/util/general-util";
 // hook import
 import { useAuth } from "@/context/AuthProvider";
 import { postApi } from "@/api/postApi";
-
-
+import LikeCommentButtons from "../ui/like-comment-buttons";
 export const PostItem: React.FC<PostItemProps> = ({ user, post }) => {
-    
+
     // hook destructuring
     const { user: authUser, token } = useAuth();
     const { likePost, unlikePost } = postApi();
-    
+    const navigate = useNavigate();
+
     // Like functionality
-    const [likesCount, setLikesCount] = React.useState(post.likes?.length ?? 0);
-    const [liked, setLiked] = React.useState(
+    const [likesCount, setLikesCount] = useState<number>(post.likes?.length ?? 0);
+    const [liked, setLiked] = useState<boolean>(
         post.likes?.some((like: Like) => like.user_id === authUser?.user_id) ?? false
     );
 
     // comment functionality
-    const [ commentsCount, setCommentsCount ] = React.useState(post.comments?.length ?? 0);
+    const [commentsCount, setCommentsCount] = useState<number>(post.comments?.length ?? 0);
 
     const handleLikeToggle = async () => {
         if (!authUser || !token) return;
@@ -45,10 +45,10 @@ export const PostItem: React.FC<PostItemProps> = ({ user, post }) => {
                 setLikesCount((count) => count - 1);
                 setLiked(false);
                 toast(
-                        <>
-                            You unliked that post - nice!
-                        </>
-                    );
+                    <>
+                        You unliked that post - nice!
+                    </>
+                );
             } catch (error) {
                 console.error("Failed to unlike post:", error);
             }
@@ -58,16 +58,16 @@ export const PostItem: React.FC<PostItemProps> = ({ user, post }) => {
                 setLikesCount((count) => count + 1);
                 setLiked(true);
                 toast.success(
-                        <>
-                            You liked that post - nice!
-                        </>
-                    );
+                    <>
+                        You liked that post - nice!
+                    </>
+                );
             } catch (error) {
                 console.error("Failed to like post:", error);
             }
         }
     };
-    
+
     // comment handlers
     const handleCommentAdded = () => {
         setCommentsCount((count) => count + 1);
@@ -87,7 +87,7 @@ export const PostItem: React.FC<PostItemProps> = ({ user, post }) => {
                         )}
                     </Avatar>
                     <div className="text-left">
-                        <p className="font-semibold text-sm">{user?.username}</p>
+                        <p className="font-semibold text-sm text-[var(--accent)]">{user?.username}</p>
                         <p className="text-xs text-[var(--subhead-text)]">
                             {formatDate(post.created_at, "relative")}
                         </p>
@@ -96,12 +96,14 @@ export const PostItem: React.FC<PostItemProps> = ({ user, post }) => {
 
 
                 <div className="flex items-center gap-x-2">
+
+                    {/* Workout Tag */}
                     <div className="flex items-center gap-2 bg-[var(--accent-hover)] p-2 rounded-md text-[var(--accent)] text-xs">
                         <Dumbbell className="size-4 text-[var(--accent)]" />
                         <p className="max-w-24 truncate">Workout Title</p>
                     </div>
 
-
+                    {/* Post Options */}
                     <DropdownMenu>
                         <DropdownMenuTrigger asChild>
                             <EllipsisVertical className="w-5 h-5 text-[var(--subhead-text)] hover:cursor-pointer hover:text-[var(--accent)] -mr-2" />
@@ -109,7 +111,9 @@ export const PostItem: React.FC<PostItemProps> = ({ user, post }) => {
                         <DropdownMenuContent align="end" className="w-40">
                             <DropdownMenuLabel className="text-[var(--subhead-text)] text-xs font-bold">Post Actions</DropdownMenuLabel>
                             <DropdownMenuItem>
-                                View Post
+                                <Link to={`/posts/${post.post_id}`} className="w-full h-full block">
+                                    View Post
+                                </Link>
                             </DropdownMenuItem>
                             {user?.user_id === post.user_id && (
                                 <>
@@ -132,35 +136,16 @@ export const PostItem: React.FC<PostItemProps> = ({ user, post }) => {
             <CardContent className="flex flex-col justify-start" >
                 <p className="text-left">{post.content}</p>
 
-                <div className="flex items-center gap-4 mt-3">
-                    <Button
-                        variant="outline"
-                        className={`group flex items-center gap-2 px-3 py-1 border border-[var(--accent-hover)] text-sm hover:text-[var(--white)] hover:border-[var(--white)] ${
-                            liked ? "bg-[var(--accent-hover)] text-[var(--accent)] border border-[var(--accent)] hover:text-[var(--white)] hover:border-[var(--white)]" : ""
-                        }`}
-                        onClick={() => {
-                            if (!authUser) {
-                                toast.error("You must log in to interact with posts.");
-                                return;
-                            }
-                            handleLikeToggle();
-                        }}
-                    >
-                        <ThumbsUp
-                            size={18}
-                            className="transition-colors"
-                        />
-                        {likesCount}
-                    </Button>
-                    <Button
-                        variant="outline"
-                        className="flex items-center gap-2 px-3 py-1 border border-[var(--accent-hover)] text-sm hover:text-[var(--white)] hover:border-[var(--white)]"
-                    >
-                        <MessageCircle size={18} />
-                        {commentsCount}
-                    </Button>
-                
-                </div>
+                <LikeCommentButtons
+                    liked={liked}
+                    likesCount={likesCount}
+                    commentsCount={commentsCount}
+                    onLikeToggle={handleLikeToggle}
+                    onCommentClick={() => {
+                        navigate(`/posts/${post.post_id}`);
+                    }}
+                    disabled={!authUser}
+                />
             </CardContent>
 
             <div className="flex-1 border-t border-[#f4f4f4]" />

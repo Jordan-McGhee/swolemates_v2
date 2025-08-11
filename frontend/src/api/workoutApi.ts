@@ -21,6 +21,7 @@ export const workoutApi = () => {
             url: `${BACKEND_URL}/workout/user/${user_id}`,
             method: "GET",
             headers: {
+                'Content-Type': 'application/json',
                 'Authorization': `Bearer ${token}`
             }
         });
@@ -29,7 +30,12 @@ export const workoutApi = () => {
     // get single workout
     const getSingleWorkout = async (workout_id: number) => {
         return await sendRequest({
-            url: `${process.env.REACT_APP_BACKEND_URL}/workout/${workout_id}`
+            url: `${process.env.REACT_APP_BACKEND_URL}/public/workout/${workout_id}`,
+            method: "GET",
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${token}`
+            }
         })
     }
 
@@ -70,7 +76,7 @@ export const workoutApi = () => {
     // comment on workout
     const commentOnWorkout = async (
         workout_id: number,
-        commentData: { user_id: number, content: string }
+        content: string
     ) => {
         return await sendRequest({
             url: `${BACKEND_URL}/workout/${workout_id}/comment`,
@@ -79,7 +85,7 @@ export const workoutApi = () => {
                 'Content-Type': 'application/json',
                 'Authorization': `Bearer ${token}`
             },
-            body: JSON.stringify(commentData)
+            body: JSON.stringify({content})
         });
     };
 
@@ -87,7 +93,7 @@ export const workoutApi = () => {
     const editCommentOnWorkout = async (
         workout_id: number,
         comment_id: number,
-        comment_data: { user_id: number, content: string }
+        content: string
     ) => {
         return await sendRequest({
             url: `${BACKEND_URL}/workout/${workout_id}/comment/${comment_id}`,
@@ -96,7 +102,7 @@ export const workoutApi = () => {
                 'Content-Type': 'application/json',
                 'Authorization': `Bearer ${token}`
             },
-            body: JSON.stringify(comment_data)
+            body: JSON.stringify({content})
         });
     };
 
@@ -104,7 +110,6 @@ export const workoutApi = () => {
     const deleteWorkoutComment = async (
         workout_id: number,
         comment_id: number,
-        user_id: number
     ) => {
         return await sendRequest({
             url: `${BACKEND_URL}/workout/${workout_id}/comment/${comment_id}`,
@@ -112,15 +117,13 @@ export const workoutApi = () => {
             headers: {
                 'Content-Type': 'application/json',
                 'Authorization': `Bearer ${token}`
-            },
-            body: JSON.stringify({ user_id })
+            }
         });
     };
 
     // like workout
     const likeWorkout = async (
-        workout_id: number,
-        user_id: number
+        workout_id: number
     ) => {
         return await sendRequest({
             url: `${BACKEND_URL}/workout/${workout_id}/like`,
@@ -128,15 +131,13 @@ export const workoutApi = () => {
             headers: {
                 'Content-Type': 'application/json',
                 'Authorization': `Bearer ${token}`
-            },
-            body: JSON.stringify({ user_id })
+            }
         });
     };
 
     // unlike workout
     const unlikeWorkout = async (
-        workout_id: number,
-        user_id: number
+        workout_id: number
     ) => {
         return await sendRequest({
             url: `${BACKEND_URL}/workout/${workout_id}/unlike`,
@@ -144,15 +145,13 @@ export const workoutApi = () => {
             headers: {
                 'Content-Type': 'application/json',
                 'Authorization': `Bearer ${token}`
-            },
-            body: JSON.stringify({ user_id })
+            }
         });
     };
 
     // delete workout
     const deleteWorkout = async (
-        workout_id: number,
-        user_id: number
+        workout_id: number
     ) => {
         return await sendRequest({
             url: `${BACKEND_URL}/workout/${workout_id}`,
@@ -160,8 +159,7 @@ export const workoutApi = () => {
             headers: {
                 'Content-Type': 'application/json',
                 'Authorization': `Bearer ${token}`
-            },
-            body: JSON.stringify({ user_id })
+            }
         });
     };
 

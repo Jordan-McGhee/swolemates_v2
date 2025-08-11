@@ -5,6 +5,8 @@ import { Link } from "react-router-dom";
 import { useAuth } from "@/context/AuthProvider";
 import { useFetch } from "@/hooks/useFetch";
 import { postApi } from "@/api/postApi";
+import { workoutApi } from "@/api/workoutApi";
+// import { sessionApi } from "@/api/sessionApi";
 
 // ui imports
 import { Button } from "@/components/ui/button";
@@ -18,12 +20,14 @@ import { AddCommentFormProps } from "@/types/props/props-types";
 // util imports
 import { validateCommentContent } from "@/util/input-validators";
 
-const AddCommentForm: React.FC<AddCommentFormProps> = ({ post_id, onCommentAdded }) => {
-    
+const AddCommentForm: React.FC<AddCommentFormProps> = ({ post_id, workout_id, session_id, onCommentAdded }) => {
+
     // hook destructuring
     const { user, token } = useAuth();
     const { isLoading, hasError, clearError } = useFetch();
     const { commentOnPost } = postApi();
+    const { commentOnWorkout } = workoutApi();
+    // const { commentOnSession } = sessionApi();
 
     const [commentContent, setCommentContent] = useState("");
 
@@ -40,46 +44,62 @@ const AddCommentForm: React.FC<AddCommentFormProps> = ({ post_id, onCommentAdded
             console.error("Invalid comment content:", hasError);
             return;
         }
-        clearError(); // Clear any previous errors
-        console.log("Submitting comment:", commentContent);
-        // Prepare the comment data
+        clearError();
+
         if (!user || !token) {
             console.error("You must be logged in to add a comment!");
             return;
         }
 
         try {
-
-            const response = await commentOnPost(post_id, commentContent)
+            let response;
+            if (post_id) {
+                response = await commentOnPost(post_id, commentContent);
+            } else if (workout_id) {
+                response = await commentOnWorkout(workout_id, commentContent);
+            } else if (session_id) {
+                // Uncomment and implement sessionApi if needed
+                // response = await commentOnSession(session_id, commentContent);
+                toast.error("Session comments not implemented.");
+                return;
+            } else {
+                toast.error("No valid target for comment.");
+                return;
+            }
 
             if (response) {
-                // onCommentAdded(response);
                 onCommentAdded?.(response.comment);
                 setCommentContent("");
                 toast.success(
                     <>
                         Your comment was posted!
                         <Link
-                            to={'/'}
+                            to={
+                                post_id
+                                    ? `/posts/${post_id}`
+                                    : workout_id
+                                    ? `/workouts/${workout_id}`
+                                    : session_id
+                                    ? `/sessions/${session_id}`
+                                    : "/"
+                            }
                             className="text-[var(--accent)] hover:underline ml-2"
                         >
-                            View post.
+                            {post_id
+                                ? "View post."
+                                : workout_id
+                                ? "View workout."
+                                : session_id
+                                ? "View session."
+                                : "View comments."}
                         </Link>
                     </>
                 );
-            } else {}
+            }
         } catch (error) {
             console.error("Failed to add comment:", error);
         }
     };
-
-    const mobileCommentForm = (
-        <></>
-    )
-
-    const desktopCommentForm = (
-        <></>
-    )
 
     return (
         <form onSubmit={handleSubmit} className="flex items-center gap-x-4 w-full">
@@ -87,7 +107,7 @@ const AddCommentForm: React.FC<AddCommentFormProps> = ({ post_id, onCommentAdded
                 {user?.profile_pic ? (
                     <AvatarImage src={user.profile_pic} alt={user.username} />
                 ) : (
-                    <AvatarFallback>{user?.username[0]}</AvatarFallback>
+                    <AvatarFallback>{user?.username?.[0]}</AvatarFallback>
                 )}
             </Avatar>
             <div className="relative flex-1">

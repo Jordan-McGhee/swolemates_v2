@@ -137,6 +137,7 @@ export default function Profile() {
                         {selectedMenuItem === "feed" && <ProfileFeed user={profileUser} feedType="default" />}
                         {selectedMenuItem === "posts" && <ProfileFeed user={profileUser} feedType="posts" />}
                         {selectedMenuItem === "workouts" && <ProfileFeed user={profileUser} feedType="workouts" />}
+                        {selectedMenuItem === "sessions" && <ProfileFeed user={profileUser} feedType="sessions" />}
                         {selectedMenuItem === "friends" && <ProfileFriends />}
                         {selectedMenuItem === "groups" && <ProfileGroups />}
                     </div>

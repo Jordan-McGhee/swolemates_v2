@@ -1,9 +1,12 @@
 // hook imports
 import { useFetch } from "@/hooks/useFetch";
 import { useAuth } from "@/context/AuthProvider";
+import { SessionExercise } from "@/types/props/props-types";
 
-// post api
-export const postApi = () => {
+// type imports
+
+// session api
+export const sessionApi = () => {
     // hook destructuring
     const { token } = useAuth();
     const { isLoading, hasError, sendRequest, clearError } = useFetch()
@@ -11,10 +14,10 @@ export const postApi = () => {
     // Use Vite env var
     const BACKEND_URL = import.meta.env.VITE_BACKEND_URL;
 
-    // get all posts from user
-    const getAllUserPosts = async (user_id: number) => {
+    // get all sessions from user
+    const getAllUserSessions = async (user_id: number) => {
         return await sendRequest({
-            url: `${BACKEND_URL}/post/user/${user_id}`,
+            url: `${BACKEND_URL}/session/user/${user_id}`,
             method: "GET",
             headers: {
                 'Content-Type': 'application/json',
@@ -23,10 +26,10 @@ export const postApi = () => {
         })
     }
 
-    // get single post
-    const getSinglePost = async (post_id: number) => {
+    // get single session
+    const getSingleSession = async (session_id: number) => {
         return await sendRequest({
-            url: `${BACKEND_URL}/public/post/${post_id}`,
+            url: `${BACKEND_URL}/session/${session_id}`,
             method: "GET",
             headers: {
                 'Content-Type': 'application/json',
@@ -35,37 +38,36 @@ export const postApi = () => {
         })
     }
 
-    // create post
-    const createPost = async (postData: { content: string, image_url?: string, workout_id?: number, group_id?: number }) => {
+    // create session
+    const createSession = async (sessionData: { workout_id: number, duration_minutes: number, notes?: string, difficulty?: number, exercises: SessionExercise[] }) => {
         return await sendRequest({
-            url: `${BACKEND_URL}/post`,
+            url: `${BACKEND_URL}/session`,
             method: "POST",
             headers: {
                 'Content-Type': 'application/json',
                 Authorization: `Bearer ${token}`
             },
-            body: JSON.stringify(postData)
+            body: JSON.stringify(sessionData)
         })
     }
 
-    // edit post
-    const editPost = async (post_id: number, postData: { content: string, image_url?: string, workout_id?: number }) => {
+    // edit session
+    const editSession = async (session_id: number, sessionData: { duration_minutes: number, notes?: string, difficulty?: number, exercises: SessionExercise[] }) => {
         return await sendRequest({
-            url: `${BACKEND_URL}/post/${post_id}`,
+            url: `${BACKEND_URL}/session/${session_id}`,
             method: "PATCH",
             headers: {
                 'Content-Type': 'application/json',
                 Authorization: `Bearer ${token}`
             },
-            body: JSON.stringify(postData)
+            body: JSON.stringify(sessionData)
         })
     }
 
-    // comment on post
-    const commentOnPost = async (post_id: number, content: string) => {
-        console.log("Commenting on post with ID:", post_id, "Content:", content);
+    // comment on session
+    const commentOnSession = async (session_id: number, content: string) => {
         return await sendRequest({
-            url: `${BACKEND_URL}/post/${post_id}/comment`,
+            url: `${BACKEND_URL}/session/${session_id}/comment`,
             method: "POST",
             headers: {
                 'Content-Type': 'application/json',
@@ -75,35 +77,35 @@ export const postApi = () => {
         })
     }
 
-    // edit comment on post
-    const editCommentOnPost = async (post_id: number, comment_id: number, content: string) => {
+    // edit comment on session
+    const editCommentOnSession = async (session_id: number, comment_id: number, content: string) => {
         return await sendRequest({
-            url: `${BACKEND_URL}/post/${post_id}/comment/${comment_id}`,
+            url: `${BACKEND_URL}/session/${session_id}/comment/${comment_id}`,
             method: "PATCH",
             headers: {
                 'Content-Type': 'application/json',
                 Authorization: `Bearer ${token}`
             },
-            body: JSON.stringify(content)
+            body: JSON.stringify({ content })
         })
     }
 
-    // delete comment
-    const deletePostComment = async (post_id: number, comment_id: number) => {
+    // delete comment on session
+    const deleteCommentOnSession = async (session_id: number, comment_id: number) => {
         return await sendRequest({
-            url: `${BACKEND_URL}/post/${post_id}/comment/${comment_id}`,
+            url: `${BACKEND_URL}/session/${session_id}/comment/${comment_id}`,
             method: "DELETE",
             headers: {
                 'Content-Type': 'application/json',
                 Authorization: `Bearer ${token}`
             }
         })
-    }
+    }  
 
-    // like post
-    const likePost = async (post_id: number) => {
+    // like session
+    const likeSession = async (session_id: number) => {
         return await sendRequest({
-            url: `${BACKEND_URL}/post/${post_id}/like`,
+            url: `${BACKEND_URL}/session/${session_id}/like`,
             method: "POST",
             headers: {
                 'Content-Type': 'application/json',
@@ -112,10 +114,10 @@ export const postApi = () => {
         })
     }
 
-    // remove like
-    const unlikePost = async (post_id: number) => {
+    // unlike session
+    const unlikeSession = async (session_id: number) => {
         return await sendRequest({
-            url: `${BACKEND_URL}/post/${post_id}/unlike`,
+            url: `${BACKEND_URL}/session/${session_id}/unlike`,
             method: "DELETE",
             headers: {
                 'Content-Type': 'application/json',
@@ -124,10 +126,10 @@ export const postApi = () => {
         })
     }
 
-    // delete post
-    const deletePost = async (post_id: number) => {
+    // delete session
+    const deleteSession = async (session_id: number) => {
         return await sendRequest({
-            url: `${BACKEND_URL}/post/${post_id}`,
+            url: `${BACKEND_URL}/session/${session_id}`,
             method: "DELETE",
             headers: {
                 'Content-Type': 'application/json',
@@ -137,18 +139,18 @@ export const postApi = () => {
     }
 
     return {
-        getAllUserPosts,
-        getSinglePost,
-        createPost,
-        editPost,
-        commentOnPost,
-        editCommentOnPost,
-        deletePostComment,
-        likePost,
-        unlikePost,
-        deletePost,
-        isLoadingPost: isLoading,
+        isLoading,
         hasError,
-        clearError
+        clearError,
+        getAllUserSessions,
+        getSingleSession,
+        createSession,
+        editSession,
+        commentOnSession,
+        editCommentOnSession,
+        deleteCommentOnSession,
+        likeSession,
+        unlikeSession,
+        deleteSession
     }
 }

@@ -160,7 +160,7 @@ const ExerciseInput: React.FC<ExerciseInputProps> = ({ exerciseIndex, handleExer
 
 
     return (
-        <div className="">
+        <div className="border border-[var(--accent)] rounded-lg p-4 mb-4">
             <div className="flex items-center justify-between mb-2">
                 <p className="text-lg font-semi">Exercise {exerciseIndex}</p>
                 <Button

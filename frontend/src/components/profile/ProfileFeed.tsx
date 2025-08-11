@@ -10,9 +10,10 @@ import { getSingleUserFeed } from '@/api/profileApi';
 // component imports
 import ErrorModal from '../ErrorModal';
 import PostItem from '../posts/PostItem';
+import WorkoutItem from '../workouts/WorkoutItem';
 
 // types imports
-import { ProfileFeedProps, Feed, Post, Workout } from '@/types/props/props-types';
+import { ProfileFeedProps, Feed, Post, Workout, WorkoutSession } from '@/types/props/props-types';
 import { Button } from '../ui/button';
 
 export const ProfileFeed = ({ user, feedType }: ProfileFeedProps) => {
@@ -110,7 +111,15 @@ export const ProfileFeed = ({ user, feedType }: ProfileFeedProps) => {
 
     const posts: Post[] = feed.filter((item): item is Post => item.type === 'post');
     const workouts: Workout[] = feed.filter((item): item is Workout => item.type === 'workout');
-    const displayFeed = feedType === 'posts' ? posts : feedType === 'workouts' ? workouts : feed;
+    const sessions: WorkoutSession[] = feed.filter((item): item is WorkoutSession => item.type === 'session');
+    const displayFeed =
+        feedType === 'posts'
+            ? posts
+            : feedType === 'workouts'
+            ? workouts
+            : feedType === 'sessions'
+            ? sessions
+            : feed;
 
     return (
         <>
@@ -142,27 +151,28 @@ export const ProfileFeed = ({ user, feedType }: ProfileFeedProps) => {
                                         user={user}
                                         post={item}
                                     />
-                                ) : (
+                                ) : item.type === 'workout' ? (
+                                    <WorkoutItem
+                                        user={user}
+                                        workout={item}
+                                    />
+                                ) : item.type === 'session' ? (
                                     <div>
                                         <div className="flex items-center justify-between mb-3">
-                                            <span className="text-xs font-semibold text-green-600 bg-green-50 px-2 py-1 rounded">
-                                                WORKOUT
+                                            <span className="text-xs font-semibold text-blue-600 bg-blue-50 px-2 py-1 rounded">
+                                                SESSION
                                             </span>
                                             <span className="text-xs text-gray-500">
                                                 {new Date(item.created_at).toLocaleDateString()}
-                                            </span >
-                                        </div >
+                                            </span>
+                                        </div>
                                         <div className="text-gray-800">
-                                            {
-                                                item.type === 'workout' && item.title && (
-                                                    <h3 className="font-semibold mb-2">{item.title}</h3>
-                                                )
-                                            }
-                                            {/* Add more workout rendering logic here */}
-                                        </div >
-                                    </div >
-                                )}
-                            </div >
+                                            <h3 className="font-semibold mb-2">Session Placeholder</h3>
+                                            {/* Add more session rendering logic here */}
+                                        </div>
+                                    </div>
+                                ) : null}
+                            </div>
                         );
                     })}
                 </div >
