@@ -35,15 +35,16 @@ app.use((req, res, next) => {
 
 // import routes
 const authRoutes = require("./routes/auth-routes")
+const commentRoutes = require("./routes/comment-routes")
 const friendRoutes = require("./routes/friend-routes")
 const groupRoutes = require("./routes/group-routes")
 const notificationRoutes = require("./routes/notification-routes")
 const postRoutes = require("./routes/post-routes")
+const publicRoutes = require("./routes/public-routes")
 const searchRoutes = require("./routes/search-routes")
 const sessionRoutes = require("./routes/session-routes")
 const userRoutes = require("./routes/user-routes")
 const workoutRoutes = require("./routes/workout-routes")
-const publicRoutes = require("./routes/public-routes")
 
 // public routes
 app.use("/public", publicRoutes);
@@ -54,6 +55,7 @@ app.use(verifyFirebaseToken);
 
 // private routes
 app.use("/auth", authRoutes)
+app.use("/comment", commentRoutes)
 app.use("/friend", friendRoutes)
 app.use("/group", groupRoutes)
 app.use("/notification", notificationRoutes)

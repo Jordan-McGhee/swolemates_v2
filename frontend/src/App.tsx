@@ -41,7 +41,7 @@ export default function App() {
           <Route path="/workouts/:workout_id?" element={<ViewWorkout />} />
 
           {/* sessions */}
-          <Route path="/session/:session_id" element={<ViewSession />} />
+          <Route path="/sessions/:session_id" element={<ViewSession />} />
         </Route>
       </Routes>
     </div>

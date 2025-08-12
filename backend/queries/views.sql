@@ -74,24 +74,54 @@ SELECT
         ),
         '[]'
     ) AS likes,
-    -- Aggregate comments
+    -- Aggregate comments with their likes
     COALESCE(
         (
             SELECT
                 json_agg(
-                    comment_data
+                    json_build_object(
+                        'comment_id', comment_data.comment_id,
+                        'user_id', comment_data.user_id,
+                        'username', comment_data.username,
+                        'profile_pic', comment_data.profile_pic,
+                        'content', comment_data.content,
+                        'created_at', comment_data.created_at,
+                        'updated_at', comment_data.updated_at,
+                        'likes', comment_data.likes
+                    )
                     ORDER BY
                         comment_data.created_at
                 )
             FROM
                 (
                     SELECT
+                        c.comment_id,
                         c.user_id,
                         uc.username,
                         uc.profile_pic,
                         c.content,
                         c.created_at,
-                        c.updated_at
+                        c.updated_at,
+                        -- Nested aggregation for comment likes
+                        COALESCE(
+                            (
+                                SELECT
+                                    json_agg(
+                                        json_build_object(
+                                            'user_id', cl.user_id,
+                                            'username', ucl.username,
+                                            'profile_pic', ucl.profile_pic
+                                        )
+                                        ORDER BY cl.created_at ASC
+                                    )
+                                FROM
+                                    likes cl
+                                    JOIN users ucl ON cl.user_id = ucl.user_id
+                                WHERE
+                                    cl.comment_id = c.comment_id
+                            ),
+                            '[]'
+                        ) AS likes
                     FROM
                         comments c
                         JOIN users uc ON c.user_id = uc.user_id
@@ -248,42 +278,96 @@ SELECT
 
     -- Aggregate likes into a JSON array
     COALESCE(
-        json_agg(
-            json_build_object(
-                'user_id', l.user_id,
-                'username', lu.username,
-                'profile_pic', lu.profile_pic
-            ) ORDER BY l.created_at ASC
-        ) FILTER (WHERE l.user_id IS NOT NULL), '[]'::json
+        (
+            SELECT
+                json_agg(
+                    json_build_object(
+                        'user_id', like_data.user_id,
+                        'username', like_data.username,
+                        'profile_pic', like_data.profile_pic
+                    )
+                    ORDER BY like_data.created_at ASC
+                )
+            FROM
+                (
+                    SELECT
+                        l.user_id,
+                        lu.username,
+                        lu.profile_pic,
+                        l.created_at
+                    FROM
+                        likes l
+                        JOIN users lu ON l.user_id = lu.user_id
+                    WHERE
+                        l.workout_id = w.workout_id
+                    ORDER BY
+                        l.created_at ASC
+                ) AS like_data
+        ),
+        '[]'::json
     ) AS likes,
 
-    -- Aggregate comments into a JSON array
+    -- Aggregate comments with their likes into a JSON array
     COALESCE(
-        json_agg(
-            json_build_object(
-                'user_id', c.user_id,
-                'username', cu.username,
-                'profile_pic', cu.profile_pic,
-                'content', c.content,
-                'created_at', c.created_at,
-                'updated_at', c.updated_at
-            ) ORDER BY c.created_at ASC
-        ) FILTER (WHERE c.comment_id IS NOT NULL), '[]'::json
+        (
+            SELECT
+                json_agg(
+                    json_build_object(
+                        'comment_id', comment_data.comment_id,
+                        'user_id', comment_data.user_id,
+                        'username', comment_data.username,
+                        'profile_pic', comment_data.profile_pic,
+                        'content', comment_data.content,
+                        'created_at', comment_data.created_at,
+                        'updated_at', comment_data.updated_at,
+                        'likes', comment_data.likes
+                    )
+                    ORDER BY comment_data.created_at ASC
+                )
+            FROM
+                (
+                    SELECT
+                        c.comment_id,
+                        c.user_id,
+                        cu.username,
+                        cu.profile_pic,
+                        c.content,
+                        c.created_at,
+                        c.updated_at,
+                        -- Nested aggregation for comment likes
+                        COALESCE(
+                            (
+                                SELECT
+                                    json_agg(
+                                        json_build_object(
+                                            'user_id', cl.user_id,
+                                            'username', ucl.username,
+                                            'profile_pic', ucl.profile_pic
+                                        )
+                                        ORDER BY cl.created_at ASC
+                                    )
+                                FROM
+                                    likes cl
+                                    JOIN users ucl ON cl.user_id = ucl.user_id
+                                WHERE
+                                    cl.comment_id = c.comment_id
+                            ),
+                            '[]'::json
+                        ) AS likes
+                    FROM
+                        comments c
+                        JOIN users cu ON c.user_id = cu.user_id
+                    WHERE
+                        c.workout_id = w.workout_id
+                    ORDER BY
+                        c.created_at ASC
+                ) AS comment_data
+        ),
+        '[]'::json
     ) AS comments
 
 FROM workouts w
-LEFT JOIN users u ON w.user_id = u.user_id
-
--- Join Likes
-LEFT JOIN likes l ON w.workout_id = l.workout_id
-LEFT JOIN users lu ON l.user_id = lu.user_id
-
--- Join Comments
-LEFT JOIN comments c ON w.workout_id = c.workout_id
-LEFT JOIN users cu ON c.user_id = cu.user_id
-
-GROUP BY w.workout_id, w.user_id, u.username, u.profile_pic, w.title, w.description, w.workout_type, w.created_at;
-
+LEFT JOIN users u ON w.user_id = u.user_id;
 
 -- Workout sessions view with likes and comments
 CREATE VIEW workout_session_with_likes_comments AS
@@ -328,47 +412,99 @@ SELECT
         ), '[]'::json
     ) AS completed_exercises,
 
-    -- Aggregate likes into a JSON array (assuming likes table references session_id)
+    -- Aggregate likes into a JSON array
     COALESCE(
-        json_agg(
-            json_build_object(
-                'user_id', l.user_id,
-                'username', lu.username,
-                'profile_pic', lu.profile_pic
-            ) ORDER BY l.created_at ASC
-        ) FILTER (WHERE l.user_id IS NOT NULL), '[]'::json
+        (
+            SELECT
+                json_agg(
+                    json_build_object(
+                        'user_id', like_data.user_id,
+                        'username', like_data.username,
+                        'profile_pic', like_data.profile_pic
+                    )
+                    ORDER BY like_data.created_at ASC
+                )
+            FROM
+                (
+                    SELECT
+                        l.user_id,
+                        lu.username,
+                        lu.profile_pic,
+                        l.created_at
+                    FROM
+                        likes l
+                        JOIN users lu ON l.user_id = lu.user_id
+                    WHERE
+                        l.session_id = ws.session_id
+                    ORDER BY
+                        l.created_at ASC
+                ) AS like_data
+        ),
+        '[]'::json
     ) AS likes,
 
-    -- Aggregate comments into a JSON array (assuming comments table references session_id)
+    -- Aggregate comments with their likes into a JSON array
     COALESCE(
-        json_agg(
-            json_build_object(
-                'user_id', c.user_id,
-                'username', cu.username,
-                'profile_pic', cu.profile_pic,
-                'content', c.content,
-                'created_at', c.created_at,
-                'updated_at', c.updated_at
-            ) ORDER BY c.created_at ASC
-        ) FILTER (WHERE c.comment_id IS NOT NULL), '[]'::json
+        (
+            SELECT
+                json_agg(
+                    json_build_object(
+                        'comment_id', comment_data.comment_id,
+                        'user_id', comment_data.user_id,
+                        'username', comment_data.username,
+                        'profile_pic', comment_data.profile_pic,
+                        'content', comment_data.content,
+                        'created_at', comment_data.created_at,
+                        'updated_at', comment_data.updated_at,
+                        'likes', comment_data.likes
+                    )
+                    ORDER BY comment_data.created_at ASC
+                )
+            FROM
+                (
+                    SELECT
+                        c.comment_id,
+                        c.user_id,
+                        cu.username,
+                        cu.profile_pic,
+                        c.content,
+                        c.created_at,
+                        c.updated_at,
+                        -- Nested aggregation for comment likes
+                        COALESCE(
+                            (
+                                SELECT
+                                    json_agg(
+                                        json_build_object(
+                                            'user_id', cl.user_id,
+                                            'username', ucl.username,
+                                            'profile_pic', ucl.profile_pic
+                                        )
+                                        ORDER BY cl.created_at ASC
+                                    )
+                                FROM
+                                    likes cl
+                                    JOIN users ucl ON cl.user_id = ucl.user_id
+                                WHERE
+                                    cl.comment_id = c.comment_id
+                            ),
+                            '[]'::json
+                        ) AS likes
+                    FROM
+                        comments c
+                        JOIN users cu ON c.user_id = cu.user_id
+                    WHERE
+                        c.session_id = ws.session_id
+                    ORDER BY
+                        c.created_at ASC
+                ) AS comment_data
+        ),
+        '[]'::json
     ) AS comments
 
 FROM workout_sessions ws
 LEFT JOIN users u ON ws.user_id = u.user_id
-LEFT JOIN workouts w ON ws.workout_id = w.workout_id
-
--- Join Likes (you may need to add session_id column to likes table)
-LEFT JOIN likes l ON ws.session_id = l.session_id
-LEFT JOIN users lu ON l.user_id = lu.user_id
-
--- Join Comments (you may need to add session_id column to comments table)
-LEFT JOIN comments c ON ws.session_id = c.session_id
-LEFT JOIN users cu ON c.user_id = cu.user_id
-
-GROUP BY 
-    ws.session_id, ws.workout_id, ws.user_id, u.username, u.profile_pic, 
-    w.title, w.description, w.workout_type, ws.duration_minutes, 
-    ws.total_distance_miles, ws.notes, ws.difficulty, ws.created_at;
+LEFT JOIN workouts w ON ws.workout_id = w.workout_id;
 
 
 -- Updated user feed view with posts (excluding group posts), workout templates, and workout sessions

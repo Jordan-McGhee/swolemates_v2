@@ -141,6 +141,12 @@ export const PostItem: React.FC<PostItemProps> = ({ user, post }) => {
                     likesCount={likesCount}
                     commentsCount={commentsCount}
                     onLikeToggle={handleLikeToggle}
+                    onLikeClickMobile={() => {
+                        navigate(`/posts/${post.post_id}?show=likes`);
+                    }}
+                    onLikeClickDesktop={() => {
+                        navigate(`/posts/${post.post_id}`);
+                    }}
                     onCommentClick={() => {
                         navigate(`/posts/${post.post_id}`);
                     }}
@@ -148,9 +154,9 @@ export const PostItem: React.FC<PostItemProps> = ({ user, post }) => {
                 />
             </CardContent>
 
-            <div className="flex-1 border-t border-[#f4f4f4]" />
+            {/* <div className="flex-1 border-t border-[#f4f4f4]" /> */}
 
-            <CardFooter className="">
+            {/* <CardFooter className="">
                 {authUser ? (
                     <AddCommentForm
                         post_id={post.post_id}
@@ -161,7 +167,7 @@ export const PostItem: React.FC<PostItemProps> = ({ user, post }) => {
                         You must log in to comment.
                     </div>
                 )}
-            </CardFooter>
+            </CardFooter> */}
         </Card>
     );
 };

@@ -47,6 +47,7 @@ export interface Comment {
     // username: string;
     // profile_pic?: string;
     content: string;
+    likes?: Like[];
     created_at: Date;
     updated_at: Date;
 }
@@ -61,6 +62,8 @@ export interface AddCommentFormProps {
 export interface Like {
     like_id: number;
     user_id: number;
+    username?: string;
+    profile_pic?: string;
     post_id?: number;
     workout_id?: number;
     comment_id?: number;
@@ -264,12 +267,15 @@ export interface ProfileFeedProps {
 }
 
 export interface LikeCommentButtonsProps {
-    liked: boolean;
+    liked: boolean | undefined;
     likesCount: number;
     commentsCount: number;
     onLikeToggle: () => void;
+    onLikeClickMobile?: () => void;
+    onLikeClickDesktop?: () => void;
     onCommentClick?: () => void;
     disabled?: boolean;
+    hideComments?: boolean;
 };
 
 export interface PostItemProps {
@@ -285,6 +291,10 @@ export interface WorkoutItemProps {
 export interface SessionItemProps {
     user: PostgreSQLUser | null;
     session: WorkoutSession;
+}
+
+export interface CommentItemProps {
+    comment: Comment;
 }
 
 export interface UserFeedResponse {
@@ -318,6 +328,14 @@ export interface ProfileEditFormProps {
 // POST TYPES
 export interface CreatePostProps {
     workouts?: Workout[];
+}
+
+export interface ViewPostItemProps {
+    onLikesUpdate?: (updatedLikes: Like[]) => void;
+}
+
+export interface ViewPostLikesProps {
+    likes: Like[];
 }
 
 // WORKOUT TYPES

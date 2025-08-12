@@ -126,3 +126,13 @@ Working On:
 - Workout and session items for feed
 <!-- - Add sessions to profile menu items DONE -->
 <!-- - updating workout and session apis DONE -->
+
+## Tue Aug 12
+Working On:
+<!-- - changing like/comment button stylings to allow for clicking on counts and buttons separately DONE -->
+<!-- - rearranging viewpostitem page so likes appear in drawer DONE -->
+<!-- - Updating views to allow for liking comments and viewing comment likes DONE -->
+
+## Wed Aug 13
+To do:
+- Fix likes on view post item. When clicked, it doesn't work properly. Requires page refresh

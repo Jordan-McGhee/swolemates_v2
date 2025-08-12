@@ -7,14 +7,17 @@ import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { EllipsisVertical } from "lucide-react";
 import { toast } from "sonner";
+import { Drawer, DrawerContent, DrawerHeader, DrawerTitle, DrawerClose } from "@/components/ui/drawer";
+import { UserPlus } from "lucide-react";
 
 // component imports
 import LikeCommentButtons from "@/components/ui/like-comment-buttons";
 import AddCommentForm from "@/components/comments/AddCommentForm";
+import CommentItem from "@/components/comments/CommentItem";
 import ErrorModal from "@/components/ErrorModal";
 
 // type imports
-import { Post, Comment, Like } from "@/types/props/props-types";
+import { Post, Comment, Like, ViewPostItemProps } from "@/types/props/props-types";
 
 // util imports
 import { formatDate } from "@/util/general-util";
@@ -23,7 +26,7 @@ import { formatDate } from "@/util/general-util";
 import { useAuth } from "@/context/AuthProvider";
 import { postApi } from "@/api/postApi";
 
-const ViewPostItem = () => {
+const ViewPostItem: React.FC<ViewPostItemProps> = ({ onLikesUpdate }) => {
 
     // hook destructuring
     const { user: authUser, token } = useAuth();
@@ -43,6 +46,10 @@ const ViewPostItem = () => {
     const [commentsCount, setCommentsCount] = useState<number>(0);
     const [comments, setComments] = useState<Comment[]>([]);
 
+    // mobile drawer state
+    const searchParams = new URLSearchParams(window.location.search);
+    const [drawerOpen, setDrawerOpen] = useState(searchParams.get("show") === "likes");
+
     // Fetch post data and update states
     useEffect(() => {
         const fetchPost = async () => {
@@ -51,12 +58,7 @@ const ViewPostItem = () => {
                 const fetchedPost = await getSinglePost(Number(post_id));
                 console.log("Fetched post:", fetchedPost);
                 setPost(fetchedPost.post);
-                setLikesCount(fetchedPost.post.likes?.length ?? 0);
-                setLiked(
-                    fetchedPost.post.likes?.some(
-                        (like: Like) => Number(like.user_id) === Number(authUser?.user_id)
-                    ) ?? false
-                );
+                handleLikesUpdate(fetchedPost.post.likes || []);
                 setCommentsCount(fetchedPost.post.comments?.length ?? 0);
                 setComments(fetchedPost.post.comments || []);
             } catch (error) {
@@ -65,15 +67,29 @@ const ViewPostItem = () => {
         };
         fetchPost();
 
-    }, [post_id]);
+    }, [post_id, authUser?.user_id]);
 
+    // likes update handler
+    const handleLikesUpdate = (updatedLikes: Like[]) => {
+        setLikesCount(updatedLikes.length);
+        setLiked(
+            updatedLikes.some(
+                (like: Like) =>
+                    String(like.user_id) === String(authUser?.user_id)
+            )
+        );
+        if (onLikesUpdate) {
+            onLikesUpdate(updatedLikes);
+        }
+    };
+
+    // like handlers 
     const handleLikeToggle = async () => {
         if (!authUser || !token) return;
         if (liked) {
             try {
-                await unlikePost(post.post_id);
-                setLikesCount((count) => count - 1);
-                setLiked(false);
+                const updatedLikes = await unlikePost(post.post_id);
+                handleLikesUpdate(updatedLikes);
                 toast(
                     <>
                         You unliked that post - nice!
@@ -84,9 +100,8 @@ const ViewPostItem = () => {
             }
         } else {
             try {
-                await likePost(post.post_id);
-                setLikesCount((count) => count + 1);
-                setLiked(true);
+                const updatedLikes = await likePost(post.post_id);
+                handleLikesUpdate(updatedLikes);
                 toast.success(
                     <>
                         You liked that post - nice!
@@ -123,7 +138,8 @@ const ViewPostItem = () => {
             {isLoadingPost && <div className="flex items-center justify-center h-screen">Loading...</div>}
 
             {(!isLoadingPost && post && post.post_id) && (
-                <Card className={`bg-[var(--white)] shadow-sm text-left`}>
+
+                <Card className={`bg-[var(--white)] shadow-lg text-left`}>
                     <CardHeader className="flex flex-row items-start justify-between gap-4">
                         <div className="flex items-center gap-3">
                             <Avatar className="size-8 rounded-md">
@@ -171,7 +187,6 @@ const ViewPostItem = () => {
                     </CardHeader>
 
                     <CardContent className="whitespace-pre-wrap break-words text-[var(--subhead-text)]">
-
                         {post.content}
 
                         {/* like/comment */}
@@ -179,6 +194,7 @@ const ViewPostItem = () => {
                             likesCount={likesCount}
                             commentsCount={commentsCount}
                             onLikeToggle={handleLikeToggle}
+                            onLikeClickMobile={() => { setDrawerOpen(true); }}
                             onCommentClick={() => {
                                 const commentSection = document.getElementById(`add-comment-form`);
                                 if (commentSection) {
@@ -187,37 +203,55 @@ const ViewPostItem = () => {
                             }}
                             liked={liked}
                             disabled={!authUser}
+                            hideComments={false}
                         />
 
-                        {comments.length > 0 && (
-                            <div className="mt-4">
-                                <p className="font-semibold mb-2 text-[var(--accent)]">Comments ({commentsCount})</p>
-                                <div className="flex flex-col gap-4">
-                                    {comments.map((comment) => (
-                                        <div key={comment.comment_id} className="flex items-start gap-3 bg-[#f4f4f4] rounded-md p-3">
-                                            <Avatar className="size-7 rounded-md">
-                                                {comment.profile_pic ? (
-                                                    <AvatarImage src={comment.profile_pic} alt={comment.username} />
-                                                ) : (
-                                                    <AvatarFallback>
-                                                        {comment.username}
-                                                    </AvatarFallback>
-                                                )}
-                                            </Avatar>
-                                            <div className="text-sm">
-                                                <div className="flex items-center gap-2">
-                                                    <Link to={`/user/${comment.username}`} className="font-medium text-[var(--accent)] hover:underline">
-                                                        {comment.username}
-                                                    </Link>
-                                                    <span className="text-xs text-[var(--subhead-text)]">{formatDate(comment.created_at, "relative")}</span>
-                                                </div>
-                                                <p className="text-[var(--main-text)] whitespace-pre-wrap">{comment.content}</p>
-                                            </div>
-                                        </div>
-                                    ))}
-                                </div>
-                            </div>
-                        )}
+                        {/* Drawer for likes - only visible on mobile/tablet */}
+                        <div className="md:hidden">
+                            <Drawer open={drawerOpen} onOpenChange={setDrawerOpen}>
+                                <DrawerContent>
+                                    <DrawerHeader>
+                                        <DrawerTitle className="text-xl font-semibold">Likes</DrawerTitle>
+                                        <DrawerClose />
+                                    </DrawerHeader>
+                                    <div className="px-4 pb-4" id="likes-section">
+                                        {post.likes && post.likes.length > 0 ? (
+                                            <ul>
+                                                {post.likes.map((like: Like, idx: number) => (
+                                                    <li
+                                                        key={like.user_id}
+                                                        className="p-4 bg-white shadow-sm rounded-md mb-2 flex items-center justify-between"
+                                                    >
+                                                        <Link
+                                                            to={`/user/${like.username}`}
+                                                            className="text-xl text-[var(--accent)] flex items-center gap-4 hover:underline"
+                                                        >
+                                                            <Avatar className="size-10 rounded-md">
+                                                                {like.profile_pic ? (
+                                                                    <AvatarImage src={like.profile_pic} alt={like.username} />
+                                                                ) : (
+                                                                    <AvatarFallback>
+                                                                        {like.username}
+                                                                    </AvatarFallback>
+                                                                )}
+                                                            </Avatar>
+                                                            <p className="text-xl text-[var(--accent)]">{like.username}</p>
+                                                        </Link>
+                                                        {/* Standalone UserPlus icon */}
+                                                        <UserPlus size={20} className="ml-4 text-[var(--accent)]" />
+                                                        {idx < (post.likes?.length ?? 0) - 1 && (
+                                                            <div className="border-t border-[#f4f4f4] mx-2" />
+                                                        )}
+                                                    </li>
+                                                ))}
+                                            </ul>
+                                        ) : (
+                                            <p>No likes yet.</p>
+                                        )}
+                                    </div>
+                                </DrawerContent>
+                            </Drawer>
+                        </div>
                     </CardContent>
 
                     <div className="flex-1 border-t border-[#f4f4f4]" />
@@ -230,6 +264,21 @@ const ViewPostItem = () => {
                             post_id={post.post_id}
                             onCommentAdded={handleCommentAdded}
                         />
+
+                        {comments.length > 0 ? (
+                            <div className="w-full flex flex-col gap-0">
+                                {comments.map((comment, idx) => (
+                                    <React.Fragment key={comment.comment_id}>
+                                        <CommentItem comment={comment} />
+                                        {idx < comments.length - 1 && (
+                                            <div className="border-t border-[#f4f4f4] mx-2 my-1" />
+                                        )}
+                                    </React.Fragment>
+                                ))}
+                            </div>
+                        ) : (
+                            <p className="text-sm text-[var(--subhead-text)]">No comments yet.</p>
+                        )}
                     </CardFooter>
                 </Card>
             )}

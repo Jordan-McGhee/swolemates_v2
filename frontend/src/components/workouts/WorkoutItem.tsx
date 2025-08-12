@@ -75,7 +75,7 @@ export const WorkoutItem: React.FC<WorkoutItemProps> = ({ user, workout }) => {
     };
 
     return (
-        <Card className="bg-[var(--white)] shadow-sm">
+        <Card className="bg-[var(--white)] shadow-sm text-left">
             <CardHeader className="flex flex-row items-start justify-between gap-4">
                 <div className="flex items-center gap-3">
                     <Avatar className="size-7 rounded-md">
@@ -163,13 +163,20 @@ export const WorkoutItem: React.FC<WorkoutItemProps> = ({ user, workout }) => {
                     likesCount={likesCount}
                     commentsCount={commentsCount}
                     onLikeToggle={handleLikeToggle}
+                    onLikeClickMobile={() => {
+                        navigate(`/workouts/${workout.workout_id}?show=likes`);
+                    }}
+                    onLikeClickDesktop={() => {
+                        navigate(`/workouts/${workout.workout_id}`);
+                    }}
                     onCommentClick={() => {
                         navigate(`/workouts/${workout.workout_id}`);
                     }}
                     disabled={!authUser}
+                    hideComments={false}
                 />
             </CardContent>
-            <div className="flex-1 border-t border-[#f4f4f4]" />
+            {/* <div className="flex-1 border-t border-[#f4f4f4]" />
             <CardFooter>
                 {authUser ? (
                     <AddCommentForm
@@ -181,7 +188,7 @@ export const WorkoutItem: React.FC<WorkoutItemProps> = ({ user, workout }) => {
                         You must log in to comment.
                     </div>
                 )}
-            </CardFooter>
+            </CardFooter> */}
         </Card>
     )
 }
