@@ -250,7 +250,8 @@ SELECT
     w.title AS workout_title,
     w.description AS workout_description,
     w.workout_type,
-    w.created_at AS workout_created_at,
+    w.created_at AS created_at,
+    w.updated_at AS updated_at,
 
     -- Aggregate exercises into a JSON array with all flexible fields
     COALESCE(
@@ -384,7 +385,8 @@ SELECT
     ws.total_distance_miles,
     ws.notes AS session_notes,
     ws.difficulty,
-    ws.created_at AS session_created_at,
+    ws.created_at AS created_at,
+    ws.updated_at AS updated_at,
 
     -- Aggregate completed exercises into a JSON array
     COALESCE(
@@ -532,6 +534,7 @@ FROM (
         p.username,
         p.profile_pic,
         p.created_at,
+        p.updated_at,
         json_build_object(
             'type', 'post',
             'post_id', p.post_id,
@@ -557,7 +560,8 @@ FROM (
         w.user_id,
         w.username,
         w.profile_pic,
-        w.workout_created_at AS created_at,
+        w.created_at,
+        w.updated_at,
         json_build_object(
             'type', 'workout',
             'workout_id', w.workout_id,
@@ -567,7 +571,8 @@ FROM (
             'user_id', w.user_id,
             'username', w.username,
             'profile_pic', w.profile_pic,
-            'created_at', w.workout_created_at,
+            'created_at', w.created_at,
+            'updated_at', w.updated_at,
             'exercises', w.exercises,
             'likes', w.likes,
             'comments', w.comments
@@ -581,7 +586,8 @@ FROM (
         ws.user_id,
         ws.username,
         ws.profile_pic,
-        ws.session_created_at AS created_at,
+        ws.created_at,
+        ws.updated_at,
         json_build_object(
             'type', 'session',
             'session_id', ws.session_id,
@@ -596,7 +602,8 @@ FROM (
             'total_distance_miles', ws.total_distance_miles,
             'session_notes', ws.session_notes,
             'difficulty', ws.difficulty,
-            'created_at', ws.session_created_at,
+            'created_at', ws.created_at,
+            'updated_at', ws.updated_at,
             'completed_exercises', ws.completed_exercises,
             'likes', ws.likes,
             'comments', ws.comments

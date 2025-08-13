@@ -2,7 +2,7 @@ import React, { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 
 // ui imports
-import { Card, CardHeader, CardContent, CardFooter } from "@/components/ui/card";
+import { Card, CardHeader, CardContent } from "@/components/ui/card";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuTrigger } from "../ui/dropdown-menu";
 import { EllipsisVertical } from "lucide-react";
@@ -10,7 +10,7 @@ import { toast } from "sonner";
 
 // component imports
 import LikeCommentButtons from "../ui/like-comment-buttons";
-import AddCommentForm from "@/components/comments/AddCommentForm";
+// import AddCommentForm from "@/components/comments/AddCommentForm";
 
 // type imports
 import { WorkoutItemProps, Like } from "@/types/props/props-types";
@@ -30,20 +30,20 @@ export const WorkoutItem: React.FC<WorkoutItemProps> = ({ user, workout }) => {
     const navigate = useNavigate();
 
     // Like functionality
-    const [likesCount, setLikesCount] = useState<number>(workout.likes?.length ?? 0);
+    const [likeCount, setlikeCount] = useState<number>(workout.likes?.length ?? 0);
     const [liked, setLiked] = useState<boolean>(
         workout.likes?.some((like: Like) => like.user_id === authUser?.user_id) ?? false
     );
 
     // comment functionality
-    const [commentsCount, setCommentsCount] = useState<number>(workout.comments?.length ?? 0);
+    const [commentCount, setcommentCount] = useState<number>(workout.comments?.length ?? 0);
 
     const handleLikeToggle = async () => {
         if (!authUser || !token) return;
         if (liked) {
             try {
                 await unlikeWorkout(workout.workout_id);
-                setLikesCount((count) => count - 1);
+                setlikeCount((count) => count - 1);
                 setLiked(false);
                 toast(
                     <>
@@ -56,7 +56,7 @@ export const WorkoutItem: React.FC<WorkoutItemProps> = ({ user, workout }) => {
         } else {
             try {
                 await likeWorkout(workout.workout_id);
-                setLikesCount((count) => count + 1);
+                setlikeCount((count) => count + 1);
                 setLiked(true);
                 toast.success(
                     <>
@@ -67,11 +67,6 @@ export const WorkoutItem: React.FC<WorkoutItemProps> = ({ user, workout }) => {
                 console.error("Failed to like workout:", error);
             }
         }
-    };
-
-    // comment handlers
-    const handleCommentAdded = () => {
-        setCommentsCount((count) => count + 1);
     };
 
     return (
@@ -100,17 +95,24 @@ export const WorkoutItem: React.FC<WorkoutItemProps> = ({ user, workout }) => {
                     </DropdownMenuTrigger>
                     <DropdownMenuContent align="end" className="w-40">
                         <DropdownMenuLabel className="text-[var(--subhead-text)] text-xs font-bold">Workout Actions</DropdownMenuLabel>
-                        <DropdownMenuItem>
-                            View Workout
+                        <DropdownMenuItem asChild>
+                            <Link to={`/workouts/${workout.workout_id}`}>
+                                View Workout
+                            </Link>
                         </DropdownMenuItem>
                         {user?.user_id === workout.user_id && (
                             <>
-                                <DropdownMenuItem>
-                                    Create Session
+                                <DropdownMenuItem asChild>
+                                    <Link to={`/sessions/create?workout_id=${workout.workout_id}`}>
+                                        Create Session
+                                    </Link>
                                 </DropdownMenuItem>
-                                <DropdownMenuItem>
-                                    Edit Workout
+                                <DropdownMenuItem asChild>
+                                    <Link to={`/workouts/${workout.workout_id}/edit`}>
+                                        Edit Workout
+                                    </Link>
                                 </DropdownMenuItem>
+
                                 <DropdownMenuItem variant="destructive">
                                     Delete Workout
                                 </DropdownMenuItem>
@@ -121,7 +123,12 @@ export const WorkoutItem: React.FC<WorkoutItemProps> = ({ user, workout }) => {
             </CardHeader>
             <CardContent className="flex flex-col justify-start">
                 <div className="">
-                    <p className="font-bold text-xl text-[var(--accent)]">{workout.workout_title}</p>
+                    <Link
+                        to={`/workouts/${workout.workout_id}`}
+                        className="font-bold text-xl text-[var(--accent)] hover:underline hover:cursor-pointer"
+                    >
+                        {workout.workout_title}
+                    </Link>
                     {workout.workout_description && (
                         <p className="text-[var(--subhead-text)] mt-1">{workout.workout_description}</p>
                     )}
@@ -160,8 +167,8 @@ export const WorkoutItem: React.FC<WorkoutItemProps> = ({ user, workout }) => {
                 )}
                 <LikeCommentButtons
                     liked={liked}
-                    likesCount={likesCount}
-                    commentsCount={commentsCount}
+                    likeCount={likeCount}
+                    commentCount={commentCount}
                     onLikeToggle={handleLikeToggle}
                     onLikeClickMobile={() => {
                         navigate(`/workouts/${workout.workout_id}?show=likes`);

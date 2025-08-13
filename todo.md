@@ -95,3 +95,10 @@ TESTING
 - Post tests: getAllUsers, getSingle
 - Friend tests: getAllFriends, getAllSent/ReceivedRequsts
 - Workout tests: getWorkoutsByUser, getSingleWorkout, 
+
+
+
+
+
+# WISHLIST / NICE TO HAVES
+- Ability to tag other user workouts in a post

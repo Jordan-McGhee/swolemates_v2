@@ -31,8 +31,8 @@ export const createSession = async (req: Request, res: Response, next: NextFunct
 
         // Insert session
         const sessionRes = await client.query(
-            `INSERT INTO workout_sessions (workout_id, user_id, duration_minutes, total_distance_miles, notes, difficulty, created_at)
-            VALUES ($1, $2, $3, $4, $5, $6, NOW())
+            `INSERT INTO workout_sessions (workout_id, user_id, duration_minutes, total_distance_miles, notes, difficulty, created_at, updated_at)
+            VALUES ($1, $2, $3, $4, $5, $6, NOW(), NOW())
             RETURNING session_id`,
             [workout_id, user_id, duration_minutes ?? null, total_distance_miles ?? null, notes ?? null, difficulty ?? null]
         );
@@ -122,7 +122,7 @@ export const editSession = async (req: Request, res: Response, next: NextFunctio
         // Update session
         await client.query(
             `UPDATE workout_sessions
-            SET workout_id = $1, duration_minutes = $2, total_distance_miles = $3, notes = $4, difficulty = $5
+            SET workout_id = $1, duration_minutes = $2, total_distance_miles = $3, notes = $4, difficulty = $5, updated_at = NOW()
             WHERE session_id = $6`,
             [
                 workout_id ?? null,

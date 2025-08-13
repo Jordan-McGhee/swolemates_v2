@@ -104,8 +104,8 @@ export function validateExerciseTitle(value: string): string | undefined {
     if (value.trim().length < 3) {
         return "Exercise title must be at least 3 characters.";
     }
-    if (value.trim().length > 50) {
-        return "Exercise title cannot exceed 50 characters.";
+    if (value.trim().length > 30) {
+        return "Exercise title cannot exceed 30 characters.";
     }
     return undefined;
 }

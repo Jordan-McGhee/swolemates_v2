@@ -135,4 +135,9 @@ Working On:
 
 ## Wed Aug 13
 To do:
-- Fix likes on view post item. When clicked, it doesn't work properly. Requires page refresh
+<!-- - Fix likes on view post item. When clicked, it doesn't work properly. Requires page refresh DONE -->
+<!-- - Move useEffect fetch to ViewPostPage DONE -->
+- Create ViewWorkoutPage and CreateSessionForms
+- Add workouts to createPost and ViewPostItem components
+- Add component for inaccessible routes
+<!-- - Fix issues with likes not updating properly DONE -->

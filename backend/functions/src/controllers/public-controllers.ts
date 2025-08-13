@@ -501,7 +501,7 @@ export const getWorkoutsByUser = async (req: Request, res: Response, next: NextF
         }
 
         // Fetch user's workouts
-        const getWorkoutsByUserQuery = "SELECT * FROM workouts_with_likes_comments WHERE user_id = $1 ORDER BY workout_created_at DESC";
+        const getWorkoutsByUserQuery = "SELECT * FROM workout_with_likes_comments WHERE user_id = $1 ORDER BY workout_created_at DESC";
         const getWorkoutsByUserRes: QueryResult = await pool.query(getWorkoutsByUserQuery, [user_id]);
 
         return res.status(200).json({
@@ -528,7 +528,7 @@ export const getSingleWorkout = async (req: Request, res: Response, next: NextFu
     }
 
     // Query for the workout
-    const getSingleWorkoutQuery = `SELECT * FROM workouts_with_likes_comments WHERE workout_id = $1`;
+    const getSingleWorkoutQuery = `SELECT * FROM workout_with_likes_comments WHERE workout_id = $1`;
 
     try {
         // Get the workout

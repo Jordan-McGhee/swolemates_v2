@@ -1,5 +1,5 @@
-import React, { useState, useEffect } from "react";
-import { useParams, Link } from "react-router-dom";
+import React, { useState } from "react";
+import { Link } from "react-router-dom";
 
 // ui imports
 import { Card, CardHeader, CardContent, CardFooter } from "@/components/ui/card";
@@ -14,130 +14,38 @@ import { UserPlus } from "lucide-react";
 import LikeCommentButtons from "@/components/ui/like-comment-buttons";
 import AddCommentForm from "@/components/comments/AddCommentForm";
 import CommentItem from "@/components/comments/CommentItem";
-import ErrorModal from "@/components/ErrorModal";
 
 // type imports
-import { Post, Comment, Like, ViewPostItemProps } from "@/types/props/props-types";
+import { Like, ViewPostItemProps } from "@/types/props/props-types";
 
 // util imports
 import { formatDate } from "@/util/general-util";
 
 // hook import
 import { useAuth } from "@/context/AuthProvider";
-import { postApi } from "@/api/postApi";
 
-const ViewPostItem: React.FC<ViewPostItemProps> = ({ onLikesUpdate }) => {
+const ViewPostItem: React.FC<ViewPostItemProps> = ({
+    post,
+    likes,
+    likeCount,
+    liked,
+    comments,
+    commentCount,
+    onLikeToggle,
+    onCommentAdded
+}) => {
 
     // hook destructuring
-    const { user: authUser, token } = useAuth();
-    const { getSinglePost, likePost, unlikePost, isLoadingPost, hasError, clearError } = postApi();
-
-    // Get post_id from URL params
-    const { post_id } = useParams<{ post_id: string }>();
-
-    // fetch post data
-    const [post, setPost] = useState<Post>({} as Post);
-
-    // Like functionality
-    const [likesCount, setLikesCount] = useState<number>(0);
-    const [liked, setLiked] = useState<boolean>(false);
-
-    // comment functionality
-    const [commentsCount, setCommentsCount] = useState<number>(0);
-    const [comments, setComments] = useState<Comment[]>([]);
+    const { user: authUser } = useAuth();
 
     // mobile drawer state
     const searchParams = new URLSearchParams(window.location.search);
     const [drawerOpen, setDrawerOpen] = useState(searchParams.get("show") === "likes");
 
-    // Fetch post data and update states
-    useEffect(() => {
-        const fetchPost = async () => {
-            if (!post_id) return;
-            try {
-                const fetchedPost = await getSinglePost(Number(post_id));
-                console.log("Fetched post:", fetchedPost);
-                setPost(fetchedPost.post);
-                handleLikesUpdate(fetchedPost.post.likes || []);
-                setCommentsCount(fetchedPost.post.comments?.length ?? 0);
-                setComments(fetchedPost.post.comments || []);
-            } catch (error) {
-                console.error("Failed to fetch post:", error);
-            }
-        };
-        fetchPost();
-
-    }, [post_id, authUser?.user_id]);
-
-    // likes update handler
-    const handleLikesUpdate = (updatedLikes: Like[]) => {
-        setLikesCount(updatedLikes.length);
-        setLiked(
-            updatedLikes.some(
-                (like: Like) =>
-                    String(like.user_id) === String(authUser?.user_id)
-            )
-        );
-        if (onLikesUpdate) {
-            onLikesUpdate(updatedLikes);
-        }
-    };
-
-    // like handlers 
-    const handleLikeToggle = async () => {
-        if (!authUser || !token) return;
-        if (liked) {
-            try {
-                const updatedLikes = await unlikePost(post.post_id);
-                handleLikesUpdate(updatedLikes);
-                toast(
-                    <>
-                        You unliked that post - nice!
-                    </>
-                );
-            } catch (error) {
-                console.error("Failed to unlike post:", error);
-            }
-        } else {
-            try {
-                const updatedLikes = await likePost(post.post_id);
-                handleLikesUpdate(updatedLikes);
-                toast.success(
-                    <>
-                        You liked that post - nice!
-                    </>
-                );
-            } catch (error) {
-                console.error("Failed to like post:", error);
-            }
-        }
-    };
-
-    // comment handlers
-    const handleCommentAdded = (newComment: Comment) => {
-        // Populate authUser info if available
-        const populatedComment = {
-            ...newComment,
-            username: authUser?.username ?? newComment.username,
-            profile_pic: authUser?.profile_pic ?? newComment.profile_pic,
-        };
-        setCommentsCount((count) => count + 1);
-        setComments((prevComments) => [
-            ...prevComments,
-            populatedComment
-        ]);
-    };
-
     return (
 
         <>
-            {/* error state */}
-            {hasError && <ErrorModal error={hasError} onClear={clearError} />}
-
-            {/* loading state */}
-            {isLoadingPost && <div className="flex items-center justify-center h-screen">Loading...</div>}
-
-            {(!isLoadingPost && post && post.post_id) && (
+            {post && (
 
                 <Card className={`bg-[var(--white)] shadow-lg text-left`}>
                     <CardHeader className="flex flex-row items-start justify-between gap-4">
@@ -191,9 +99,9 @@ const ViewPostItem: React.FC<ViewPostItemProps> = ({ onLikesUpdate }) => {
 
                         {/* like/comment */}
                         <LikeCommentButtons
-                            likesCount={likesCount}
-                            commentsCount={commentsCount}
-                            onLikeToggle={handleLikeToggle}
+                            likeCount={likeCount}
+                            commentCount={commentCount}
+                            onLikeToggle={onLikeToggle}
                             onLikeClickMobile={() => { setDrawerOpen(true); }}
                             onCommentClick={() => {
                                 const commentSection = document.getElementById(`add-comment-form`);
@@ -215,9 +123,9 @@ const ViewPostItem: React.FC<ViewPostItemProps> = ({ onLikesUpdate }) => {
                                         <DrawerClose />
                                     </DrawerHeader>
                                     <div className="px-4 pb-4" id="likes-section">
-                                        {post.likes && post.likes.length > 0 ? (
+                                        {likes && likes.length > 0 ? (
                                             <ul>
-                                                {post.likes.map((like: Like, idx: number) => (
+                                                {likes.map((like: Like, idx: number) => (
                                                     <li
                                                         key={like.user_id}
                                                         className="p-4 bg-white shadow-sm rounded-md mb-2 flex items-center justify-between"
@@ -239,7 +147,7 @@ const ViewPostItem: React.FC<ViewPostItemProps> = ({ onLikesUpdate }) => {
                                                         </Link>
                                                         {/* Standalone UserPlus icon */}
                                                         <UserPlus size={20} className="ml-4 text-[var(--accent)]" />
-                                                        {idx < (post.likes?.length ?? 0) - 1 && (
+                                                        {idx < (likes?.length ?? 0) - 1 && (
                                                             <div className="border-t border-[#f4f4f4] mx-2" />
                                                         )}
                                                     </li>
@@ -254,16 +162,23 @@ const ViewPostItem: React.FC<ViewPostItemProps> = ({ onLikesUpdate }) => {
                         </div>
                     </CardContent>
 
-                    <div className="flex-1 border-t border-[#f4f4f4]" />
+                    {/* <div className="flex-1 border-t border-[#f4f4f4]" /> */}
 
                     <CardFooter
                         id="add-comment-form"
                         className="flex flex-col gap-4"
                     >
-                        <AddCommentForm
-                            post_id={post.post_id}
-                            onCommentAdded={handleCommentAdded}
-                        />
+                        {/* comment form */}
+                        {authUser ? (
+                            <div className="w-full pb-4 border-b border-[#f4f4f4]">
+                                <AddCommentForm
+                                    post_id={post.post_id}
+                                    onCommentAdded={onCommentAdded}
+                                />
+                            </div>
+                        ) : (
+                            <p className="text-sm text-[var(--subhead-text)]">Log in to add a comment.</p>
+                        )}
 
                         {comments.length > 0 ? (
                             <div className="w-full flex flex-col gap-0">

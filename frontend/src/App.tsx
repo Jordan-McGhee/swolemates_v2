@@ -13,7 +13,7 @@ import Groups from "./pages/groups/Groups"
 import ViewPostPage from "./pages/posts/ViewPostPage"
 import Workouts from "./pages/workouts/Workouts"
 import CreateWorkout from "./pages/workouts/CreateWorkout"
-import ViewWorkout from "./pages/workouts/ViewWorkout"
+import ViewWorkoutPage from "./pages/workouts/ViewWorkoutPage"
 import ViewSession from "./pages/sessions/ViewSession"
 
 export default function App() {
@@ -26,7 +26,9 @@ export default function App() {
 
           {/* groups */}
           <Route path="/groups" element={<Groups />} />
+          <Route path="/groups/create" element={<div>Create Group</div>} />
           <Route path="/groups/:group_id" element={<div>View Group</div>} />
+          <Route path="/groups/:group_id/edit" element={<div>Edit Group</div>} />
 
           {/* posts */}
           <Route path="/posts/:post_id" element={<ViewPostPage />} />
@@ -36,12 +38,17 @@ export default function App() {
           <Route path="/user/:username?" element={<Profile />} />
 
           {/* workouts */}
-          <Route path="/workouts/create" element={<CreateWorkout />} />
           <Route path="/workouts" element={<Workouts />} />
-          <Route path="/workouts/:workout_id?" element={<ViewWorkout />} />
+          <Route path="/workouts/create" element={<CreateWorkout />} />
+          <Route path="/workouts/:workout_id?" element={<ViewWorkoutPage />} />
+          <Route path="/workouts/:workout_id/edit" element={<div>Edit Workout</div>} />
 
           {/* sessions */}
+          <Route path="/sessions" element={<div>View Sessions</div>} />
+          <Route path="/sessions/create" element={<div>Create Session</div>} />
           <Route path="/sessions/:session_id" element={<ViewSession />} />
+          <Route path="/sessions/:session_id/edit" element={<div>Edit Session</div>} />
+
         </Route>
       </Routes>
     </div>

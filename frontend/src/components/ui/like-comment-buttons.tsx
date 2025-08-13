@@ -9,8 +9,8 @@ import { LikeCommentButtonsProps } from "@/types/props/props-types";
 
 export const LikeCommentButtons: React.FC<LikeCommentButtonsProps> = ({
     liked,
-    likesCount,
-    commentsCount,
+    likeCount,
+    commentCount,
     onLikeToggle,
     onLikeClickMobile,
     onLikeClickDesktop,
@@ -23,8 +23,8 @@ export const LikeCommentButtons: React.FC<LikeCommentButtonsProps> = ({
             <div className="flex items-center gap-x-4 md:gap-x-3">
                 <Button
                     variant="outline"
-                    className={`group flex items-center px-3 py-1 border border-[var(--accent-hover)] text-sm hover:text-[var(--white)] hover:border-[var(--white)] ${liked
-                        ? "bg-[var(--accent-hover)] text-[var(--accent)] border border-[var(--accent)] hover:text-[var(--white)] hover:border-[var(--white)]"
+                    className={`group flex items-center px-3 py-1 border border-[var(--accent-hover)] text-sm hover:text-[var(--accent-hover)] hover:border-[var(--white)] ${liked
+                        ? "bg-[var(--accent-hover)] text-[var(--accent)] border border-[var(--accent)] hover:text-[var(--accent-hover)] hover:border-[var(--white)]"
                         : ""
                         }`}
                     onClick={onLikeToggle}
@@ -42,7 +42,7 @@ export const LikeCommentButtons: React.FC<LikeCommentButtonsProps> = ({
                     onClick={onLikeClickMobile}
                     role="button"
                 >
-                    {likesCount}
+                    {likeCount}
                 </p>
                 {/* Desktop and larger: non-clickable likes count */}
                 <p
@@ -54,13 +54,13 @@ export const LikeCommentButtons: React.FC<LikeCommentButtonsProps> = ({
                     aria-label="Likes count"
                     onClick={onLikeClickDesktop ?? undefined}
                 >
-                    {likesCount}
+                    {likeCount}
                 </p>
                 {!hideComments && (
                     <>
                         <Button
                             variant="outline"
-                            className="flex items-center px-3 py-1 border border-[var(--accent-hover)] text-sm hover:text-[var(--white)] hover:border-[var(--white)]"
+                            className="flex items-center px-3 py-1 border border-[var(--accent-hover)] text-sm hover:text-[var(--accent-hover)] hover:border-[var(--white)]"
                             onClick={onCommentClick}
                             disabled={disabled}
                             aria-label="Comment"
@@ -74,7 +74,7 @@ export const LikeCommentButtons: React.FC<LikeCommentButtonsProps> = ({
                             onClick={onCommentClick}
                             role="button"
                         >
-                            {commentsCount}
+                            {commentCount}
                         </p>
                     </>
                 )}

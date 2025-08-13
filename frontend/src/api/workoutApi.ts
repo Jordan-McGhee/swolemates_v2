@@ -30,7 +30,7 @@ export const workoutApi = () => {
     // get single workout
     const getSingleWorkout = async (workout_id: number) => {
         return await sendRequest({
-            url: `${process.env.REACT_APP_BACKEND_URL}/public/workout/${workout_id}`,
+            url: `${BACKEND_URL}/public/workout/${workout_id}`,
             method: "GET",
             headers: {
                 'Content-Type': 'application/json',

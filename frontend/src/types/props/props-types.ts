@@ -90,10 +90,12 @@ export interface Workout {
     type?: 'workout';
     workout_id: number;
     user_id: number;
+    username?: string;
+    profile_pic?: string;
     workout_title: string;
     workout_description?: string;
     workout_type: WorkoutType;
-    exercises: WorkoutFormExercise[];
+    exercises: WorkoutExercise[];
     likes?: Like[];
     likes_count?: number;
     comments?: Comment[];
@@ -107,11 +109,15 @@ export interface WorkoutExercise {
     workout_id: number;
     exercise_id: number;
     exercise?: Exercise;
+    exercise_type: ExerciseType;
+    measurement_type?: MeasurementType;
+    title?: string;
     sets?: number;
     reps?: number;
     duration_seconds?: number;
     distance_miles?: number;
     created_at?: Date;
+    order_created_at?: Date;
 }
 
 // For creating/editing workouts
@@ -268,8 +274,8 @@ export interface ProfileFeedProps {
 
 export interface LikeCommentButtonsProps {
     liked: boolean | undefined;
-    likesCount: number;
-    commentsCount: number;
+    likeCount: number;
+    commentCount: number;
     onLikeToggle: () => void;
     onLikeClickMobile?: () => void;
     onLikeClickDesktop?: () => void;
@@ -331,14 +337,38 @@ export interface CreatePostProps {
 }
 
 export interface ViewPostItemProps {
+    post: Post | null;
+    likes: Like[];
+    likeCount: number;
+    liked: boolean;
+    comments: Comment[];
+    commentCount: number;
+    onLikeToggle: () => void;
     onLikesUpdate?: (updatedLikes: Like[]) => void;
+    onCommentAdded?: (newComment: Comment) => void;
 }
 
-export interface ViewPostLikesProps {
+export interface ViewPageLikesProps {
     likes: Like[];
 }
 
 // WORKOUT TYPES
+export interface ViewWorkoutItemProps {
+    workout: Workout;
+    likes: Like[];
+    likeCount: number;
+    liked: boolean;
+    comments: Comment[];
+    commentCount: number;
+    onLikeToggle: () => void;
+    onLikesUpdate?: (updatedLikes: Like[]) => void;
+    onCommentAdded?: (newComment: Comment) => void;
+}
+
+export interface ViewWorkoutExerciseItemProps {
+    exercise: WorkoutExercise;
+    index: number;
+}
 
 // WORKOUT FORM TYPES
 export interface ExerciseInputProps {

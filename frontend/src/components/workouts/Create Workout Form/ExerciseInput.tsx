@@ -190,7 +190,7 @@ const ExerciseInput: React.FC<ExerciseInputProps> = ({ exerciseIndex, handleExer
                         </p>
                     )}
                     <p
-                        className={`ml-auto mt-1.5 text-xs text-right ${title.length > 50
+                        className={`ml-auto mt-1.5 text-xs text-right ${title.length > 35
                             ? "text-[var(--danger)]"
                             : "text-[var(--subhead-text)]"
                             }`}
@@ -265,7 +265,7 @@ const ExerciseInput: React.FC<ExerciseInputProps> = ({ exerciseIndex, handleExer
                             type="number"
                             min={1}
                             max={300}
-                            step={5}
+                            step={1}
                             value={duration}
                             onChange={e => setDuration(e.target.value)}
                             onBlur={handleDurationBlur}

@@ -29,20 +29,20 @@ export const PostItem: React.FC<PostItemProps> = ({ user, post }) => {
     const navigate = useNavigate();
 
     // Like functionality
-    const [likesCount, setLikesCount] = useState<number>(post.likes?.length ?? 0);
+    const [likeCount, setLikeCount] = useState<number>(post.likes?.length ?? 0);
     const [liked, setLiked] = useState<boolean>(
         post.likes?.some((like: Like) => like.user_id === authUser?.user_id) ?? false
     );
 
     // comment functionality
-    const [commentsCount, setCommentsCount] = useState<number>(post.comments?.length ?? 0);
+    const [commentCount, setCommentCount] = useState<number>(post.comments?.length ?? 0);
 
     const handleLikeToggle = async () => {
         if (!authUser || !token) return;
         if (liked) {
             try {
                 await unlikePost(post.post_id);
-                setLikesCount((count) => count - 1);
+                setLikeCount((count) => count - 1);
                 setLiked(false);
                 toast(
                     <>
@@ -55,7 +55,7 @@ export const PostItem: React.FC<PostItemProps> = ({ user, post }) => {
         } else {
             try {
                 await likePost(post.post_id);
-                setLikesCount((count) => count + 1);
+                setLikeCount((count) => count + 1);
                 setLiked(true);
                 toast.success(
                     <>
@@ -70,7 +70,7 @@ export const PostItem: React.FC<PostItemProps> = ({ user, post }) => {
 
     // comment handlers
     const handleCommentAdded = () => {
-        setCommentsCount((count) => count + 1);
+        setCommentCount((count) => count + 1);
     };
 
     return (
@@ -138,8 +138,8 @@ export const PostItem: React.FC<PostItemProps> = ({ user, post }) => {
 
                 <LikeCommentButtons
                     liked={liked}
-                    likesCount={likesCount}
-                    commentsCount={commentsCount}
+                    likeCount={likeCount}
+                    commentCount={commentCount}
                     onLikeToggle={handleLikeToggle}
                     onLikeClickMobile={() => {
                         navigate(`/posts/${post.post_id}?show=likes`);

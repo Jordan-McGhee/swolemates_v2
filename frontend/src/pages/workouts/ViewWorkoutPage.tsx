@@ -2,63 +2,59 @@ import React, { useState, useEffect } from "react";
 import { useParams } from "react-router-dom";
 
 // component imports
-import ViewPostItem from "@/components/posts/ViewPost/ViewPostItem";
+import ViewWorkoutItem from "@/components/workouts/ViewWorkout/ViewWorkoutItem";
 
 // ui imports
 import { toast } from "sonner";
 
 // type imports
-import { Like, Comment, Post } from "@/types/props/props-types";
+import { Like, Comment, Workout, Exercise, WorkoutExercise } from "@/types/props/props-types";
 
 // hook imports
 import { useAuth } from "@/context/AuthProvider";
-import { postApi } from "@/api/postApi";
+import { workoutApi } from "@/api/workoutApi";
 import ViewPageLikes from "@/components/posts/ViewPost/ViewPageLikes";
 
-
-const ViewPostPage: React.FC = () => {
+const ViewWorkoutPage: React.FC = () => {
 
     // hook destructuring
     const { user: authUser, token } = useAuth();
-    const { getSinglePost, likePost, unlikePost } = postApi();
+    const { getSingleWorkout, likeWorkout, unlikeWorkout } = workoutApi();
 
-    // post id from url params
-    const { post_id } = useParams<{ post_id?: string }>();
+    // workout id from url params
+    const { workout_id } = useParams<{ workout_id: string }>();
 
     // states
-    const [post, setPost] = useState<Post | null>(null);
+    const [workout, setWorkout] = useState<Workout | null>(null);
 
-    // Like functionality
+    // like functionality
     const [likes, setLikes] = useState<Like[]>([]);
     const [liked, setLiked] = useState<boolean>(false);
 
     // comment functionality
     const [comments, setComments] = useState<Comment[]>([]);
 
-    // Fetch post data and update states
+    // Fetch workout data and update states
     useEffect(() => {
-        const fetchPost = async () => {
-            if (!post_id) return;
+        const fetchWorkout = async () => {
+            if (!workout_id) return;
             try {
-                const fetchedPost = await getSinglePost(Number(post_id));
-                console.log("Fetched post:", fetchedPost);
-                setPost(fetchedPost.post);
-                setLiked(
-                    fetchedPost.post.likes?.some(
-                        (like: Like) =>
-                            String(like.user_id) === String(authUser?.user_id)
-                    ) ?? false
-                );
-                setLikes(fetchedPost.post.likes ?? []);
-                setComments(fetchedPost.post.comments || []);
+                const fetchedWorkout = await getSingleWorkout(Number(workout_id));
+                console.log("Fetched workout:", fetchedWorkout);
+                setWorkout(fetchedWorkout.workout);
+                setLiked(fetchedWorkout.likes?.some(
+                    (like: Like) =>
+                        Number(like.user_id) === Number(authUser?.user_id)
+                ) ?? false);
+                setLikes(fetchedWorkout.likes ?? []);
+                setComments(fetchedWorkout.comments || []);
             } catch (error: any) {
-                console.error("Failed to fetch post:", error);
-                // toast.error(`Failed to fetch post: ${error?.message || error}`);
+                console.error("Failed to fetch workout:", error);
+                // toast.error(`Failed to fetch workout: ${error?.message || error}`);
             }
         };
-        fetchPost();
-
-    }, [post_id, authUser?.user_id]);
+        fetchWorkout();
+    }, [workout_id, authUser?.user_id]);
 
     // like handlers
     const handleLikesUpdate = (updatedLikes: Like[]) => {
@@ -68,37 +64,37 @@ const ViewPostPage: React.FC = () => {
                 (like: Like) => Number(like.user_id) === Number(authUser?.user_id)
             )
         );
-        setPost((prevPost) =>
-            prevPost ? { ...prevPost, likes: updatedLikes } : prevPost
+        setWorkout((prevWorkout) =>
+            prevWorkout ? { ...prevWorkout, likes: updatedLikes } : prevWorkout
         );
     };
 
     const handleLikeToggle = async () => {
-        if (!authUser || !token || !post) return;
+        if (!authUser || !token || !workout) return;
 
         if (liked) {
             try {
-                const response = await unlikePost(post.post_id);
+                const response = await unlikeWorkout(workout.workout_id);
                 const updatedLikes = Array.isArray(response)
                     ? response
                     : response?.likes ?? [];
                 handleLikesUpdate(updatedLikes);
                 toast(
                     <>
-                        You unliked that post - nice!
+                        You unliked that workout - nice!
                     </>
                 );
             } catch (error: any) {
-                console.error("Failed to unlike post:", error);
-                toast.error(`Failed to unlike post: ${error?.message || error}`);
+                console.error("Failed to unlike workout:", error);
+                toast.error(`Failed to unlike workout: ${error?.message || error}`);
             }
         } else {
             try {
-                const response = await likePost(post.post_id);
+                const response = await likeWorkout(workout.workout_id);
                 let updatedLikes = Array.isArray(response)
                     ? response
                     : response?.likes ?? [];
-                    
+
                 // Ensure the current user's like info is present
                 if (
                     !updatedLikes.some(
@@ -117,12 +113,12 @@ const ViewPostPage: React.FC = () => {
                 handleLikesUpdate(updatedLikes);
                 toast.success(
                     <>
-                        You liked that post - nice!
+                        You liked that workout - nice!
                     </>
                 );
             } catch (error: any) {
-                console.error("Failed to like post:", error);
-                toast.error(`Failed to like post: ${error?.message || error}`);
+                console.error("Failed to like workout:", error);
+                toast.error(`Failed to like workout: ${error?.message || error}`);
             }
         }
     };
@@ -139,14 +135,25 @@ const ViewPostPage: React.FC = () => {
             ...prevComments,
             populatedComment
         ]);
+
+        setWorkout((prevWorkout) =>
+            prevWorkout
+                ? {
+                    ...prevWorkout,
+                    comments: prevWorkout.comments
+                        ? [...prevWorkout.comments, populatedComment]
+                        : [populatedComment],
+                }
+                : prevWorkout
+        );
     };
 
     return (
         <div className="flex gap-4 w-full min-h-screen">
             {/* left side */}
             <div className="w-full lg:w-[65%] flex flex-col gap-4 overflow-y-auto h-full">
-                <ViewPostItem
-                    post={post}
+                <ViewWorkoutItem
+                    workout={workout!}
                     liked={liked}
                     likes={likes}
                     likeCount={likes.length}
@@ -162,9 +169,11 @@ const ViewPostPage: React.FC = () => {
             <div className="w-[35%] hidden lg:block overflow-y-auto h-screen">
                 <p className="text-xl font-semibold text-[var(--accent)] mb-2">Likes</p>
                 <ViewPageLikes likes={likes} />
+
+                {/* <ViewWorkoutFeaturedPosts /> */}
             </div>
         </div>
-    );
+    )
 }
 
-export default ViewPostPage;
+export default ViewWorkoutPage;

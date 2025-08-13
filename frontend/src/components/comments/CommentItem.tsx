@@ -69,8 +69,8 @@ const CommentItem: React.FC<CommentItemProps> = ({ comment }) => {
     };
 
     return (
-        <div className="relative flex flex-col gap-2 py-3 bg-[var(--white)] rounded-md">
-            <div className="flex items-center gap-3">
+        <div className="relative flex flex-col gap-2 py-2 bg-[var(--white)] rounded-md">
+            <div className="flex items-center gap-2">
                 <Avatar className="size-7 rounded-md">
                     {comment.profile_pic ? (
                         <AvatarImage src={comment.profile_pic} alt={comment.username} />
@@ -97,8 +97,8 @@ const CommentItem: React.FC<CommentItemProps> = ({ comment }) => {
 
             <div className="absolute bottom-2 right-2">
                 <LikeCommentButtons
-                    likesCount={likes.length}
-                    commentsCount={0}
+                    likeCount={likes.length}
+                    commentCount={0}
                     onLikeToggle={handleLikeToggle}
                     onCommentClick={() => { }}
                     liked={liked}
