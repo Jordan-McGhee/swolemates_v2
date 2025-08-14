@@ -14,6 +14,7 @@ import { UserPlus } from "lucide-react";
 import LikeCommentButtons from "@/components/ui/like-comment-buttons";
 import AddCommentForm from "@/components/comments/AddCommentForm";
 import CommentItem from "@/components/comments/CommentItem";
+import PostItemWorkout from "../PostItemWorkout";
 
 // type imports
 import { Like, ViewPostItemProps } from "@/types/props/props-types";
@@ -40,7 +41,8 @@ const ViewPostItem: React.FC<ViewPostItemProps> = ({
 
     // mobile drawer state
     const searchParams = new URLSearchParams(window.location.search);
-    const [drawerOpen, setDrawerOpen] = useState(searchParams.get("show") === "likes");
+    const initialDrawerOpen = searchParams.get("show") === "likes";
+    const [drawerOpen, setDrawerOpen] = useState(initialDrawerOpen);
 
     return (
 
@@ -67,31 +69,41 @@ const ViewPostItem: React.FC<ViewPostItemProps> = ({
                             </div>
                         </div>
 
-                        {/* post options */}
-                        {authUser && authUser.user_id === post.user_id && (
-                            <DropdownMenu>
-                                <DropdownMenuTrigger className="p-2 rounded-full hover:bg-[var(--off-bg)] transition">
-                                    <EllipsisVertical size={20} />
-                                </DropdownMenuTrigger>
-                                <DropdownMenuContent align="end" className="w-40">
-                                    <DropdownMenuLabel>Post Options</DropdownMenuLabel>
-                                    <DropdownMenuItem>
-                                        <Link to={`/posts/${post.post_id}/edit`} className="w-full h-full block">
-                                            Edit Post
-                                        </Link>
-                                    </DropdownMenuItem>
-                                    <DropdownMenuItem
-                                        variant="destructive"
-                                        onClick={() => {
-                                            // Implement delete functionality
-                                            toast.error("Delete functionality not implemented.");
-                                        }}
-                                    >
-                                        Delete Post
-                                    </DropdownMenuItem>
-                                </DropdownMenuContent>
-                            </DropdownMenu>
-                        )}
+                        <div className="flex items-center gap-1">
+                            {
+                                post.workout_id &&
+                                <PostItemWorkout
+                                    workout_id={post.workout_id}
+                                    workout_title={post.workout_title}
+                                />
+                            }
+
+                            {/* post options */}
+                            {authUser && authUser.user_id === post.user_id && (
+                                <DropdownMenu>
+                                    <DropdownMenuTrigger className="rounded-full hover:bg-[var(--off-bg)] transition">
+                                        <EllipsisVertical size={20} />
+                                    </DropdownMenuTrigger>
+                                    <DropdownMenuContent align="end" className="w-40">
+                                        <DropdownMenuLabel>Post Options</DropdownMenuLabel>
+                                        <DropdownMenuItem>
+                                            <Link to={`/posts/${post.post_id}/edit`} className="w-full h-full block">
+                                                Edit Post
+                                            </Link>
+                                        </DropdownMenuItem>
+                                        <DropdownMenuItem
+                                            variant="destructive"
+                                            onClick={() => {
+                                                // Implement delete functionality
+                                                toast.error("Delete functionality not implemented.");
+                                            }}
+                                        >
+                                            Delete Post
+                                        </DropdownMenuItem>
+                                    </DropdownMenuContent>
+                                </DropdownMenu>
+                            )}
+                        </div>
                     </CardHeader>
 
                     <CardContent className="whitespace-pre-wrap break-words text-[var(--subhead-text)]">

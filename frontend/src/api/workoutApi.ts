@@ -2,7 +2,7 @@ import { useFetch } from "@/hooks/useFetch";
 import { useAuth } from "@/context/AuthProvider";
 
 // type imports
-import { Workout, WorkoutFormExercise, WorkoutType } from "@/types/props/props-types";
+import { Like, Comment, Workout, WorkoutFormExercise, WorkoutType } from "@/types/props/props-types";
 
 // workout api
 export const workoutApi = () => {
@@ -16,9 +16,18 @@ export const workoutApi = () => {
     const BACKEND_URL = import.meta.env.VITE_BACKEND_URL;
 
     // get workouts by user
-    const getAllUserWorkouts = async (user_id: number): Promise<Workout[]> => {
+    interface GetAllUserWorkoutsResponse {
+        message: string;
+        workouts: Workout[];
+        workout_user_id: number;
+        likes: Like[]; // Update type if you have a specific Like type
+        comments: Comment[]; // Update type if you have a specific Comment type
+        canView: boolean;
+    }
+
+    const getAllUserWorkouts = async (username: string): Promise<GetAllUserWorkoutsResponse> => {
         return await sendRequest({
-            url: `${BACKEND_URL}/workout/user/${user_id}`,
+            url: `${BACKEND_URL}/public/workout/user/${username}`,
             method: "GET",
             headers: {
                 'Content-Type': 'application/json',
@@ -85,7 +94,7 @@ export const workoutApi = () => {
                 'Content-Type': 'application/json',
                 'Authorization': `Bearer ${token}`
             },
-            body: JSON.stringify({content})
+            body: JSON.stringify({ content })
         });
     };
 
@@ -102,7 +111,7 @@ export const workoutApi = () => {
                 'Content-Type': 'application/json',
                 'Authorization': `Bearer ${token}`
             },
-            body: JSON.stringify({content})
+            body: JSON.stringify({ content })
         });
     };
 

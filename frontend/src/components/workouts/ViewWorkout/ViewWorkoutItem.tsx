@@ -9,6 +9,7 @@ import { EllipsisVertical } from "lucide-react";
 import { toast } from "sonner";
 import { Drawer, DrawerContent, DrawerHeader, DrawerTitle, DrawerClose } from "@/components/ui/drawer";
 import { UserPlus } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
 
 // component imports
 import LikeCommentButtons from "@/components/ui/like-comment-buttons";
@@ -54,56 +55,12 @@ const ViewWorkoutItem: React.FC<ViewWorkoutItemProps> = ({
 
                         {/* workout info and user avatar */}
                         <div className="flex flex-col gap-2 w-full">
+
+                            <Badge className="">
+                                {workout.workout_type.toUpperCase()}
+                            </Badge>
                             {/* title and description */}
                             <p className="text-2xl font-semibold w-full">{workout.workout_title}</p>
-
-                            <span className='text-sm font-bold bg-[var(--accent-hover)] text-[var(--accent)] px-2 py-1 rounded-md w-fit'>
-                                {workout.workout_type.toUpperCase()}
-                            </span>
-
-
-                            {
-                                workout.workout_description &&
-                                <p className="text-[var(--subhead-text)]">{workout.workout_description}</p>
-                            }
-
-                            {/* user avatar and name */}
-                            <div className="flex flex-row items-center">
-                                <div className="flex items-center gap-3">
-                                    <Avatar className="size-8 rounded-md">
-                                        {workout.profile_pic ? (
-                                            <AvatarImage src={workout.profile_pic} alt={workout.username} />
-                                        ) : (
-                                            <AvatarFallback>
-                                                {workout.username}
-                                            </AvatarFallback>
-                                        )}
-                                    </Avatar>
-                                    <div className="text-left">
-                                        <Link to={`/user/${workout.username}`} className="font-medium text-[var(--accent)] hover:underline">
-                                            {workout.username}
-                                        </Link>
-                                        <p className="text-sm text-[var(--subhead-text)]">
-                                            {formatDate(workout.created_at, "relative")}
-                                        </p>
-                                    </div>
-                                </div>
-                            </div>
-
-                            <LikeCommentButtons
-                                likeCount={likeCount}
-                                commentCount={commentCount}
-                                onLikeToggle={onLikeToggle}
-                                onLikeClickMobile={() => setDrawerOpen(true)}
-                                onCommentClick={() => {
-                                    const commentSection = document.getElementById(`add-comment-form`);
-                                    if (commentSection) {
-                                        commentSection.scrollIntoView({ behavior: "smooth" });
-                                    }
-                                }}
-                                liked={liked}
-                                disabled={!authUser}
-                            />
 
                         </div>
 
@@ -150,6 +107,51 @@ const ViewWorkoutItem: React.FC<ViewWorkoutItemProps> = ({
                     </CardHeader>
 
                     <CardContent className="">
+
+                        <div className="flex flex-col gap-2 -mt-4 mb-4">
+                            {
+                                workout.workout_description &&
+                                <p className="text-[var(--subhead-text)]">{workout.workout_description}</p>
+                            }
+
+                            {/* user avatar and name */}
+                            <div className="flex flex-row items-center -mb-2">
+                                <div className="flex items-center gap-3">
+                                    <Avatar className="size-8 rounded-md">
+                                        {workout.profile_pic ? (
+                                            <AvatarImage src={workout.profile_pic} alt={workout.username} />
+                                        ) : (
+                                            <AvatarFallback>
+                                                {workout.username}
+                                            </AvatarFallback>
+                                        )}
+                                    </Avatar>
+                                    <div className="text-left">
+                                        <Link to={`/user/${workout.username}`} className="font-medium text-[var(--accent)] hover:underline">
+                                            {workout.username}
+                                        </Link>
+                                        <p className="text-sm text-[var(--subhead-text)]">
+                                            {formatDate(workout.created_at, "relative")}
+                                        </p>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <LikeCommentButtons
+                                likeCount={likeCount}
+                                commentCount={commentCount}
+                                onLikeToggle={onLikeToggle}
+                                onLikeClickMobile={() => setDrawerOpen(true)}
+                                onCommentClick={() => {
+                                    const commentSection = document.getElementById(`add-comment-form`);
+                                    if (commentSection) {
+                                        commentSection.scrollIntoView({ behavior: "smooth" });
+                                    }
+                                }}
+                                liked={liked}
+                                disabled={!authUser}
+                            />
+                        </div>
 
                         {/* exercise list */}
                         {workout.exercises.map((exercise, idx) => {

@@ -501,7 +501,7 @@ export const getWorkoutsByUser = async (req: Request, res: Response, next: NextF
         }
 
         // Fetch user's workouts
-        const getWorkoutsByUserQuery = "SELECT * FROM workout_with_likes_comments WHERE user_id = $1 ORDER BY workout_created_at DESC";
+        const getWorkoutsByUserQuery = "SELECT * FROM workout_with_likes_comments WHERE user_id = $1 ORDER BY created_at DESC";
         const getWorkoutsByUserRes: QueryResult = await pool.query(getWorkoutsByUserQuery, [user_id]);
 
         return res.status(200).json({

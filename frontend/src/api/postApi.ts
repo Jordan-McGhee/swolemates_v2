@@ -12,9 +12,9 @@ export const postApi = () => {
     const BACKEND_URL = import.meta.env.VITE_BACKEND_URL;
 
     // get all posts from user
-    const getAllUserPosts = async (user_id: number) => {
+    const getAllUserPosts = async (username: string) => {
         return await sendRequest({
-            url: `${BACKEND_URL}/post/user/${user_id}`,
+            url: `${BACKEND_URL}/post/user/${username}`,
             method: "GET",
             headers: {
                 'Content-Type': 'application/json',

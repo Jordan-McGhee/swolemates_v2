@@ -289,6 +289,11 @@ export interface PostItemProps {
     post: Post;
 }
 
+export interface PostItemWorkoutProps {
+    workout_id: number | undefined;
+    workout_title?: string;
+}
+
 export interface WorkoutItemProps {
     user: PostgreSQLUser | null;
     workout: Workout;
@@ -334,6 +339,10 @@ export interface ProfileEditFormProps {
 // POST TYPES
 export interface CreatePostProps {
     workouts?: Workout[];
+}
+
+export interface AddWorkoutButtonProps {
+    onWorkoutSelect: (workout: Workout | null) => void;
 }
 
 export interface ViewPostItemProps {

@@ -137,7 +137,12 @@ Working On:
 To do:
 <!-- - Fix likes on view post item. When clicked, it doesn't work properly. Requires page refresh DONE -->
 <!-- - Move useEffect fetch to ViewPostPage DONE -->
-- Create ViewWorkoutPage and CreateSessionForms
-- Add workouts to createPost and ViewPostItem components
-- Add component for inaccessible routes
 <!-- - Fix issues with likes not updating properly DONE -->
+
+## Thu Aug 14
+To do:
+- Create ViewWorkoutPage and CreateSessionForms
+<!-- - Add workouts to createPost and ViewPostItem components DONE -->
+- Add component for inaccessible routes
+- Fix drawer opening twice on like click on mobile
+- Fix nav menu on profile - on desktop, it is slightly cut off and doesn't scroll

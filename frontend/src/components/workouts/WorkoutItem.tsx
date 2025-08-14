@@ -7,6 +7,7 @@ import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuTrigger } from "../ui/dropdown-menu";
 import { EllipsisVertical } from "lucide-react";
 import { toast } from "sonner";
+import { Badge } from "@/components/ui/badge";
 
 // component imports
 import LikeCommentButtons from "../ui/like-comment-buttons";
@@ -83,7 +84,7 @@ export const WorkoutItem: React.FC<WorkoutItemProps> = ({ user, workout }) => {
                         )}
                     </Avatar>
                     <div className="text-left">
-                        <p className="text-sm"><span className="font-semibold text-[var(--accent)]">{user?.username}</span> created a new <span className="font-semibold text-[var(--accent)]">{workout.workout_type.toUpperCase()}</span> workout!</p>
+                        <p className="text-sm font-semibold text-[var(--accent)]">{user?.username} <span className="text-[var(--subhead-text)]">created a workout!</span></p>
                         <p className="text-xs text-[var(--subhead-text)]">
                             {formatDate(workout.created_at, "relative")}
                         </p>
@@ -122,7 +123,13 @@ export const WorkoutItem: React.FC<WorkoutItemProps> = ({ user, workout }) => {
                 </DropdownMenu>
             </CardHeader>
             <CardContent className="flex flex-col justify-start">
-                <div className="">
+
+                {/* workout info */}
+                <div className="flex flex-col">
+                    <Badge className="mb-2">
+                        {workout.workout_type.toUpperCase()}
+                    </Badge>
+
                     <Link
                         to={`/workouts/${workout.workout_id}`}
                         className="font-bold text-xl text-[var(--accent)] hover:underline hover:cursor-pointer"
@@ -133,34 +140,31 @@ export const WorkoutItem: React.FC<WorkoutItemProps> = ({ user, workout }) => {
                         <p className="text-[var(--subhead-text)] mt-1">{workout.workout_description}</p>
                     )}
                 </div>
-                {workout.exercises && workout.exercises.length > 0 && (
+
+                {/* exercises */}
+                {workout.exercises && (
                     <details className="mt-2">
-                        <summary className="cursor-pointer text-xs text-[var(--accent)]">
+                        <summary className="cursor-pointer text-sm text-[var(--accent)]">
                             View Exercises ({workout.exercises.length})
                         </summary>
                         <ul className="mt-2 space-y-1">
                             {workout.exercises.map((exercise, idx) => {
                                 const type = exercise.exercise_type?.toLowerCase();
+                                let value;
                                 if (["strength", "plyometric", "other"].includes(type)) {
-                                    return (
-                                        <li key={idx} className="text-[var(--subhead-text)]">
-                                            • <span className="font-semibold text-[var(--accent)]">{exercise.title}</span>: {exercise.sets} sets x {exercise.reps} reps
-                                        </li>
-                                    );
+                                    value = `${exercise.sets} sets x ${exercise.reps} reps`;
                                 } else if (["cardio", "flexibility", "stretch", "balance"].includes(type)) {
                                     const minutes = exercise.duration_seconds ? Math.round(exercise.duration_seconds / 60) : 0;
-                                    return (
-                                        <li key={idx} className="text-[var(--subhead-text)]">
-                                            • <span className="font-semibold text-[var(--accent)]">{exercise.title}</span>: {minutes} minutes
-                                        </li>
-                                    );
+                                    value = `${minutes} minutes`;
                                 } else {
-                                    return (
-                                        <li key={idx} className="text-[var(--subhead-text)]">
-                                            • <span className="font-semibold text-[var(--accent)]">{exercise.title}</span>: {exercise.distance_miles} miles
-                                        </li>
-                                    );
+                                    value = `${exercise.distance_miles} miles`;
                                 }
+                                return (
+                                    <li key={idx} className="grid grid-cols-[1fr_auto] items-center gap-2 py-1 text-[var(--subhead-text)] text-sm md:text-lg">
+                                        <span className="font-semibold text-[var(--accent)] uppercase">· {exercise.title}</span>
+                                        <span className="justify-self-end px-2 rounded">{value}</span>
+                                    </li>
+                                );
                             })}
                         </ul>
                     </details>

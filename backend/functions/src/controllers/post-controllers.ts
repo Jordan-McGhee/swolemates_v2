@@ -38,7 +38,7 @@ export const createPost = async (req: Request, res: Response, next: NextFunction
                 return res.status(400).json({ message: "Invalid workout ID." });
             }
 
-            const checkWorkoutQuery = "SELECT * FROM workout_with_exercises WHERE workout_id = $1";
+            const checkWorkoutQuery = "SELECT * FROM workouts WHERE workout_id = $1";
             const checkWorkoutRes = await pool.query(checkWorkoutQuery, [workout_id]);
 
             if (checkWorkoutRes.rows.length === 0) {

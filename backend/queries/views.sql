@@ -45,6 +45,7 @@ SELECT
     p.content,
     p.image_url,
     p.workout_id,
+    w.title AS workout_title,
     p.group_id,
     p.created_at,
     p.updated_at,
@@ -135,7 +136,8 @@ SELECT
     ) AS comments
 FROM
     posts p
-    JOIN users u ON p.user_id = u.user_id;
+    JOIN users u ON p.user_id = u.user_id
+    LEFT JOIN workouts w ON p.workout_id = w.workout_id;
 
 
 -- group join requests with user info view
@@ -153,92 +155,6 @@ SELECT
 FROM group_join_requests gr
 JOIN users u ON gr.user_id = u.user_id
 WHERE gr.status = 'pending';
-
--- user feed view with posts (excluding group posts) and workouts
-CREATE VIEW user_feeds AS
-SELECT 
-    cf.user_id,
-    cf.username,
-    cf.profile_pic,
-    json_agg(
-        cf.feed_item ORDER BY cf.created_at DESC
-    ) AS feed_items,
-    
-    -- Count posts for this user (excluding posts with non-null group_id)
-    COALESCE(pc.post_count, 0) AS post_count,
-    
-    -- Count workouts for this user  
-    COALESCE(wc.workout_count, 0) AS workout_count
-FROM (
-    -- Posts (excluding group posts)
-    SELECT 
-        p.user_id,
-        p.username,
-        p.profile_pic,
-        p.created_at,
-        json_build_object(
-            'type', 'post',
-            'post_id', p.post_id,
-            'user_id', p.user_id,
-            'username', p.username,
-            'profile_pic', p.profile_pic,
-            'content', p.content,
-            'image_url', p.image_url,
-            'workout_id', p.workout_id,
-            'group_id', p.group_id,
-            'created_at', p.created_at,
-            'updated_at', p.updated_at,
-            'likes', p.likes,
-            'comments', p.comments
-        ) AS feed_item
-    FROM post_with_likes_comments p
-    WHERE p.group_id IS NULL
-    
-    UNION ALL
-    
-    -- Workouts
-    SELECT 
-        w.user_id,
-        w.username,
-        w.profile_pic,
-        w.workout_created_at AS created_at,
-        json_build_object(
-            'type', 'workout',
-            'workout_id', w.workout_id,
-            'workout_title', w.workout_title,
-            'workout_description', w.workout_description,
-            'user_id', w.user_id,
-            'username', w.username,
-            'profile_pic', w.profile_pic,
-            'created_at', w.workout_created_at,
-            'exercises', w.exercises,
-            'likes', w.likes,
-            'comments', w.comments
-        ) AS feed_item
-    FROM workout_with_likes_comments w
-) AS cf
-
--- Left join to get post counts (excluding posts with non-null group_id)
-LEFT JOIN (
-    SELECT 
-        user_id,
-        COUNT(*) AS post_count
-    FROM posts
-    WHERE group_id IS NULL
-    GROUP BY user_id
-) pc ON cf.user_id = pc.user_id
-
--- Left join to get workout counts  
-LEFT JOIN (
-    SELECT 
-        user_id,
-        COUNT(*) AS workout_count
-    FROM workouts
-    GROUP BY user_id
-) wc ON cf.user_id = wc.user_id
-
-GROUP BY cf.user_id, cf.username, cf.profile_pic, pc.post_count, wc.workout_count
-ORDER BY cf.user_id;
 
 -- Updated workout view with new schema
 CREATE VIEW workout_with_likes_comments AS
@@ -544,6 +460,7 @@ FROM (
             'content', p.content,
             'image_url', p.image_url,
             'workout_id', p.workout_id,
+            'workout_title', p.workout_title,
             'group_id', p.group_id,
             'created_at', p.created_at,
             'updated_at', p.updated_at,

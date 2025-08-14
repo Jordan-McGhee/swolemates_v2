@@ -2,9 +2,10 @@ import React from 'react';
 
 // type imports
 import { ViewWorkoutExerciseItemProps } from '@/types/props/props-types';
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 
 // ui imports
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Badge } from '@/components/ui/badge';
 
 
 const ViewWorkoutExerciseItem: React.FC<ViewWorkoutExerciseItemProps> = ({ exercise, index }) => {
@@ -18,9 +19,10 @@ const ViewWorkoutExerciseItem: React.FC<ViewWorkoutExerciseItemProps> = ({ exerc
                     </CardTitle>
                     {/* Exercise type and details in a flex row underneath */}
                     <div className="flex items-center justify-between">
-                        <span className='text-xs font-bold bg-[var(--accent-hover)] text-[var(--accent)] px-2 py-1 rounded-md'>
-                            {exercise?.exercise_type.toUpperCase()}
-                        </span>
+                        <Badge>
+                            {exercise.exercise_type.toUpperCase()}
+                        </Badge>
+                        
                         <div className='text-right text-lg'>
                             {exercise.sets && exercise.reps ? (
                                 <div className="flex items-center gap-2">

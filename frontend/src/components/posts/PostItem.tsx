@@ -9,7 +9,7 @@ import { EllipsisVertical, Dumbbell } from "lucide-react";
 import { toast } from "sonner";
 
 // component imports
-import AddCommentForm from "@/components/comments/AddCommentForm";
+import PostItemWorkout from "./PostItemWorkout";
 
 // type imports
 import { PostItemProps, Like } from "@/types/props/props-types";
@@ -68,11 +68,6 @@ export const PostItem: React.FC<PostItemProps> = ({ user, post }) => {
         }
     };
 
-    // comment handlers
-    const handleCommentAdded = () => {
-        setCommentCount((count) => count + 1);
-    };
-
     return (
         <Card className={`bg-[var(--white)] shadow-sm`}>
             <CardHeader className="flex flex-row items-start justify-between gap-4">
@@ -98,10 +93,18 @@ export const PostItem: React.FC<PostItemProps> = ({ user, post }) => {
                 <div className="flex items-center gap-x-2">
 
                     {/* Workout Tag */}
-                    <div className="flex items-center gap-2 bg-[var(--accent-hover)] p-2 rounded-md text-[var(--accent)] text-xs">
+                    {/* <div className="flex items-center gap-2 bg-[var(--accent-hover)] p-2 rounded-md text-[var(--accent)] text-xs">
                         <Dumbbell className="size-4 text-[var(--accent)]" />
                         <p className="max-w-24 truncate">Workout Title</p>
-                    </div>
+                    </div> */}
+
+                    {
+                        post.workout_id &&
+                        <PostItemWorkout
+                            workout_id={post.workout_id}
+                            workout_title={post.workout_title}
+                        />
+                    }
 
                     {/* Post Options */}
                     <DropdownMenu>

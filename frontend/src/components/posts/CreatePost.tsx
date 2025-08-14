@@ -11,6 +11,9 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Dumbbell, Loader2, Image as ImageIcon, User as UserIcon } from "lucide-react";
 import { toast } from "sonner";
 
+// component imports
+import AddWorkoutButton from "./AddWorkoutButton";
+
 // types imports
 import { CreatePostProps, Workout } from "@/types/props/props-types";
 
@@ -54,6 +57,13 @@ const CreatePost: React.FC<CreatePostProps> = ({ workouts }) => {
         }
     };
 
+    const handleWorkoutSelect = (workout: Workout | null) => {
+        setFormData((prev) => ({
+            ...prev,
+            selectedWorkout: workout,
+        }));
+    };
+
     const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault();
 
@@ -83,9 +93,8 @@ const CreatePost: React.FC<CreatePostProps> = ({ workouts }) => {
                         <>
                             Post created successfully.{" "}
                             <a
-                                href={`/user/${user?.username}`}
-                                className="text-[var(-accent)] italic ml-1"
-                                target="_blank"
+                                href={`/posts/${new_post_id}`}
+                                className="text-[var(--accent)] italic ml-1"
                                 rel="noopener noreferrer"
                             >
                                 View post
@@ -146,7 +155,7 @@ const CreatePost: React.FC<CreatePostProps> = ({ workouts }) => {
                                 </Avatar>
                             </div>
                             <div className="flex items-center gap-2">
-                                <Button
+                                {/* <Button
                                     type="button"
                                     variant="ghost"
                                     className="rounded-lg flex items-center gap-1 hover:bg-[var(--accent-hover)] hover:text-[var(--accent)] hover:cursor-pointer"
@@ -154,7 +163,10 @@ const CreatePost: React.FC<CreatePostProps> = ({ workouts }) => {
                                 >
                                     <Dumbbell className="h-5 w-5" />
                                     <span className="text-sm hidden md:block">Add Workout</span>
-                                </Button>
+                                </Button> */}
+                                <AddWorkoutButton
+                                    onWorkoutSelect={handleWorkoutSelect}
+                                />
                                 <Button
                                     type="button"
                                     variant="ghost"
