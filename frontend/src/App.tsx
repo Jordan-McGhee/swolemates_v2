@@ -14,7 +14,8 @@ import ViewPostPage from "./pages/posts/ViewPostPage"
 import Workouts from "./pages/workouts/Workouts"
 import CreateWorkout from "./pages/workouts/CreateWorkout"
 import ViewWorkoutPage from "./pages/workouts/ViewWorkoutPage"
-import ViewSession from "./pages/sessions/ViewSession"
+import CreateSession from "./pages/sessions/CreateSession"
+import ViewSessionPage from "./pages/sessions/ViewSessionPage"
 
 export default function App() {
   return (
@@ -45,8 +46,8 @@ export default function App() {
 
           {/* sessions */}
           <Route path="/sessions" element={<div>View Sessions</div>} />
-          <Route path="/sessions/create" element={<div>Create Session</div>} />
-          <Route path="/sessions/:session_id" element={<ViewSession />} />
+          <Route path="/sessions/create" element={<CreateSession />} />
+          <Route path="/sessions/:session_id" element={<ViewSessionPage />} />
           <Route path="/sessions/:session_id/edit" element={<div>Edit Session</div>} />
 
         </Route>

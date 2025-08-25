@@ -19,9 +19,8 @@ export const workoutApi = () => {
     interface GetAllUserWorkoutsResponse {
         message: string;
         workouts: Workout[];
-        workout_user_id: number;
-        likes: Like[]; // Update type if you have a specific Like type
-        comments: Comment[]; // Update type if you have a specific Comment type
+        username: string;
+        user_id: number;
         canView: boolean;
     }
 

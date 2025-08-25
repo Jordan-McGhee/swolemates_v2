@@ -139,7 +139,7 @@ To do:
 <!-- - Move useEffect fetch to ViewPostPage DONE -->
 <!-- - Fix issues with likes not updating properly DONE -->
 
-## Thu Aug 14
+## Mon Aug 25
 To do:
 - Create ViewWorkoutPage and CreateSessionForms
 <!-- - Add workouts to createPost and ViewPostItem components DONE -->

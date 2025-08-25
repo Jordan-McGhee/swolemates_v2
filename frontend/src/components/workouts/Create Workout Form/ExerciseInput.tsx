@@ -5,13 +5,13 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from "@/components/ui/select";
 import { Trash } from "lucide-react";
+import { Button } from "@/components/ui/button";
 
 // type imports
 import { ExerciseType, MeasurementType, ExerciseInputProps } from "@/types/props/props-types";
 
 // validator imports
 import { validateExerciseTitle, validateSets, validateReps, validateDuration, validateDistance } from "@/util/input-validators";
-import { Button } from "@/components/ui/button";
 
 const exerciseTypes: ExerciseType[] = [
     "strength",
@@ -160,7 +160,7 @@ const ExerciseInput: React.FC<ExerciseInputProps> = ({ exerciseIndex, handleExer
 
 
     return (
-        <div className="border border-[var(--accent)] rounded-lg p-4 mb-4">
+        <div className="shadow-md rounded-lg p-4 mb-4">
             <div className="flex items-center justify-between mb-2">
                 <p className="text-lg font-semi">Exercise {exerciseIndex}</p>
                 <Button

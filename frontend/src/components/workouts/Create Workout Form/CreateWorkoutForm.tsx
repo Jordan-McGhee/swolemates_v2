@@ -14,6 +14,7 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Loader2 } from 'lucide-react';
 import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from '@/components/ui/select';
 import { toast } from 'sonner';
+import { CharacterCounter } from '@/components/ui/character-counter';
 
 // component imports
 import ExerciseInput from './ExerciseInput';
@@ -212,14 +213,11 @@ const CreateWorkoutForm: React.FC = () => {
                                 </p>
                             )}
                         </div>
-                        <p
-                            className={`text-xs text-right ${workoutName.length > 25
-                                ? "text-[var(--danger)]"
-                                : "text-[var(--subhead-text)]"
-                                }`}
-                        >
-                            {workoutName.length}/25 characters
-                        </p>
+                        <CharacterCounter
+                            value={workoutName}
+                            max={25}
+                        />
+
                     </div>
                 </div>
                 <div className="flex-2 min-w-[120px]">
@@ -257,14 +255,10 @@ const CreateWorkoutForm: React.FC = () => {
                             {formError.description}
                         </p>
                     )}
-                    <p
-                        className={`ml-auto mt-1.5 text-xs text-right ${description.length > 75
-                            ? "text-[var(--danger)]"
-                            : "text-[var(--subhead-text)]"
-                            }`}
-                    >
-                        {description.length}/75 characters
-                    </p>
+                    <CharacterCounter
+                        value={description}
+                        max={75}
+                    />
                 </div>
             </div>
 

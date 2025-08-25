@@ -151,8 +151,8 @@ export interface WorkoutSession {
 
 // Actual exercise performance in a session
 export interface SessionExercise {
-    session_exercise_id: number;
-    session_id: number;
+    session_exercise_id?: number;
+    session_id?: number;
     exercise_id: number;
     exercise?: Exercise;
     weight_used?: number;
@@ -161,7 +161,7 @@ export interface SessionExercise {
     duration_seconds?: number;
     distance_miles?: number;
     pace_minutes_per_mile?: string;
-    created_at: Date;
+    created_at?: Date;
 }
 
 export interface Group { }
@@ -343,6 +343,8 @@ export interface CreatePostProps {
 
 export interface AddWorkoutButtonProps {
     onWorkoutSelect: (workout: Workout | null) => void;
+    propsClassName?: string;
+    buttonClassName?: string;
 }
 
 export interface ViewPostItemProps {
@@ -384,5 +386,15 @@ export interface ExerciseInputProps {
     exerciseIndex: number;
     handleExerciseChange: (index: number, updatedExercise: WorkoutFormExercise) => void;
     handleDeleteExercise: () => void;
+    handleExerciseError: (index: number, hasError: boolean) => void;
+}
+
+// SESSION TYPES
+
+
+// SESSION FORM TYPES
+export interface SessionExerciseInputProps {
+    exerciseIndex: number;
+    exerciseObject: WorkoutExercise;
     handleExerciseError: (index: number, hasError: boolean) => void;
 }
