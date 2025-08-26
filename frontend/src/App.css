@@ -8,7 +8,8 @@
   border: 0;
 }
 
-html, body {
+html,
+body {
   height: 100%;
   width: 100%;
   font-family: inherit;
@@ -16,7 +17,8 @@ html, body {
   color: inherit;
 }
 
-ul, ol {
+ul,
+ol {
   list-style: none;
 }
 
@@ -44,6 +46,7 @@ svg {
   max-width: 100%;
   height: auto;
 }
+
 @layer utilities {
 
   /* Hide scrollbar for Chrome, Safari and Opera */
@@ -58,4 +61,22 @@ svg {
     scrollbar-width: none;
     /* Firefox */
   }
+}
+
+/* Remove spinner buttons for number inputs in Chrome, Safari, Edge */
+.test input[type="number"]::-webkit-outer-spin-button,
+.test input[type="number"]::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+
+/* Remove spinner buttons for number inputs in Firefox */
+input[type="number"] {
+  -moz-appearance: textfield;
+  appearance: textfield;
+}
+
+/* Remove spinner buttons for number inputs in Edge (legacy) */
+input[type="number"]::-ms-clear {
+  display: none;
 }

@@ -155,6 +155,8 @@ export interface SessionExercise {
     session_id?: number;
     exercise_id: number;
     exercise?: Exercise;
+    exercise_type?: ExerciseType;
+    measurement_type?: MeasurementType;
     weight_used?: number;
     sets_completed?: number;
     reps_completed?: number;
@@ -345,6 +347,7 @@ export interface AddWorkoutButtonProps {
     onWorkoutSelect: (workout: Workout | null) => void;
     propsClassName?: string;
     buttonClassName?: string;
+    passedWorkout?: Workout | null;
 }
 
 export interface ViewPostItemProps {
@@ -397,4 +400,5 @@ export interface SessionExerciseInputProps {
     exerciseIndex: number;
     exerciseObject: WorkoutExercise;
     handleExerciseError: (index: number, hasError: boolean) => void;
+    handleExerciseChange: (index: number, updatedExercise: SessionExercise) => void;
 }

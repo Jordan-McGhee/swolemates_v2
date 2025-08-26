@@ -16,7 +16,7 @@ import { ThumbsUp, MessageCircle } from "lucide-react";
 // type imports
 import { Workout, AddWorkoutButtonProps } from "@/types/props/props-types";
 
-const AddWorkoutButton: React.FC<AddWorkoutButtonProps> = ({ onWorkoutSelect, propsClassName, buttonClassName }) => {
+const AddWorkoutButton: React.FC<AddWorkoutButtonProps> = ({ onWorkoutSelect, propsClassName, buttonClassName, passedWorkout }) => {
 
     // hook destructuring
     const { user: authUser, token } = useAuth();
@@ -25,7 +25,7 @@ const AddWorkoutButton: React.FC<AddWorkoutButtonProps> = ({ onWorkoutSelect, pr
     // states
     const [workouts, setWorkouts] = useState<Workout[]>([]);
     const [loadingWorkouts, setLoadingWorkouts] = useState<boolean>(false);
-    const [selectedWorkout, setSelectedWorkout] = useState<Workout | null>(null);
+    const [selectedWorkout, setSelectedWorkout] = useState<Workout | null>(passedWorkout || null);
     const [open, setOpen] = useState(false);
 
     // useEffect to fetch workouts
