@@ -287,7 +287,7 @@ FROM workouts w
 LEFT JOIN users u ON w.user_id = u.user_id;
 
 -- Workout sessions view with likes and comments
-CREATE VIEW workout_session_with_likes_comments AS
+CREATE OR REPLACE VIEW workout_session_with_likes_comments AS
 SELECT 
     ws.session_id,
     ws.workout_id,
@@ -304,7 +304,7 @@ SELECT
     ws.created_at AS created_at,
     ws.updated_at AS updated_at,
 
-    -- Aggregate completed exercises into a JSON array
+    -- Aggregate completed exercises into a JSON array (including targets)
     COALESCE(
         (
             SELECT json_agg(session_exercise_data ORDER BY session_exercise_data.order_created_at DESC)
@@ -314,18 +314,18 @@ SELECT
                     e.title,
                     e.exercise_type,
                     e.measurement_type,
-                    -- Include all actual performance fields
                     se.weight_used,
                     se.sets_completed,
                     se.reps_completed,
                     se.duration_seconds,
                     se.distance_miles,
                     se.pace_minutes_per_mile,
+                    se.exercise_target,
                     se.created_at AS order_created_at
                 FROM session_exercises se
                 JOIN exercises e ON se.exercise_id = e.exercise_id
                 WHERE se.session_id = ws.session_id
-                ORDER BY e.exercise_id, se.created_at DESC  -- Keep most recent entry per exercise
+                ORDER BY e.exercise_id, se.created_at DESC
             ) AS session_exercise_data
         ), '[]'::json
     ) AS completed_exercises,

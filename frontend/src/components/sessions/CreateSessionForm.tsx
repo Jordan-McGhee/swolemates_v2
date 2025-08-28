@@ -55,7 +55,7 @@ const CreateSessionForm: React.FC = () => {
     const [notes, setNotes] = useState<string>("");
     const [formError, setFormError] = useState<Record<string, string> | null>(null);
     const [exerciseInputs, setExerciseInputs] = useState<SessionExercise[]>([]);
-    const [exerciseErrors, setExerciseErrors] = useState<boolean[]>([]);
+    const [exerciseValidationStates, setExerciseValidationStates] = useState<boolean[]>([]);
 
     // fetch workouts and selected workout
     useEffect(() => {
@@ -137,7 +137,8 @@ const CreateSessionForm: React.FC = () => {
             }));
 
             setExerciseInputs(initialExerciseInputs);
-            setExerciseErrors(Array(workout.exercises.length).fill(false));
+            // Initialize all exercises as invalid (false) until they're properly filled
+            setExerciseValidationStates(Array(workout.exercises.length).fill(false));
 
         } catch (error) {
             console.error("Error fetching workout:", error);
@@ -201,15 +202,43 @@ const CreateSessionForm: React.FC = () => {
         });
     };
 
-    // Form validation
-    const formIsValid =
-        selectedWorkout &&
-        (duration === null || (typeof duration === 'number' && duration >= 0)) &&
-        (difficulty >= 1 && difficulty <= 5) &&
-        (notes.length <= 250) &&
-        exerciseInputs.length > 0 &&
-        !exerciseErrors.some(err => err) &&
-        (!formError || Object.values(formError).every(error => !error));
+    // Updated handler for exercise validation state
+    const handleExerciseValidation = (index: number, isValid: boolean) => {
+        setExerciseValidationStates((prev) => {
+            const newValidationStates = [...prev];
+            newValidationStates[index] = isValid;
+            console.log(`Exercise ${index + 1} validation state:`, isValid);
+            return newValidationStates;
+        });
+    };
+
+    // Enhanced form validation
+    const formIsValid = (() => {
+        // Check basic form fields
+        const basicFieldsValid =
+            selectedWorkout &&
+            (duration === null || (typeof duration === 'number' && duration >= 0)) &&
+            (difficulty >= 1 && difficulty <= 5) &&
+            (notes.length <= 250) &&
+            (!formError || Object.values(formError).every(error => !error));
+
+        // Check if we have exercises
+        const hasExercises = selectedWorkout?.exercises && selectedWorkout.exercises.length > 0;
+
+        // Check if all exercises are valid
+        const allExercisesValid = hasExercises &&
+            exerciseValidationStates.length === selectedWorkout.exercises.length &&
+            exerciseValidationStates.every(isValid => isValid === true);
+
+        // console.log("Form validation:", {
+        //     basicFieldsValid,
+        //     hasExercises,
+        //     allExercisesValid,
+        //     exerciseValidationStates
+        // });
+
+        return basicFieldsValid && allExercisesValid;
+    })();
 
     // form submission handler
     const handleSubmit = async (e: React.FormEvent) => {
@@ -221,7 +250,7 @@ const CreateSessionForm: React.FC = () => {
         }
 
         if (!formIsValid) {
-            toast.error("Please fix form errors before submitting.");
+            toast.error("Please complete all required exercise fields before submitting.");
             return;
         }
 
@@ -233,10 +262,7 @@ const CreateSessionForm: React.FC = () => {
             duration_minutes: duration || 0,
             difficulty,
             notes,
-            exercises: exerciseInputs.map((input, index) => ({
-                ...input,
-                error: exerciseErrors[index],
-            })),
+            exercises: exerciseInputs,
         };
 
         try {
@@ -440,10 +466,10 @@ const CreateSessionForm: React.FC = () => {
                         <Label htmlFor="notes">Notes</Label>
                         <textarea
                             id="notes"
-                            value={notes}
+                            defaultValue={notes}
                             onBlur={handleNotesBlur}
-                            onChange={e => setNotes(e.target.value)}
-                            maxLength={100}
+                            // onChange={e => setNotes(e.target.value)}
+                            maxLength={250}
                             placeholder="How was your workout?"
                             className={`border rounded px-3 py-2 mt-1 resize-none ${formError?.notes ? "border-[var(--danger)]" : ""}`}
                             rows={3}
@@ -467,13 +493,7 @@ const CreateSessionForm: React.FC = () => {
                             key={index}
                             exerciseIndex={index + 1}
                             exerciseObject={exercise}
-                            handleExerciseError={(idx, hasError) => {
-                                setExerciseErrors(prev => {
-                                    const newErrors = [...prev];
-                                    newErrors[idx] = hasError;
-                                    return newErrors;
-                                });
-                            }}
+                            onValidationChange={(isValid) => handleExerciseValidation(index, isValid)}
                             handleExerciseChange={(idx, updatedExercise) => {
                                 handleExerciseChange((idx - 1), updatedExercise);
                             }}

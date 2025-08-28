@@ -3,6 +3,7 @@ import { useParams } from "react-router-dom";
 
 // component imports
 import ViewWorkoutItem from "@/components/workouts/ViewWorkout/ViewWorkoutItem";
+import ViewPageLikes from "@/components/posts/ViewPost/ViewPageLikes";
 
 // ui imports
 import { toast } from "sonner";
@@ -13,7 +14,6 @@ import { Like, Comment, Workout, Exercise, WorkoutExercise } from "@/types/props
 // hook imports
 import { useAuth } from "@/context/AuthProvider";
 import { workoutApi } from "@/api/workoutApi";
-import ViewPageLikes from "@/components/posts/ViewPost/ViewPageLikes";
 
 const ViewWorkoutPage: React.FC = () => {
 
@@ -40,7 +40,7 @@ const ViewWorkoutPage: React.FC = () => {
             if (!workout_id) return;
             try {
                 const fetchedWorkout = await getSingleWorkout(Number(workout_id));
-                console.log("Fetched workout:", fetchedWorkout);
+                // console.log("Fetched workout:", fetchedWorkout);
                 setWorkout(fetchedWorkout.workout);
                 setLiked(fetchedWorkout.likes?.some(
                     (like: Like) =>

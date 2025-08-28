@@ -38,6 +38,25 @@ export const createSession = async (req: Request, res: Response, next: NextFunct
         );
         const session_id = sessionRes.rows[0].session_id;
 
+        // Get all target values for this workout's exercises in one query
+        const targetsRes = await client.query(
+            `SELECT exercise_id, sets, reps, duration_seconds, distance_miles
+            FROM workout_exercises 
+            WHERE workout_id = $1`,
+            [workout_id]
+        );
+
+        // Create a map for quick lookup of targets by exercise_id
+        const targetsMap = new Map();
+        targetsRes.rows.forEach(row => {
+            const target: any = {};
+            if (row.sets !== null) target.sets = row.sets;
+            if (row.reps !== null) target.reps = row.reps;
+            if (row.duration_seconds !== null) target.duration_seconds = row.duration_seconds;
+            if (row.distance_miles !== null) target.distance_miles = row.distance_miles;
+            targetsMap.set(row.exercise_id, target);
+        });
+
         for (const ex of exercises) {
             const {
                 exercise_id,
@@ -54,10 +73,20 @@ export const createSession = async (req: Request, res: Response, next: NextFunct
                 return res.status(400).json({ message: "Each exercise must include a valid exercise_id." });
             }
 
+            // Get the target for this exercise
+            const target = targetsMap.get(exercise_id);
+            if (!target) {
+                await client.query("ROLLBACK");
+                return res.status(400).json({
+                    message: `Exercise ${exercise_id} is not part of workout ${workout_id}.`
+                });
+            }
+
             await client.query(
                 `INSERT INTO session_exercises (
-                    session_id, exercise_id, weight_used, sets_completed, reps_completed, duration_seconds, distance_miles, pace_minutes_per_mile, created_at
-                ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, NOW())`,
+                    session_id, exercise_id, weight_used, sets_completed, reps_completed, 
+                    duration_seconds, distance_miles, pace_minutes_per_mile, exercise_target, created_at
+                ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, NOW())`,
                 [
                     session_id,
                     exercise_id,
@@ -66,7 +95,8 @@ export const createSession = async (req: Request, res: Response, next: NextFunct
                     reps_completed ?? null,
                     duration_seconds ?? null,
                     distance_miles ?? null,
-                    pace_minutes_per_mile ?? null
+                    pace_minutes_per_mile ?? null,
+                    JSON.stringify(target)
                 ]
             );
         }
@@ -134,13 +164,38 @@ export const editSession = async (req: Request, res: Response, next: NextFunctio
             ]
         );
 
+        // Get the workout_id (in case it changed) for target lookup
+        const finalWorkoutId = workout_id ?? (await client.query(
+            `SELECT workout_id FROM workout_sessions WHERE session_id = $1`,
+            [session_id]
+        )).rows[0].workout_id;
+
+        // Get all target values for this workout's exercises
+        const targetsRes = await client.query(
+            `SELECT exercise_id, sets, reps, duration_seconds, distance_miles
+            FROM workout_exercises 
+            WHERE workout_id = $1`,
+            [finalWorkoutId]
+        );
+
+        // Create a map for quick lookup of targets by exercise_id
+        const targetsMap = new Map();
+        targetsRes.rows.forEach(row => {
+            const target: any = {};
+            if (row.sets !== null) target.sets = row.sets;
+            if (row.reps !== null) target.reps = row.reps;
+            if (row.duration_seconds !== null) target.duration_seconds = row.duration_seconds;
+            if (row.distance_miles !== null) target.distance_miles = row.distance_miles;
+            targetsMap.set(row.exercise_id, target);
+        });
+
         // Remove old exercises
         await client.query(
             `DELETE FROM session_exercises WHERE session_id = $1`,
             [session_id]
         );
 
-        // Insert new exercises
+        // Insert new exercises with targets
         for (const ex of exercises) {
             const {
                 exercise_id,
@@ -157,10 +212,20 @@ export const editSession = async (req: Request, res: Response, next: NextFunctio
                 return res.status(400).json({ message: "Each exercise must include a valid exercise_id." });
             }
 
+            // Get the target for this exercise
+            const target = targetsMap.get(exercise_id);
+            if (!target) {
+                await client.query("ROLLBACK");
+                return res.status(400).json({
+                    message: `Exercise ${exercise_id} is not part of workout ${finalWorkoutId}.`
+                });
+            }
+
             await client.query(
                 `INSERT INTO session_exercises (
-                    session_id, exercise_id, weight_used, sets_completed, reps_completed, duration_seconds, distance_miles, pace_minutes_per_mile, created_at
-                ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, NOW())`,
+                    session_id, exercise_id, weight_used, sets_completed, reps_completed, 
+                    duration_seconds, distance_miles, pace_minutes_per_mile, exercise_target, created_at
+                ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, NOW())`,
                 [
                     session_id,
                     exercise_id,
@@ -169,7 +234,8 @@ export const editSession = async (req: Request, res: Response, next: NextFunctio
                     reps_completed ?? null,
                     duration_seconds ?? null,
                     distance_miles ?? null,
-                    pace_minutes_per_mile ?? null
+                    pace_minutes_per_mile ?? null,
+                    JSON.stringify(target)
                 ]
             );
         }
@@ -230,7 +296,7 @@ export const commentOnSession = async (req: Request, res: Response, next: NextFu
 
         // Insert comment into session_comments table
         const addCommentQuery = `
-            INSERT INTO session_comments (session_id, user_id, comment_text, created_at, updated_at) 
+            INSERT INTO comments (session_id, user_id, comment_text, created_at, updated_at) 
             VALUES ($1, $2, $3, NOW(), NOW()) 
             RETURNING *;
         `;
@@ -299,7 +365,7 @@ export const editCommentOnSession = async (req: Request, res: Response, next: Ne
 
         // Check if comment exists and retrieve its owner
         const checkCommentQuery = `
-            SELECT user_id, session_id FROM session_comments WHERE comment_id = $1 AND session_id = $2;
+            SELECT user_id, session_id FROM comments WHERE comment_id = $1 AND session_id = $2;
         `;
         const checkCommentResponse = await client.query(checkCommentQuery, [comment_id, session_id]);
 
@@ -314,7 +380,7 @@ export const editCommentOnSession = async (req: Request, res: Response, next: Ne
 
         // Update query
         const updateCommentQuery = `
-            UPDATE session_comments 
+            UPDATE comments 
             SET comment_text = $1, updated_at = NOW()
             WHERE comment_id = $2 AND session_id = $3
             RETURNING *;
@@ -358,7 +424,7 @@ export const deleteCommentOnSession = async (req: Request, res: Response, next: 
         // Retrieve comment info and check ownership by joining with workout_sessions
         const getCommentQuery = `
             SELECT c.user_id AS comment_owner, s.user_id AS session_owner
-            FROM session_comments c
+            FROM comments c
             JOIN workout_sessions s ON c.session_id = s.session_id
             WHERE c.comment_id = $1 AND c.session_id = $2
         `;
@@ -378,7 +444,7 @@ export const deleteCommentOnSession = async (req: Request, res: Response, next: 
         }
 
         // Delete the comment
-        const deleteCommentQuery = `DELETE FROM session_comments WHERE comment_id = $1 AND session_id = $2 RETURNING *;`;
+        const deleteCommentQuery = `DELETE FROM comments WHERE comment_id = $1 AND session_id = $2 RETURNING *;`;
         const deleteCommentResponse = await client.query(deleteCommentQuery, [comment_id, session_id]);
 
         client.release();
@@ -431,7 +497,7 @@ export const likeSession = async (req: Request, res: Response, next: NextFunctio
         const sessionOwnerId = checkSessionRes.rows[0].user_id;
 
         // Check if already liked
-        const checkLikeQuery = `SELECT * FROM session_likes WHERE user_id = $1 AND session_id = $2`;
+        const checkLikeQuery = `SELECT * FROM likes WHERE user_id = $1 AND session_id = $2`;
         const checkLikeRes = await client.query(checkLikeQuery, [user_id, session_id]);
 
         if (checkLikeRes.rows.length > 0) {
@@ -441,7 +507,7 @@ export const likeSession = async (req: Request, res: Response, next: NextFunctio
 
         // Insert like
         const likeQuery = `
-            INSERT INTO session_likes (user_id, session_id, created_at)
+            INSERT INTO likes (user_id, session_id, created_at)
             VALUES ($1, $2, NOW())
             RETURNING *;
         `;
@@ -506,7 +572,7 @@ export const unlikeSession = async (req: Request, res: Response, next: NextFunct
         }
 
         // Check if liked
-        const checkLikeQuery = `SELECT * FROM session_likes WHERE user_id = $1 AND session_id = $2`;
+        const checkLikeQuery = `SELECT * FROM likes WHERE user_id = $1 AND session_id = $2`;
         const checkLikeRes = await client.query(checkLikeQuery, [user_id, session_id]);
 
         if (checkLikeRes.rows.length === 0) {
@@ -515,7 +581,7 @@ export const unlikeSession = async (req: Request, res: Response, next: NextFunct
         }
 
         // Remove like
-        const unlikeQuery = `DELETE FROM session_likes WHERE user_id = $1 AND session_id = $2 RETURNING *;`;
+        const unlikeQuery = `DELETE FROM likes WHERE user_id = $1 AND session_id = $2 RETURNING *;`;
         const unlikeRes = await client.query(unlikeQuery, [user_id, session_id]);
 
         client.release();
@@ -564,8 +630,8 @@ export const deleteSession = async (req: Request, res: Response, next: NextFunct
         }
 
         // Delete related likes, comments, and session_exercises
-        await client.query(`DELETE FROM session_likes WHERE session_id = $1`, [session_id]);
-        await client.query(`DELETE FROM session_comments WHERE session_id = $1`, [session_id]);
+        await client.query(`DELETE FROM likes WHERE session_id = $1`, [session_id]);
+        await client.query(`DELETE FROM comments WHERE session_id = $1`, [session_id]);
         await client.query(`DELETE FROM session_exercises WHERE session_id = $1`, [session_id]);
 
         // Delete the session

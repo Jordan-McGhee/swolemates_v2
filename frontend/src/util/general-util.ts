@@ -39,7 +39,11 @@ export function formatDate(
         const diffHour = Math.floor(diffMin / 60);
         const diffDay = Math.floor(diffHour / 24);
         const diffWeek = Math.floor(diffDay / 7);
+        const diffMonth = Math.floor(diffDay / 30);
+        const diffYear = Math.floor(diffDay / 365);
 
+        if (diffYear >= 1) return `${diffYear}y ago`;
+        if (diffMonth >= 1) return `${diffMonth}mo ago`;
         if (diffWeek >= 1) return `${diffWeek}w ago`;
         if (diffDay >= 1) return `${diffDay}d ago`;
         if (diffHour >= 1) return `${diffHour}h ago`;

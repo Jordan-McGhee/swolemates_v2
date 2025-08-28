@@ -11,6 +11,7 @@ import { getSingleUserFeed } from '@/api/profileApi';
 import ErrorModal from '../ErrorModal';
 import PostItem from '../posts/PostItem';
 import WorkoutItem from '../workouts/WorkoutItem';
+import SessionItem from '../sessions/SessionItem';
 
 // types imports
 import { ProfileFeedProps, Feed, Post, Workout, WorkoutSession } from '@/types/props/props-types';
@@ -108,7 +109,6 @@ export const ProfileFeed = ({ user, feedType }: ProfileFeedProps) => {
         };
     }, []);
 
-
     const posts: Post[] = feed.filter((item): item is Post => item.type === 'post');
     const workouts: Workout[] = feed.filter((item): item is Workout => item.type === 'workout');
     const sessions: WorkoutSession[] = feed.filter((item): item is WorkoutSession => item.type === 'session');
@@ -116,10 +116,10 @@ export const ProfileFeed = ({ user, feedType }: ProfileFeedProps) => {
         feedType === 'posts'
             ? posts
             : feedType === 'workouts'
-            ? workouts
-            : feedType === 'sessions'
-            ? sessions
-            : feed;
+                ? workouts
+                : feedType === 'sessions'
+                    ? sessions
+                    : feed;
 
     return (
         <>
@@ -139,7 +139,11 @@ export const ProfileFeed = ({ user, feedType }: ProfileFeedProps) => {
                 <div className="space-y-4 w-full">
                     {displayFeed.map((item, index) => {
                         const isLast = index === feed.length - 1;
-                        const itemKey = item.type === 'post' ? `post-${item.post_id}` : `workout-${item.workout_id}`;
+                        const itemKey = item.type === 'post' 
+                            ? `post-${(item as Post).post_id}` 
+                            : item.type === 'workout' 
+                                ? `workout-${(item as Workout).workout_id}` 
+                                : `session-${(item as WorkoutSession).session_id}`;
 
                         return (
                             <div
@@ -157,20 +161,10 @@ export const ProfileFeed = ({ user, feedType }: ProfileFeedProps) => {
                                         workout={item}
                                     />
                                 ) : item.type === 'session' ? (
-                                    <div>
-                                        <div className="flex items-center justify-between mb-3">
-                                            <span className="text-xs font-semibold text-blue-600 bg-blue-50 px-2 py-1 rounded">
-                                                SESSION
-                                            </span>
-                                            <span className="text-xs text-gray-500">
-                                                {new Date(item.created_at).toLocaleDateString()}
-                                            </span>
-                                        </div>
-                                        <div className="text-gray-800">
-                                            <h3 className="font-semibold mb-2">Session Placeholder</h3>
-                                            {/* Add more session rendering logic here */}
-                                        </div>
-                                    </div>
+                                    <SessionItem
+                                        user={user}
+                                        session={item}
+                                    />
                                 ) : null}
                             </div>
                         );

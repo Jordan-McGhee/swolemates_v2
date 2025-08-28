@@ -131,30 +131,41 @@ export interface WorkoutFormExercise {
     distance_miles?: number;
 }
 
+export interface ExerciseTarget {
+    sets?: number;
+    reps?: number;
+    duration_seconds?: number;
+    distance_miles?: number;
+}
+
 // Completed workout session
 export interface WorkoutSession {
     type?: 'session';
     session_id: number;
     workout_id: number;
+    workout_type?: WorkoutType;
+    workout_title?: string;
     user_id: number;
+    username?: string;
+    profile_pic?: string;
     duration_minutes?: number;
     total_distance_miles?: number;
-    notes?: string;
+    session_notes?: string;
     difficulty?: number; // 1-5
     likes?: Like[];
     likes_count?: number;
     comments?: Comment[];
     comments_count?: number;
     created_at: Date;
-    exercises: SessionExercise[];
+    completed_exercises?: SessionExercise[];
 }
 
 // Actual exercise performance in a session
 export interface SessionExercise {
     session_exercise_id?: number;
-    session_id?: number;
     exercise_id: number;
-    exercise?: Exercise;
+    title?: string;
+    // exercise?: Exercise;
     exercise_type?: ExerciseType;
     measurement_type?: MeasurementType;
     weight_used?: number;
@@ -163,6 +174,7 @@ export interface SessionExercise {
     duration_seconds?: number;
     distance_miles?: number;
     pace_minutes_per_mile?: string;
+    target?: ExerciseTarget;
     created_at?: Date;
 }
 
@@ -393,12 +405,22 @@ export interface ExerciseInputProps {
 }
 
 // SESSION TYPES
-
+export interface ViewSessionItemProps {
+    session: WorkoutSession;
+    liked: boolean;
+    likes: Like[];
+    likeCount: number;
+    comments: Comment[];
+    commentCount: number;
+    onLikeToggle: () => void;
+    onCommentAdded: (newComment: Comment) => void;
+}
 
 // SESSION FORM TYPES
 export interface SessionExerciseInputProps {
     exerciseIndex: number;
     exerciseObject: WorkoutExercise;
-    handleExerciseError: (index: number, hasError: boolean) => void;
+    // handleExerciseError: (index: number, hasError: boolean) => void;
+    onValidationChange: (isValid: boolean) => void;
     handleExerciseChange: (index: number, updatedExercise: SessionExercise) => void;
 }

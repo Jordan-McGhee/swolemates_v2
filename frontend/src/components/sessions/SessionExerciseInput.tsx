@@ -13,7 +13,7 @@ import { SessionExerciseInputProps, ExerciseType, WorkoutExercise, SessionExerci
 const SessionExerciseInput: React.FC<SessionExerciseInputProps> = ({
     exerciseIndex,
     exerciseObject,
-    handleExerciseError,
+    onValidationChange,
     handleExerciseChange
 }) => {
     // states with initial values from exerciseObject prop
@@ -30,6 +30,7 @@ const SessionExerciseInput: React.FC<SessionExerciseInputProps> = ({
 
     // Use ref to track the last sent data to prevent unnecessary calls
     const lastSentDataRef = useRef<string>("");
+    const lastValidationStateRef = useRef<boolean>(false);
 
     // individual state setters
     const setWeightUsed = (weight_used: number | undefined) =>
@@ -50,10 +51,7 @@ const SessionExerciseInput: React.FC<SessionExerciseInputProps> = ({
             distance_miles: distance_miles !== undefined ? Math.round(distance_miles * 10) / 10 : undefined
         }));
 
-    const setPaceMinutesPerMile = (pace_minutes_per_mile: string | undefined) =>
-        setExerciseInputData(prev => ({ ...prev, pace_minutes_per_mile }));
-
-    const { exercise_id, weight_used, sets_completed, reps_completed, duration_seconds, distance_miles, pace_minutes_per_mile } = exerciseInputData;
+    const { exercise_id, weight_used, sets_completed, reps_completed, duration_seconds, distance_miles } = exerciseInputData;
 
     // Handler functions for increment/decrement with error checking
     const handleWeightChange = useCallback((newValue: number | undefined) => {
@@ -122,22 +120,27 @@ const SessionExerciseInput: React.FC<SessionExerciseInputProps> = ({
         }
     }, []);
 
-    // Memoize the validation logic
-    const isFormValid = useCallback(() => {
-        const noErrors = Object.values(errors).every(err => !err);
+    // Validation logic based on exercise type
+    const isExerciseValid = useCallback(() => {
+        const hasNoErrors = Object.keys(errors).length === 0;
 
-        // Check if all required fields are filled based on exercise type
-        let isFilled = false;
+        let requiredFieldsFilled = false;
+
         if (exerciseObject?.measurement_type === "reps") {
-            isFilled = !!weight_used && !!sets_completed && !!reps_completed;
+            requiredFieldsFilled =
+                weight_used !== undefined && weight_used > 0 &&
+                sets_completed !== undefined && sets_completed > 0 &&
+                reps_completed !== undefined && reps_completed > 0;
         } else if (exerciseObject?.measurement_type === "duration") {
-            isFilled = !!duration_seconds;
+            requiredFieldsFilled =
+                duration_seconds !== undefined && duration_seconds > 0;
         } else if (exerciseObject?.measurement_type === "distance") {
-            isFilled = !!pace_minutes_per_mile && !!distance_miles;
+            requiredFieldsFilled =
+                distance_miles !== undefined && distance_miles > 0 && distance_miles <= 100;
         }
 
-        return noErrors && isFilled;
-    }, [errors, weight_used, sets_completed, reps_completed, duration_seconds, distance_miles, pace_minutes_per_mile, exerciseObject?.measurement_type]);
+        return hasNoErrors && requiredFieldsFilled;
+    }, [errors, weight_used, sets_completed, reps_completed, duration_seconds, distance_miles, exerciseObject?.measurement_type]);
 
     // Create the data object to send
     const createExerciseData = useCallback(() => ({
@@ -146,29 +149,35 @@ const SessionExerciseInput: React.FC<SessionExerciseInputProps> = ({
         sets_completed: sets_completed ? Number(sets_completed) : undefined,
         reps_completed: reps_completed ? Number(reps_completed) : undefined,
         duration_seconds: duration_seconds ? Number(duration_seconds) : undefined,
-        distance_miles: distance_miles ? Number(distance_miles) : undefined,
+        distance_miles: distance_miles ? Number(distance_miles) : undefined
     }), [exercise_id, weight_used, sets_completed, reps_completed, duration_seconds, distance_miles]);
 
+    // Effect to handle validation state changes and data updates
     useEffect(() => {
-        // Only proceed if form is valid
-        if (!isFormValid()) return;
+        const isValid = isExerciseValid();
 
-        // Check if any input is focused
-        const activeTag = document.activeElement?.tagName;
-        const isInputFocused = activeTag === "INPUT" || activeTag === "SELECT" || activeTag === "TEXTAREA";
-
-        // Don't update while user is actively typing
-        if (isInputFocused) return;
-
-        const exerciseData = createExerciseData();
-        const dataString = JSON.stringify(exerciseData);
-
-        // Only call handleExerciseChange if the data actually changed
-        if (dataString !== lastSentDataRef.current) {
-            lastSentDataRef.current = dataString;
-            handleExerciseChange(exerciseIndex, exerciseData);
+        // Send validation state to parent if it changed
+        if (isValid !== lastValidationStateRef.current) {
+            lastValidationStateRef.current = isValid;
+            onValidationChange?.(isValid);
         }
-    }, [isFormValid, createExerciseData, exerciseIndex, handleExerciseChange]);
+
+        // Only send data if valid and not actively typing
+        if (isValid) {
+            const activeTag = document.activeElement?.tagName;
+            const isInputFocused = activeTag === "INPUT" || activeTag === "SELECT" || activeTag === "TEXTAREA";
+
+            if (!isInputFocused) {
+                const exerciseData = createExerciseData();
+                const dataString = JSON.stringify(exerciseData);
+
+                if (dataString !== lastSentDataRef.current) {
+                    lastSentDataRef.current = dataString;
+                    handleExerciseChange(exerciseIndex, exerciseData);
+                }
+            }
+        }
+    }, [isExerciseValid, createExerciseData, exerciseIndex, handleExerciseChange, onValidationChange]);
 
     // div for fields based on exercise type
     let content;
@@ -203,10 +212,10 @@ const SessionExerciseInput: React.FC<SessionExerciseInputProps> = ({
                                 type="text"
                                 min={0}
                                 max={999}
-                                value={weight_used ?? "0"}
+                                value={weight_used ?? ""}
                                 onBlur={() => {
-                                    if (weight_used === undefined || weight_used < 0 || weight_used > 999) {
-                                        setErrors(prev => ({ ...prev, weight_used: "Enter a valid weight (0-999)" }));
+                                    if (weight_used === undefined || weight_used < 1 || weight_used > 999) {
+                                        setErrors(prev => ({ ...prev, weight_used: "Enter a valid weight (1-999)" }));
                                     } else {
                                         setErrors(prev => {
                                             const newErrors = { ...prev };
@@ -231,9 +240,10 @@ const SessionExerciseInput: React.FC<SessionExerciseInputProps> = ({
                                         }
                                     }
                                 }}
-                            className="w-15 text-center font-bold text-base sm:text-xl text-[var(--accent)] border-transparent focus:border focus:border-[var(--accent)] focus:bg-white bg-transparent shadow-none"
-                            inputMode="numeric"
-                            pattern="[0-9]*\.?[0-9]*"
+                                className="w-15 text-center font-bold text-base sm:text-xl text-[var(--accent)] border-transparent focus:border focus:border-[var(--accent)] focus:bg-white bg-transparent shadow-none"
+                                inputMode="numeric"
+                                pattern="[0-9]*"
+                                placeholder="0"
                             />
                             <Button
                                 type="button"
@@ -268,12 +278,12 @@ const SessionExerciseInput: React.FC<SessionExerciseInputProps> = ({
                             <Input
                                 id={`sets-${exerciseIndex}`}
                                 type="text"
-                                min={0}
+                                min={1}
                                 max={20}
                                 value={sets_completed ?? ""}
                                 onBlur={() => {
-                                    if (sets_completed === undefined || sets_completed < 0 || sets_completed > 20) {
-                                        setErrors(prev => ({ ...prev, sets_completed: "Enter sets (0-20)" }));
+                                    if (sets_completed === undefined || sets_completed < 1 || sets_completed > 20) {
+                                        setErrors(prev => ({ ...prev, sets_completed: "Enter sets (1-20)" }));
                                     } else {
                                         setErrors(prev => {
                                             const newErrors = { ...prev };
@@ -298,9 +308,10 @@ const SessionExerciseInput: React.FC<SessionExerciseInputProps> = ({
                                         }
                                     }
                                 }}
-                            className="w-15 text-center font-bold text-base sm:text-xl text-[var(--accent)] border-transparent focus:border focus:border-[var(--accent)] focus:bg-white bg-transparent shadow-none"
-                            inputMode="numeric"
-                            pattern="[0-9]*"
+                                className="w-15 text-center font-bold text-base sm:text-xl text-[var(--accent)] border-transparent focus:border focus:border-[var(--accent)] focus:bg-white bg-transparent shadow-none"
+                                inputMode="numeric"
+                                pattern="[0-9]*"
+                                placeholder="0"
                             />
                             <Button
                                 type="button"
@@ -332,12 +343,12 @@ const SessionExerciseInput: React.FC<SessionExerciseInputProps> = ({
                             <Input
                                 id={`reps-${exerciseIndex}`}
                                 type="text"
-                                min={0}
+                                min={1}
                                 max={30}
                                 value={reps_completed ?? ""}
                                 onBlur={() => {
-                                    if (reps_completed === undefined || reps_completed < 0 || reps_completed > 30) {
-                                        setErrors(prev => ({ ...prev, reps_completed: "Enter reps (0-30)" }));
+                                    if (reps_completed === undefined || reps_completed < 1 || reps_completed > 30) {
+                                        setErrors(prev => ({ ...prev, reps_completed: "Enter reps (1-30)" }));
                                     } else {
                                         setErrors(prev => {
                                             const newErrors = { ...prev };
@@ -362,9 +373,10 @@ const SessionExerciseInput: React.FC<SessionExerciseInputProps> = ({
                                         }
                                     }
                                 }}
-                            className="w-15 text-center font-bold text-base sm:text-xl text-[var(--accent)] border-transparent focus:border focus:border-[var(--accent)] focus:bg-white bg-transparent shadow-none"
-                            inputMode="numeric"
-                            pattern="[0-9]*"
+                                className="w-15 text-center font-bold text-base sm:text-xl text-[var(--accent)] border-transparent focus:border focus:border-[var(--accent)] focus:bg-white bg-transparent shadow-none"
+                                inputMode="numeric"
+                                pattern="[0-9]*"
+                                placeholder="0"
                             />
                             <Button
                                 type="button"
@@ -420,8 +432,8 @@ const SessionExerciseInput: React.FC<SessionExerciseInputProps> = ({
                             onBlur={e => {
                                 const val = e.target.value;
                                 const num = val ? Number(val) : undefined;
-                                if (num === undefined || isNaN(num) || num < 0 || num > 300) {
-                                    setErrors(prev => ({ ...prev, duration_seconds: "Enter valid minutes (0-300)" }));
+                                if (num === undefined || isNaN(num) || num < 1 || num > 300) {
+                                    setErrors(prev => ({ ...prev, duration_seconds: "Enter valid minutes (1-300)" }));
                                 } else {
                                     setDurationSeconds(num * 60);
                                     setErrors(prev => {
@@ -449,10 +461,10 @@ const SessionExerciseInput: React.FC<SessionExerciseInputProps> = ({
                                     }
                                 }
                             }}
-                        className="w-15 text-center font-bold text-base sm:text-xl text-[var(--accent)] border-transparent focus:border focus:border-[var(--accent)] focus:bg-white bg-transparent shadow-none"
-                        placeholder="Minutes"
-                        inputMode="numeric"
-                        pattern="[0-9]*"
+                            className="w-15 text-center font-bold text-base sm:text-xl text-[var(--accent)] border-transparent focus:border focus:border-[var(--accent)] focus:bg-white bg-transparent shadow-none"
+                            placeholder="0"
+                            inputMode="numeric"
+                            pattern="[0-9]*"
                         />
                         <Button
                             type="button"
@@ -539,7 +551,7 @@ const SessionExerciseInput: React.FC<SessionExerciseInputProps> = ({
                                     }
                                 }}
                                 className="w-15 text-center font-bold text-[var(--accent)] border-transparent focus:border focus:border-[var(--accent)] focus:bg-white bg-transparent shadow-none text-base sm:text-xl"
-                                placeholder="Miles"
+                                placeholder="0"
                                 inputMode="text"
                                 pattern="[0-9]*\.?[0-9]*"
                                 autoComplete="off"
@@ -558,6 +570,7 @@ const SessionExerciseInput: React.FC<SessionExerciseInputProps> = ({
                         <p className="text-xs sm:text-sm text-[var(--subhead-text)] -mt-2">miles</p>
                         {errors.distance_miles && <span className="text-xs text-[var(--danger)] italic">{errors.distance_miles}</span>}
                     </div>
+
                 </div>
             </div>
         );

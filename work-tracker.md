@@ -1,5 +1,11 @@
 # Work Tracker
 
+# BUGS TO COME BACK TO
+- Add component for inaccessible routes
+- Fix drawer opening twice on like click on mobile
+- Fix nav menu on profile - on desktop, it is slightly cut off and doesn't scroll
+- Adding loading page for profile
+
 ## Fri Jul 18
 - Working more on authentication flow
     <!-- - updating backend for when users sign in with gmail to slugify their username to prevent duplicate entries DONE -->
@@ -116,14 +122,13 @@ Working On:
 
 ## Mon Aug 11
 To do:
-- Adding loading page for profile
 <!-- - Adding workout and post items to view feed DONE -->
-- Add hover card to workout for desktop version
+<!-- - Add hover card to workout for desktop version DONE -->
 <!-- - Fix error with feed not loading DONE -->
 <!-- - Create single post, workout, group, session routes and placeholders DONE -->
 
 Working On:
-- Workout and session items for feed
+<!-- - Workout and session items for feed DONE -->
 <!-- - Add sessions to profile menu items DONE -->
 <!-- - updating workout and session apis DONE -->
 
@@ -139,10 +144,11 @@ To do:
 <!-- - Move useEffect fetch to ViewPostPage DONE -->
 <!-- - Fix issues with likes not updating properly DONE -->
 
-## Mon Aug 25
+## Mon - Fri Aug 25 - 29
 To do:
-- Create ViewWorkoutPage and CreateSessionForms
+<!-- - Create ViewWorkoutPage and CreateSessionForms DONE -->
 <!-- - Add workouts to createPost and ViewPostItem components DONE -->
-- Add component for inaccessible routes
-- Fix drawer opening twice on like click on mobile
-- Fix nav menu on profile - on desktop, it is slightly cut off and doesn't scroll
+<!-- - Add exercise target to session_exercise table? DONE -->
+<!-- - Add session items to feed, view session page, connect like/comment functionality DONE -->
+- Finish ViewSessionPage/Item
+- Work on edit post, workout, session forms

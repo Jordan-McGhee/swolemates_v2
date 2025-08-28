@@ -19,8 +19,6 @@ import { ProfileMenuItem, PostgreSQLUser } from "@/types/props/props-types";
 
 // view imports
 import { ProfileFeed } from "@/components/profile/ProfileFeed";
-import { ProfilePosts } from "@/components/profile/ProfilePosts";
-import { ProfileWorkouts } from "@/components/profile/ProfileWorkouts";
 import { ProfileFriends } from "@/components/profile/ProfileFriends";
 import { ProfileGroups } from "@/components/profile/ProfileGroups";
 

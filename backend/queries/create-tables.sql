@@ -200,6 +200,7 @@ CREATE TABLE session_exercises (
     duration_seconds INT NULL,              -- For time-based exercises
     distance_miles INT NULL,               -- For distance-based exercises
     pace_minutes_per_mile VARCHAR(10) NULL,           -- For running (e.g., "8:30" per mile)
+    exercise_target JSON NULL,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 

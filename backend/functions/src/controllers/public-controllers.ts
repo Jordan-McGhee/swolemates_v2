@@ -618,7 +618,7 @@ export const getSessionsByUser = async (req: Request, res: Response, next: NextF
         }
 
         // Fetch user's sessions
-        const getSessionsByUserQuery = "SELECT * FROM sessions_with_likes_comments WHERE user_id = $1 ORDER BY session_created_at DESC";
+        const getSessionsByUserQuery = "SELECT * FROM workout_session_with_likes_comments WHERE user_id = $1 ORDER BY session_created_at DESC";
         const getSessionsByUserRes: QueryResult = await pool.query(getSessionsByUserQuery, [user_id]);
 
         return res.status(200).json({
@@ -644,7 +644,7 @@ export const getSingleSession = async (req: Request, res: Response, next: NextFu
     }
 
     // Query for the session
-    const getSingleSessionQuery = `SELECT * FROM sessions_with_likes_comments WHERE session_id = $1`;
+    const getSingleSessionQuery = `SELECT * FROM workout_session_with_likes_comments WHERE session_id = $1`;
 
     try {
         // Get the session

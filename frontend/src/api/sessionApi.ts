@@ -17,7 +17,7 @@ export const sessionApi = () => {
     // get all sessions from user
     const getAllUserSessions = async (user_id: number) => {
         return await sendRequest({
-            url: `${BACKEND_URL}/session/user/${user_id}`,
+            url: `${BACKEND_URL}/public/session/user/${user_id}`,
             method: "GET",
             headers: {
                 'Content-Type': 'application/json',
@@ -29,7 +29,7 @@ export const sessionApi = () => {
     // get single session
     const getSingleSession = async (session_id: number) => {
         return await sendRequest({
-            url: `${BACKEND_URL}/session/${session_id}`,
+            url: `${BACKEND_URL}/public/session/${session_id}`,
             method: "GET",
             headers: {
                 'Content-Type': 'application/json',

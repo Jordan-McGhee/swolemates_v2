@@ -152,7 +152,7 @@ export const WorkoutItem: React.FC<WorkoutItemProps> = ({ user, workout }) => {
                                 const type = exercise.exercise_type?.toLowerCase();
                                 let value;
                                 if (["strength", "plyometric", "other"].includes(type)) {
-                                    value = `${exercise.sets} sets x ${exercise.reps} reps`;
+                                    value = `${exercise.sets} x ${exercise.reps}`;
                                 } else if (["cardio", "flexibility", "stretch", "balance"].includes(type)) {
                                     const minutes = exercise.duration_seconds ? Math.round(exercise.duration_seconds / 60) : 0;
                                     value = `${minutes} minutes`;
@@ -161,7 +161,7 @@ export const WorkoutItem: React.FC<WorkoutItemProps> = ({ user, workout }) => {
                                 }
                                 return (
                                     <li key={idx} className="grid grid-cols-[1fr_auto] items-center gap-2 py-1 text-[var(--subhead-text)] text-sm md:text-lg">
-                                        <span className="font-semibold text-[var(--accent)] uppercase">· {exercise.title}</span>
+                                        <span className="font-semibold text-[var(--accent)]">· {exercise.title}</span>
                                         <span className="justify-self-end px-2 rounded">{value}</span>
                                     </li>
                                 );
@@ -187,19 +187,6 @@ export const WorkoutItem: React.FC<WorkoutItemProps> = ({ user, workout }) => {
                     hideComments={false}
                 />
             </CardContent>
-            {/* <div className="flex-1 border-t border-[#f4f4f4]" />
-            <CardFooter>
-                {authUser ? (
-                    <AddCommentForm
-                        workout_id={workout.workout_id}
-                        onCommentAdded={handleCommentAdded}
-                    />
-                ) : (
-                    <div className="italic text-sm text-[var(--subhead-text)]">
-                        You must log in to comment.
-                    </div>
-                )}
-            </CardFooter> */}
         </Card>
     )
 }
