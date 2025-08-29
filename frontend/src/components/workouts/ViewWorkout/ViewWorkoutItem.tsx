@@ -153,6 +153,9 @@ const ViewWorkoutItem: React.FC<ViewWorkoutItemProps> = ({
                             />
                         </div>
 
+                        {/* EXERCISES */}
+                        <p className='text-lg font-semibold text-[var(--accent)] bg-[var(--accent-hover)] px-6 py-2 my-6'>Exercises ({workout.exercises.length})</p>
+
                         {/* exercise list */}
                         {workout.exercises.map((exercise, idx) => {
                             // Ensure the required properties are present

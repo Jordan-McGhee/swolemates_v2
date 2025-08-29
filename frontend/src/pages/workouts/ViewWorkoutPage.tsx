@@ -151,7 +151,7 @@ const ViewWorkoutPage: React.FC = () => {
     return (
         <div className="flex gap-4 w-full min-h-screen">
             {/* left side */}
-            <div className="w-full lg:w-[65%] flex flex-col gap-4 overflow-y-auto h-full">
+            <div className="w-full lg:w-[65%] flex flex-col gap-4 h-full">
                 <ViewWorkoutItem
                     workout={workout!}
                     liked={liked}
@@ -166,7 +166,7 @@ const ViewWorkoutPage: React.FC = () => {
             </div>
 
             {/* right side */}
-            <div className="w-[35%] hidden lg:block overflow-y-auto h-screen">
+            <div className="w-[35%] hidden lg:block h-screen">
                 <p className="text-xl font-semibold text-[var(--accent)] mb-2">Likes</p>
                 <ViewPageLikes likes={likes} />
 

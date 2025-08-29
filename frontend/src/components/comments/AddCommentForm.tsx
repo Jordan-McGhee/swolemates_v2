@@ -6,7 +6,7 @@ import { useAuth } from "@/context/AuthProvider";
 import { useFetch } from "@/hooks/useFetch";
 import { postApi } from "@/api/postApi";
 import { workoutApi } from "@/api/workoutApi";
-// import { sessionApi } from "@/api/sessionApi";
+import { sessionApi } from "@/api/sessionApi";
 
 // ui imports
 import { Button } from "@/components/ui/button";
@@ -27,7 +27,7 @@ const AddCommentForm: React.FC<AddCommentFormProps> = ({ post_id, workout_id, se
     const { isLoading, hasError, clearError } = useFetch();
     const { commentOnPost } = postApi();
     const { commentOnWorkout } = workoutApi();
-    // const { commentOnSession } = sessionApi();
+    const { commentOnSession } = sessionApi();
 
     const [commentContent, setCommentContent] = useState("");
 
@@ -58,10 +58,7 @@ const AddCommentForm: React.FC<AddCommentFormProps> = ({ post_id, workout_id, se
             } else if (workout_id) {
                 response = await commentOnWorkout(workout_id, commentContent);
             } else if (session_id) {
-                // Uncomment and implement sessionApi if needed
-                // response = await commentOnSession(session_id, commentContent);
-                toast.error("Session comments not implemented.");
-                return;
+                response = await commentOnSession(session_id, commentContent);
             } else {
                 toast.error("No valid target for comment.");
                 return;
@@ -73,7 +70,7 @@ const AddCommentForm: React.FC<AddCommentFormProps> = ({ post_id, workout_id, se
                 toast.success(
                     <>
                         Your comment was posted!
-                        <Link
+                        {/* <Link
                             to={
                                 post_id
                                     ? `/posts/${post_id}`
@@ -92,7 +89,7 @@ const AddCommentForm: React.FC<AddCommentFormProps> = ({ post_id, workout_id, se
                                 : session_id
                                 ? "View session."
                                 : "View comments."}
-                        </Link>
+                        </Link> */}
                     </>
                 );
             }

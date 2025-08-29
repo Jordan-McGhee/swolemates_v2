@@ -178,10 +178,27 @@ export const SessionItem: React.FC<SessionItemProps> = ({ user, session }) => {
                         <summary className="cursor-pointer text-sm text-[var(--accent)]">
                             View Exercises ({session.completed_exercises.length})
                         </summary>
-                        <ul className="mt-2 space-y-1">
+                        <ul className="mt-2 space-y-2">
                             {session.completed_exercises.map((exercise, idx) => {
                                 const type = exercise.exercise_type?.toLowerCase();
                                 let value;
+                                let targetDisplay = "";
+
+                                // Target formatting
+                                if (exercise.exercise_target) {
+                                    if ("sets" in exercise.exercise_target && "reps" in exercise.exercise_target) {
+                                        targetDisplay = `${exercise.exercise_target.sets} x ${exercise.exercise_target.reps}`;
+                                    } else if ("duration_seconds" in exercise.exercise_target) {
+                                        const min = exercise.exercise_target.duration_seconds !== undefined
+                                            ? Math.round(exercise.exercise_target.duration_seconds / 60)
+                                            : 0;
+                                        targetDisplay = `${min} min`;
+                                    } else if ("distance_miles" in exercise.exercise_target) {
+                                        targetDisplay = `${exercise.exercise_target.distance_miles} mi`;
+                                    }
+                                }
+
+                                // Value formatting
                                 if (typeof type === "string" && ["strength", "plyometric", "other"].includes(type)) {
                                     value = `${exercise.sets_completed ?? "-"} x ${exercise.reps_completed ?? "-"}`;
                                     if (exercise.weight_used) value += ` @ ${exercise.weight_used} lbs`;
@@ -195,9 +212,15 @@ export const SessionItem: React.FC<SessionItemProps> = ({ user, session }) => {
                                 }
 
                                 return (
-                                    <li key={idx} className="grid grid-cols-[1fr_auto] items-center gap-2 py-1 text-[var(--subhead-text)] text-sm md:text-lg">
-                                        <span className="font-semibold text-[var(--accent)]">· {exercise.title ?? "Exercise"}</span>
-                                        <span className="justify-self-end px-2 rounded ">{value}</span>
+
+                                    <li key={idx} className="">
+                                        <p className="font-semibold text-[var(--accent)] text-base sm:text-lg">{exercise.title ?? "Exercise"}</p>
+                                        <div className="flex justify-between items-center gap-2">
+                                            {targetDisplay && (
+                                                <p className="text-[var(--subhead-text)]">Target: <span className="font-semibold">{targetDisplay}</span></p>
+                                            )}
+                                            <p className="text-[var(--accent)] font-semibold">{value}</p>
+                                        </div>
                                     </li>
                                 );
                             })}

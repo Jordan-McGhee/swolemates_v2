@@ -296,7 +296,7 @@ export const commentOnSession = async (req: Request, res: Response, next: NextFu
 
         // Insert comment into session_comments table
         const addCommentQuery = `
-            INSERT INTO comments (session_id, user_id, comment_text, created_at, updated_at) 
+            INSERT INTO comments (session_id, user_id, content, created_at, updated_at) 
             VALUES ($1, $2, $3, NOW(), NOW()) 
             RETURNING *;
         `;
@@ -381,7 +381,7 @@ export const editCommentOnSession = async (req: Request, res: Response, next: Ne
         // Update query
         const updateCommentQuery = `
             UPDATE comments 
-            SET comment_text = $1, updated_at = NOW()
+            SET content = $1, updated_at = NOW()
             WHERE comment_id = $2 AND session_id = $3
             RETURNING *;
         `;

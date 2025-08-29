@@ -5,6 +5,8 @@
 - Fix drawer opening twice on like click on mobile
 - Fix nav menu on profile - on desktop, it is slightly cut off and doesn't scroll
 - Adding loading page for profile
+- Banner for exercises isn't displayed properly with negative margins
+- Tailwind bug causing issues displaying styles?
 
 ## Fri Jul 18
 - Working more on authentication flow
@@ -150,5 +152,5 @@ To do:
 <!-- - Add workouts to createPost and ViewPostItem components DONE -->
 <!-- - Add exercise target to session_exercise table? DONE -->
 <!-- - Add session items to feed, view session page, connect like/comment functionality DONE -->
-- Finish ViewSessionPage/Item
+<!-- - Finish ViewSessionPage/Item DONE -->
 - Work on edit post, workout, session forms

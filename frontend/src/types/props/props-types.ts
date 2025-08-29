@@ -174,7 +174,7 @@ export interface SessionExercise {
     duration_seconds?: number;
     distance_miles?: number;
     pace_minutes_per_mile?: string;
-    target?: ExerciseTarget;
+    exercise_target?: ExerciseTarget;
     created_at?: Date;
 }
 

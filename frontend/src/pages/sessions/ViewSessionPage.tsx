@@ -4,6 +4,7 @@ import { useParams } from "react-router-dom";
 // component imports
 import ViewSessionItem from "@/components/sessions/ViewSession/ViewSessionItem";
 import ViewPageLikes from "@/components/posts/ViewPost/ViewPageLikes";
+import { ViewItemPageSkeleton, ViewItemPageSidebarSkeleton } from "@/components/skeletons/ViewItemPageSkeletons";
 
 // ui imports
 import { toast } from "sonner";
@@ -26,6 +27,7 @@ const ViewSessionPage: React.FC = () => {
 
     // states
     const [session, setSession] = useState<WorkoutSession | null>(null);
+    const [loading, setLoading] = useState<boolean>(true);
 
     // like functionality
     const [likes, setLikes] = useState<Like[]>([]);
@@ -38,7 +40,12 @@ const ViewSessionPage: React.FC = () => {
     // Fetch session data and update states
     useEffect(() => {
         const fetchSession = async () => {
-            if (!session_id) return;
+            if (!session_id) {
+                setLoading(false);
+                return;
+            }
+
+            setLoading(true);
             try {
                 const fetchedSession = await getSingleSession(Number(session_id));
                 console.log("Fetched session:", fetchedSession);
@@ -52,6 +59,8 @@ const ViewSessionPage: React.FC = () => {
             } catch (error: any) {
                 console.error("Failed to fetch session:", error);
                 // toast.error(`Failed to fetch session: ${error?.message || error}`);
+            } finally {
+                setLoading(false);
             }
         };
         fetchSession();
@@ -148,11 +157,39 @@ const ViewSessionPage: React.FC = () => {
         );
     };
 
+    // Show loading skeleton while fetching
+    if (loading) {
+        return (
+            <div className="flex gap-4 w-full min-h-screen">
+                {/* left side - skeleton */}
+                <div className="w-full lg:w-[65%] flex flex-col gap-4 h-full">
+                    <ViewItemPageSkeleton />
+                </div>
+
+                {/* right side - skeleton for likes section */}
+                <div className="w-[35%] hidden sm:block h-screen">
+                    <ViewItemPageSidebarSkeleton />
+                </div>
+            </div>
+        );
+    }
+
+    // Show error state if session is not found after loading
+    if (!loading && !session) {
+        return (
+            <div className="flex items-start justify-center sm:justify-start min-h-screen sm:min-h-0">
+                <div className="text-center sm:text-left text-[var(--subhead-text)] mt-0">
+                    <p className="text-xl font-semibold mb-2">Session not found</p>
+                    <p>The session you're looking for doesn't exist or has been removed.</p>
+                </div>
+            </div>
+        );
+    }
 
     return (
         <div className="flex gap-4 w-full min-h-screen">
             {/* left side */}
-            <div className="w-full lg:w-[65%] flex flex-col gap-4 overflow-y-auto h-full">
+            <div className="w-full lg:w-[65%] flex flex-col gap-4 h-full">
                 <ViewSessionItem
                     session={session!}
                     liked={liked}
@@ -167,7 +204,7 @@ const ViewSessionPage: React.FC = () => {
             </div>
 
             {/* right side */}
-            <div className="w-[35%] hidden lg:block overflow-y-auto h-screen">
+            <div className="w-[35%] hidden lg:block h-screen">
                 <p className="text-xl font-semibold text-[var(--accent)] mb-2">Likes</p>
                 <ViewPageLikes likes={likes} />
 

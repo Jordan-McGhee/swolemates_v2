@@ -3,7 +3,7 @@ import CreateWorkoutForm from "../../components/workouts/Create Workout Form/Cre
 
 const CreateWorkout: React.FC = () => {
     return (
-        <div className="flex flex-row gap-4 w-full overflow-y-auto min-h-screen">
+        <div className="flex flex-row gap-4 w-full min-h-screen">
             {/* Left side */}
             <div className="w-full lg:w-[65%] flex flex-col gap-4">
                 <div className="bg-[var(--white)] rounded-xl p-6">
