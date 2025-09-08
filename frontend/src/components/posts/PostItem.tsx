@@ -85,6 +85,9 @@ export const PostItem: React.FC<PostItemProps> = ({ user, post }) => {
                         <p className="font-semibold text-sm text-[var(--accent)]">{user?.username}</p>
                         <p className="text-xs text-[var(--subhead-text)]">
                             {formatDate(post.created_at, "relative")}
+                            {post.updated_at !== post.created_at && (
+                                <span className="italic"> (Edited)</span>
+                            )}
                         </p>
                     </div>
                 </div>
@@ -92,12 +95,7 @@ export const PostItem: React.FC<PostItemProps> = ({ user, post }) => {
 
                 <div className="flex items-center gap-x-2">
 
-                    {/* Workout Tag */}
-                    {/* <div className="flex items-center gap-2 bg-[var(--accent-hover)] p-2 rounded-md text-[var(--accent)] text-xs">
-                        <Dumbbell className="size-4 text-[var(--accent)]" />
-                        <p className="max-w-24 truncate">Workout Title</p>
-                    </div> */}
-
+                    {/* Workout Info */}
                     {
                         post.workout_id &&
                         <PostItemWorkout
@@ -121,7 +119,9 @@ export const PostItem: React.FC<PostItemProps> = ({ user, post }) => {
                             {user?.user_id === post.user_id && (
                                 <>
                                     <DropdownMenuItem>
-                                        Edit Post
+                                        <Link to={`/posts/${post.post_id}/edit`} className="w-full h-full block">
+                                            Edit Post
+                                        </Link>
                                     </DropdownMenuItem>
                                     <DropdownMenuItem variant="destructive">
                                         Delete Post

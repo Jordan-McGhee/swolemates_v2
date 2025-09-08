@@ -65,7 +65,15 @@ const ViewPostItem: React.FC<ViewPostItemProps> = ({
                                 <Link to={`/user/${post.username}`} className="font-medium text-[var(--accent)] hover:underline">
                                     {post.username}
                                 </Link>
-                                <p className="text-sm text-[var(--subhead-text)]">{formatDate(post.created_at, "relative")}</p>
+                                <p className="text-xs text-[var(--subhead-text)]">
+                                    {formatDate(post.created_at, "shortTime")}
+                                    {post.updated_at !== post.created_at && (
+                                        <>
+                                            {" | "}
+                                            <span className="italic">Edited {formatDate(post.updated_at, "relative")}</span>
+                                        </>
+                                    )}
+                                </p>
                             </div>
                         </div>
 

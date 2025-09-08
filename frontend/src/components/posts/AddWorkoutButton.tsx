@@ -45,7 +45,7 @@ const AddWorkoutButton: React.FC<AddWorkoutButtonProps> = ({ onWorkoutSelect, pr
             }
         };
         fetchWorkouts();
-    }, [authUser, token]);
+    }, [authUser?.username, token]);
 
     const handleWorkoutSelect = (workout: Workout) => {
         setSelectedWorkout(workout);

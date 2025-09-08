@@ -11,6 +11,7 @@ import Home from "./pages/Home"
 import Profile from "./pages/Profile"
 import Groups from "./pages/groups/Groups"
 import ViewPostPage from "./pages/posts/ViewPostPage"
+import EditPostPage from "./pages/posts/EditPostPage"
 import Workouts from "./pages/workouts/Workouts"
 import CreateWorkout from "./pages/workouts/CreateWorkout"
 import ViewWorkoutPage from "./pages/workouts/ViewWorkoutPage"
@@ -33,7 +34,7 @@ export default function App() {
 
           {/* posts */}
           <Route path="/posts/:post_id" element={<ViewPostPage />} />
-          <Route path="/posts/:post_id/edit" element={<div>Edit Post</div>} />
+          <Route path="/posts/:post_id/edit" element={<EditPostPage />} />
 
           {/* profile */}
           <Route path="/user/:username?" element={<Profile />} />

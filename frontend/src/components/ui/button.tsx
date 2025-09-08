@@ -13,6 +13,8 @@ const buttonVariants = cva(
           "shadow-xs bg-[var(--accent)] text-white font-semibold text-base py-2 px-4 rounded-lg hover:bg-[var(--accent-hover)] hover:text-[var(--accent)] hover:cursor-pointer transition-colors",
         destructive:
           "shadow-xs bg-[#e69ea0] hover:bg-[var(--danger)] text-white font-semibold text-base py-3 shadow  hover:text-[var(--white)] hover:cursor-pointer transition-colors hover:cursor-pointer",
+        destructiveOutline:
+          "border border-[#e69ea0] text-[#e69ea0] hover:bg-[var(--danger)] hover:text-white hover:cursor-pointer transition-colors",
         outline:
           "border bg-background shadow-xs hover:bg-accent hover:text-[var(--white)] dark:bg-input/30 dark:border-input dark:hover:bg-input/50 hover:cursor-pointer",
         secondary:

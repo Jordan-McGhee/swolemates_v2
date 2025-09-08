@@ -1,10 +1,10 @@
-import { createContext, useContext, useEffect, useRef, useState } from "react";
+import { createContext, useContext, useEffect, useRef, useState, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import { authApi } from "@/api/authApi";
 
 // type imports
 import { AuthContextValue, AuthProviderProps, PostgreSQLUser } from "@/types/props/props-types";
-import { User as FirebaseUser } from "firebase/auth"; // Adjust import if needed
+import { User as FirebaseUser } from "firebase/auth";
 
 // Create AuthContext
 const AuthContext = createContext<AuthContextValue | undefined>(undefined);
@@ -163,26 +163,44 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
         }
     };
 
+    // Memoize context value to prevent unnecessary re-renders
+    const contextValue = useMemo(() => ({
+        user,
+        firebaseUser,
+        token,
+        isAuthLoading: isAuthLoading || isLoadingAuth,
+        hasError,
+        clearError,
+        checkUsernameAvailability,
+        checkEmailAvailability,
+        handleSignUp,
+        handleLoginEmail,
+        handleLoginGoogle,
+        handleUpdateUserProfile,
+        handleLogout,
+        handleDeleteAccount,
+        syncUserWithBackend,
+    }), [
+        user,
+        firebaseUser,
+        token,
+        isAuthLoading,
+        isLoadingAuth,
+        hasError,
+        clearError,
+        checkUsernameAvailability,
+        checkEmailAvailability,
+        handleSignUp,
+        handleLoginEmail,
+        handleLoginGoogle,
+        handleUpdateUserProfile,
+        handleLogout,
+        handleDeleteAccount,
+        syncUserWithBackend,
+    ]);
+
     return (
-        <AuthContext.Provider
-            value={{
-            user,
-            firebaseUser,
-            token,
-            isAuthLoading: isAuthLoading || isLoadingAuth,
-            hasError,
-            clearError,
-            checkUsernameAvailability,
-            checkEmailAvailability,
-            handleSignUp,
-            handleLoginEmail,
-            handleLoginGoogle,
-            handleUpdateUserProfile,
-            handleLogout,
-            handleDeleteAccount,
-            syncUserWithBackend,
-            }}
-        >
+        <AuthContext.Provider value={contextValue}>
             {children}
         </AuthContext.Provider>
     );

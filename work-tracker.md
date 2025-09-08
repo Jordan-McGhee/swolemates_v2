@@ -153,4 +153,13 @@ To do:
 <!-- - Add exercise target to session_exercise table? DONE -->
 <!-- - Add session items to feed, view session page, connect like/comment functionality DONE -->
 <!-- - Finish ViewSessionPage/Item DONE -->
+
+## Mon - Fri Sep 8 - 12
+To do:
 - Work on edit post, workout, session forms
+    <!-- - edit post DONE -->
+    - edit workout
+    - edit session
+- Update feeditems to use updated_at if it is different from created_at
+- Mobile versions of forms
+- Loading state for viewPostItem

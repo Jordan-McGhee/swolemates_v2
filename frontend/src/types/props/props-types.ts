@@ -378,6 +378,15 @@ export interface ViewPageLikesProps {
     likes: Like[];
 }
 
+// EDIT POST TYPES
+export interface EditPostFormProps {
+    post: Post,
+    selectedWorkout: Workout | null,
+    onSubmit: (formData: any) => Promise<void>;
+    onCancel: (hasChanges: boolean) => void;
+    isUpdating: boolean;
+}
+
 // WORKOUT TYPES
 export interface ViewWorkoutItemProps {
     workout: Workout;

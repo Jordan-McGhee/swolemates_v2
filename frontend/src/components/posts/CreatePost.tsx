@@ -166,6 +166,8 @@ const CreatePost: React.FC<CreatePostProps> = ({ workouts }) => {
                                 </Button> */}
                                 <AddWorkoutButton
                                     onWorkoutSelect={handleWorkoutSelect}
+                                    buttonClassName="w-full mt-4 sm:mt-0 sm:w-fit flex items-center justify-center"
+                                    propsClassName="truncate max-w-[12rem]"
                                 />
                                 <Button
                                     type="button"
