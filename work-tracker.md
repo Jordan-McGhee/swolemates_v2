@@ -160,6 +160,10 @@ To do:
     <!-- - edit post DONE -->
     - edit workout
     - edit session
-- Update feeditems to use updated_at if it is different from created_at
+<!-- - Update feeditems to use updated_at if it is different from created_at DONE -->
 - Mobile versions of forms
 - Loading state for viewPostItem
+- Rework exercise inputs to match input style from creating session
+<!-- - Double check validations on workout and session form inputs. Prevent negative negative numbers and letters DONE -->
+- confirm delete on exercise inputs or add undo?
+- On editing workout, the index of exercises is not the same when an exercise is changed. Work on making sure the order of the workout is consistent with how it was submitted

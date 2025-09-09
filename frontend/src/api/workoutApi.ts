@@ -68,7 +68,7 @@ export const workoutApi = () => {
     // edit workout
     const editWorkout = async (
         workout_id: number,
-        workoutData: { user_id: number, content: string, description: string, exercises: WorkoutFormExercise[] }
+        workoutData: { user_id: number, title?: string, description?: string, workout_type?: string, exercises: WorkoutFormExercise[] }
     ) => {
         return await sendRequest({
             url: `${BACKEND_URL}/workout/${workout_id}`,

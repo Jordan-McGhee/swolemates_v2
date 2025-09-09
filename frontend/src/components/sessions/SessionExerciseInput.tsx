@@ -580,7 +580,7 @@ const SessionExerciseInput: React.FC<SessionExerciseInputProps> = ({
     }
 
     return (
-        <div className="shadow-md rounded-lg p-4 mb-4">
+        <div className="border border-[var(--accent-hover)] rounded-lg p-4 mb-4">
             {content}
         </div>
     )

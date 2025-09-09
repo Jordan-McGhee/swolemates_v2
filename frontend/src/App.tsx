@@ -14,6 +14,7 @@ import ViewPostPage from "./pages/posts/ViewPostPage"
 import EditPostPage from "./pages/posts/EditPostPage"
 import Workouts from "./pages/workouts/Workouts"
 import CreateWorkout from "./pages/workouts/CreateWorkout"
+import EditWorkoutPage from "./pages/workouts/EditWorkoutPage"
 import ViewWorkoutPage from "./pages/workouts/ViewWorkoutPage"
 import CreateSession from "./pages/sessions/CreateSession"
 import ViewSessionPage from "./pages/sessions/ViewSessionPage"
@@ -43,7 +44,7 @@ export default function App() {
           <Route path="/workouts" element={<Workouts />} />
           <Route path="/workouts/create" element={<CreateWorkout />} />
           <Route path="/workouts/:workout_id?" element={<ViewWorkoutPage />} />
-          <Route path="/workouts/:workout_id/edit" element={<div>Edit Workout</div>} />
+          <Route path="/workouts/:workout_id/edit" element={<EditWorkoutPage />} />
 
           {/* sessions */}
           <Route path="/sessions" element={<div>View Sessions</div>} />

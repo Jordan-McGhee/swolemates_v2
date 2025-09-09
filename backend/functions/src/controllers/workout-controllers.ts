@@ -130,7 +130,7 @@ export const editWorkout = async (req: Request, res: Response, next: NextFunctio
     console.log("[editWorkout] Decoded Firebase UID:", firebase_uid);
 
     const { workout_id } = req.params;
-    const { title, description, workout_type, exercises } = req.body;
+    const { workout_title, description, workout_type, exercises } = req.body;
 
     // Validations
     if (!firebase_uid) {
@@ -141,18 +141,18 @@ export const editWorkout = async (req: Request, res: Response, next: NextFunctio
         console.log("[editWorkout] Invalid workout ID:", workout_id);
         return res.status(400).json({ message: "Invalid workout ID." });
     }
-    if (!title || typeof title !== "string" || !description || typeof description !== "string") {
-        console.log("[editWorkout] Invalid title/description:", title, description);
-        return res.status(400).json({ message: "Workout must include a title and description." });
-    }
+    // if (!title || typeof title !== "string" || !description || typeof description !== "string") {
+    //     console.log("[editWorkout] Invalid title/description:", title, description);
+    //     return res.status(400).json({ message: "Workout must include a title and description." });
+    // }
     if (!Array.isArray(exercises) || exercises.length < 1 || exercises.length > 10) {
         console.log("[editWorkout] Invalid exercises array:", exercises);
         return res.status(400).json({ message: "Workout must have between 1 and 10 exercises." });
     }
-    if (workout_type && !["strength", "cardio", "mobility"].includes(workout_type)) {
-        console.log("[editWorkout] Invalid workout_type:", workout_type);
-        return res.status(400).json({ message: "Invalid workout_type." });
-    }
+    // if (workout_type && !["strength", "cardio", "mobility"].includes(workout_type)) {
+    //     console.log("[editWorkout] Invalid workout_type:", workout_type);
+    //     return res.status(400).json({ message: "Invalid workout_type." });
+    // }
 
     const exerciseTitleSet = new Set();
     for (const ex of exercises) {
@@ -187,7 +187,7 @@ export const editWorkout = async (req: Request, res: Response, next: NextFunctio
 
         // Check workout ownership
         const workoutRes = await client.query(
-            `SELECT user_id FROM workouts WHERE workout_id = $1`,
+            `SELECT * FROM workouts WHERE workout_id = $1`,
             [workout_id]
         );
         if (workoutRes.rows.length === 0) {
@@ -204,9 +204,9 @@ export const editWorkout = async (req: Request, res: Response, next: NextFunctio
         // Update workout main info
         await client.query(
             `UPDATE workouts SET title = $1, description = $2, workout_type = $3, updated_at = NOW() WHERE workout_id = $4`,
-            [title, description, workout_type ?? 'strength', workout_id]
+            [workout_title ?? workoutRes.rows[0].title, description ?? workoutRes.rows[0].description, workout_type ?? 'strength', workout_id]
         );
-        console.log("[editWorkout] Updated workout info:", { title, description, workout_type });
+        console.log("[editWorkout] Updated workout info:", { workout_title, description, workout_type });
 
 
         // Check for existing exercises in library

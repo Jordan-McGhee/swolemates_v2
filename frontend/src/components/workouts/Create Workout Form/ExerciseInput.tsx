@@ -8,7 +8,7 @@ import { Trash } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
 // type imports
-import { ExerciseType, MeasurementType, ExerciseInputProps } from "@/types/props/props-types";
+import { ExerciseType, MeasurementType, ExerciseInputProps, WorkoutFormExercise, WorkoutExercise } from "@/types/props/props-types";
 
 // validator imports
 import { validateExerciseTitle, validateSets, validateReps, validateDuration, validateDistance } from "@/util/input-validators";
@@ -35,23 +35,36 @@ const measurementTypeMap: Record<ExerciseType, MeasurementType> = {
     other: "reps"
 };
 
-const ExerciseInput: React.FC<ExerciseInputProps> = ({ exerciseIndex, handleExerciseChange, handleDeleteExercise, handleExerciseError }) => {
+const ExerciseInput: React.FC<ExerciseInputProps & { initialExerciseData?: WorkoutFormExercise | WorkoutExercise }> = ({ exerciseIndex, handleExerciseChange, handleDeleteExercise, handleExerciseError, initialExerciseData }) => {
     const [exerciseInputData, setExerciseInputData] = useState<{
         title: string;
         exerciseType: ExerciseType;
         measurementType: MeasurementType;
-        sets: string;
-        reps: string;
-        duration: string;
-        distance: string;
-    }>({
-        title: "",
-        exerciseType: "strength",
-        measurementType: measurementTypeMap["strength"],
-        sets: "",
-        reps: "",
-        duration: "",
-        distance: ""
+        sets: number | undefined;
+        reps: number | undefined;
+        duration: number | undefined;
+        distance: number | undefined;
+    }>(() => {
+        if (initialExerciseData) {
+            return {
+                title: initialExerciseData.title || "",
+                exerciseType: initialExerciseData.exercise_type || "strength",
+                measurementType: initialExerciseData.measurement_type || "reps",
+                sets: initialExerciseData.sets !== undefined ? Number(initialExerciseData.sets) : undefined,
+                reps: initialExerciseData.reps !== undefined ? Number(initialExerciseData.reps) : undefined,
+                duration: initialExerciseData.duration_seconds !== undefined ? Math.round(Number(initialExerciseData.duration_seconds) / 60) : undefined,
+                distance: initialExerciseData.distance_miles !== undefined ? Number(initialExerciseData.distance_miles) : undefined
+            };
+        }
+        return {
+            title: "",
+            exerciseType: "strength",
+            measurementType: measurementTypeMap["strength"],
+            sets: undefined,
+            reps: undefined,
+            duration: undefined,
+            distance: undefined
+        };
     });
 
     // individual state setters
@@ -62,18 +75,18 @@ const ExerciseInput: React.FC<ExerciseInputProps> = ({ exerciseIndex, handleExer
             ...prev,
             exerciseType,
             measurementType: measurementTypeMap[exerciseType],
-            sets: "",
-            reps: "",
-            duration: "",
-            distance: ""
+            sets: undefined,
+            reps: undefined,
+            duration: undefined,
+            distance: undefined
         }));
-    const setSets = (sets: string) =>
+    const setSets = (sets: number | undefined) =>
         setExerciseInputData(prev => ({ ...prev, sets }));
-    const setReps = (reps: string) =>
+    const setReps = (reps: number | undefined) =>
         setExerciseInputData(prev => ({ ...prev, reps }));
-    const setDuration = (duration: string) =>
+    const setDuration = (duration: number | undefined) =>
         setExerciseInputData(prev => ({ ...prev, duration }));
-    const setDistance = (distance: string) =>
+    const setDistance = (distance: number | undefined) =>
         setExerciseInputData(prev => ({ ...prev, distance }));
     const setMeasurementType = (measurementType: MeasurementType) =>
         setExerciseInputData(prev => ({ ...prev, measurementType }));
@@ -81,20 +94,60 @@ const ExerciseInput: React.FC<ExerciseInputProps> = ({ exerciseIndex, handleExer
     const { title, exerciseType, measurementType, sets, reps, duration, distance } = exerciseInputData;
 
     const [errors, setErrors] = useState<Record<string, string>>({});
+    const [isInitialized, setIsInitialized] = useState(false);
 
     useEffect(() => {
+        if (!isInitialized) {
+            setIsInitialized(true);
+            return;
+        }
+
         if (exerciseType) {
             setMeasurementType(measurementTypeMap[exerciseType as ExerciseType]);
         } else {
             setMeasurementType("reps");
         }
-        // Reset measurement fields when type changes
-        setSets("");
-        setReps("");
-        setDuration("");
-        setDistance("");
+        // Only reset fields when user changes exercise type, not during initialization
+        setSets(undefined);
+        setReps(undefined);
+        setDuration(undefined);
+        setDistance(undefined);
     }, [exerciseType]);
 
+    // Input validation helpers
+    const handleNumericInput = (value: string, setter: (val: number | undefined) => void, max?: number) => {
+        // Only allow digits
+        if (/^\d*$/.test(value)) {
+            if (value === "") {
+                setter(undefined);
+            } else {
+                const num = Number(value);
+                if (max && num > max) {
+                    setter(max);
+                } else {
+                    setter(num);
+                }
+            }
+        }
+    };
+
+    const handleDecimalInput = (value: string, setter: (val: number | undefined) => void, max?: number) => {
+        // Allow digits and one decimal point
+        if (/^\d*\.?\d*$/.test(value) || value === "") {
+            if (value === "" || value === ".") {
+                setter(undefined);
+            } else {
+                const num = Number(value);
+                if (!isNaN(num)) {
+                    if (max && num > max) {
+                        setter(max);
+                    } else {
+                        setter(num);
+                    }
+                }
+            }
+        }
+    };
 
     // blur and error handlers
     const handleTitleBlur = () => {
@@ -104,25 +157,25 @@ const ExerciseInput: React.FC<ExerciseInputProps> = ({ exerciseIndex, handleExer
     };
 
     const handleSetsBlur = () => {
-        const error = validateSets(sets);
+        const error = validateSets(sets !== undefined ? String(sets) : "");
         setErrors(prev => ({ ...prev, sets: error || "" }));
         handleExerciseError(exerciseIndex, !!error);
     };
 
     const handleRepsBlur = () => {
-        const error = validateReps(reps);
+        const error = validateReps(reps !== undefined ? String(reps) : "");
         setErrors(prev => ({ ...prev, reps: error || "" }));
         handleExerciseError(exerciseIndex, !!error);
     };
 
     const handleDurationBlur = () => {
-        const error = validateDuration(duration);
+        const error = validateDuration(duration !== undefined ? String(duration) : "");
         setErrors(prev => ({ ...prev, duration: error || "" }));
         handleExerciseError(exerciseIndex, !!error);
     };
 
     const handleDistanceBlur = () => {
-        const error = validateDistance(distance);
+        const error = validateDistance(distance !== undefined ? String(distance) : "");
         setErrors(prev => ({ ...prev, distance: error || "" }));
         handleExerciseError(exerciseIndex, !!error);
     };
@@ -158,9 +211,8 @@ const ExerciseInput: React.FC<ExerciseInputProps> = ({ exerciseIndex, handleExer
         }
     }, [title, exerciseType, measurementType, sets, reps, duration, distance, errors]);
 
-
     return (
-        <div className="shadow-md rounded-lg p-4 mb-4">
+        <div className="border border-[var(--accent-hover)] rounded-lg p-4 mb-4">
             <div className="flex items-center justify-between mb-2">
                 <p className="text-lg font-semi">Exercise {exerciseIndex}</p>
                 <Button
@@ -183,23 +235,23 @@ const ExerciseInput: React.FC<ExerciseInputProps> = ({ exerciseIndex, handleExer
                     placeholder="Exercise Title"
                 />
                 {/* Title error and character count */}
-                <div className="flex justify-between items-center mt-1">
+                <div className="flex justify-between items-center my-1">
                     {errors.title && (
-                        <p className="text-sm mt-1 text-[var(--danger)]">
+                        <p className="text-xs mt-1 text-[var(--danger)]">
                             {errors.title}
                         </p>
                     )}
                     <p
-                        className={`ml-auto mt-1.5 text-xs text-right ${title.length > 35
+                        className={`ml-auto mt-1.5 text-xs text-right ${title.length > 30
                             ? "text-[var(--danger)]"
                             : "text-[var(--subhead-text)]"
                             }`}
                     >
-                        {title.length}/50 characters
+                        {title.length}/30 characters
                     </p>
                 </div>
             </div>
-            <div className="flex w-full gap-x-4">
+            <div className="flex w-fit justify-center gap-x-4">
                 <div>
                     <Label htmlFor="exercise-type" className="mb-2">Exercise Type:</Label>
                     <Select
@@ -223,36 +275,80 @@ const ExerciseInput: React.FC<ExerciseInputProps> = ({ exerciseIndex, handleExer
                     <>
                         <div className="w-full">
                             <Label htmlFor="sets" className="mb-2">Sets:</Label>
-                            <Input
-                                id="sets"
-                                type="number"
-                                min={1}
-                                max={25}
-                                step={1}
-                                value={sets}
-                                onChange={e => setSets(e.target.value)}
-                                onBlur={handleSetsBlur}
-                                placeholder="Sets"
-                            />
+                            <div className="flex items-center gap-1">
+                                <Button
+                                    type="button"
+                                    variant="ghost"
+                                    size="icon"
+                                    onClick={() => setSets(Math.max((sets || 0) - 1, 0))}
+                                    aria-label="Decrease sets"
+                                    disabled={(sets || 0) <= 0}
+                                >
+                                    -
+                                </Button>
+                                <Input
+                                    id="sets"
+                                    type="text"
+                                    value={sets ?? ""}
+                                    onChange={e => handleNumericInput(e.target.value, setSets, 25)}
+                                    onBlur={handleSetsBlur}
+                                    pattern="[0-9]*"
+                                    inputMode="numeric"
+                                    placeholder="0"
+                                    className="w-15 text-center font-bold text-base sm:text-xl text-[var(--accent)] border-transparent focus:border focus:border-[var(--accent)] focus:bg-white bg-transparent shadow-none"
+                                />
+                                <Button
+                                    type="button"
+                                    variant="ghost"
+                                    size="icon"
+                                    onClick={() => setSets(Math.min((sets || 0) + 1, 25))}
+                                    aria-label="Increase sets"
+                                    disabled={(sets || 0) >= 25}
+                                >
+                                    +
+                                </Button>
+                            </div>
                             {errors.sets && (
-                                <p className="text-[var(--danger)] text-sm mt-1">{errors.sets}</p>
+                                <p className="text-[var(--danger)] text-xs mt-1">{errors.sets}</p>
                             )}
                         </div>
                         <div className="w-full">
                             <Label htmlFor="reps" className="mb-2">Reps:</Label>
-                            <Input
-                                id="reps"
-                                type="number"
-                                min={1}
-                                max={50}
-                                step={1}
-                                value={reps}
-                                onChange={e => setReps(e.target.value)}
-                                onBlur={handleRepsBlur}
-                                placeholder="Reps"
-                            />
+                            <div className="flex items-center gap-1">
+                                <Button
+                                    type="button"
+                                    variant="ghost"
+                                    size="icon"
+                                    onClick={() => setReps(Math.max((reps || 0) - 1, 0))}
+                                    aria-label="Decrease reps"
+                                    disabled={(reps || 0) <= 0}
+                                >
+                                    -
+                                </Button>
+                                <Input
+                                    id="reps"
+                                    type="text"
+                                    value={reps ?? ""}
+                                    onChange={e => handleNumericInput(e.target.value, setReps, 50)}
+                                    onBlur={handleRepsBlur}
+                                    pattern="[0-9]*"
+                                    inputMode="numeric"
+                                    placeholder="0"
+                                    className="w-15 text-center font-bold text-base sm:text-xl text-[var(--accent)] border-transparent focus:border focus:border-[var(--accent)] focus:bg-white bg-transparent shadow-none"
+                                />
+                                <Button
+                                    type="button"
+                                    variant="ghost"
+                                    size="icon"
+                                    onClick={() => setReps(Math.min((reps || 0) + 1, 50))}
+                                    aria-label="Increase reps"
+                                    disabled={(reps || 0) >= 50}
+                                >
+                                    +
+                                </Button>
+                            </div>
                             {errors.reps && (
-                                <p className="text-[var(--danger)] text-sm mt-1">{errors.reps}</p>
+                                <p className="text-[var(--danger)] text-xs mt-1">{errors.reps}</p>
                             )}
                         </div>
                     </>
@@ -260,37 +356,82 @@ const ExerciseInput: React.FC<ExerciseInputProps> = ({ exerciseIndex, handleExer
                 {measurementType === "duration" && (
                     <div className="w-full">
                         <Label htmlFor="duration" className="mb-2">Duration (minutes):</Label>
-                        <Input
-                            id="duration"
-                            type="number"
-                            min={1}
-                            max={300}
-                            step={1}
-                            value={duration}
-                            onChange={e => setDuration(e.target.value)}
-                            onBlur={handleDurationBlur}
-                            placeholder="Minutes"
-                        />
+                        <div className="flex items-center gap-1">
+                            <Button
+                                type="button"
+                                variant="ghost"
+                                size="icon"
+                                onClick={() => setDuration(Math.max((duration || 0) - 1, 0))}
+                                aria-label="Decrease duration"
+                                disabled={(duration || 0) <= 0}
+                            >
+                                -
+                            </Button>
+                            <Input
+                                id="duration"
+                                type="text"
+                                value={duration ?? ""}
+                                onChange={e => handleNumericInput(e.target.value, setDuration, 300)}
+                                onBlur={handleDurationBlur}
+                                pattern="[0-9]*"
+                                inputMode="numeric"
+                                placeholder="0"
+                                className="w-15 text-center font-bold text-base sm:text-xl text-[var(--accent)] border-transparent focus:border focus:border-[var(--accent)] focus:bg-white bg-transparent shadow-none"
+                            />
+                            <Button
+                                type="button"
+                                variant="ghost"
+                                size="icon"
+                                onClick={() => setDuration(Math.min((duration || 0) + 1, 300))}
+                                aria-label="Increase duration"
+                                disabled={(duration || 0) >= 300}
+                            >
+                                +
+                            </Button>
+                        </div>
                         {errors.duration && (
-                            <p className="text-[var(--danger)] text-sm mt-1">{errors.duration}</p>
+                            <p className="text-[var(--danger)] text-xs mt-1">{errors.duration}</p>
                         )}
                     </div>
                 )}
                 {measurementType === "distance" && (
                     <div className="w-full">
                         <Label htmlFor="distance" className="mb-2">Distance (miles):</Label>
-                        <Input
-                            id="distance"
-                            type="number"
-                            min={0.1}
-                            step={0.1}
-                            value={distance}
-                            onChange={e => setDistance(e.target.value)}
-                            onBlur={handleDistanceBlur}
-                            placeholder="Miles"
-                        />
+                        <div className="flex items-center gap-1">
+                            <Button
+                                type="button"
+                                variant="ghost"
+                                size="icon"
+                                onClick={() => setDistance(Math.max((distance || 0) - 0.1, 0))}
+                                aria-label="Decrease distance"
+                                disabled={(distance || 0) <= 0}
+                            >
+                                -
+                            </Button>
+                            <Input
+                                id="distance"
+                                type="text"
+                                value={distance ?? ""}
+                                onChange={e => handleDecimalInput(e.target.value, setDistance, 100)}
+                                onBlur={handleDistanceBlur}
+                                pattern="[0-9]*\.?[0-9]*"
+                                inputMode="decimal"
+                                placeholder="0"
+                                className="w-15 text-center font-bold text-base sm:text-xl text-[var(--accent)] border-transparent focus:border focus:border-[var(--accent)] focus:bg-white bg-transparent shadow-none"
+                            />
+                            <Button
+                                type="button"
+                                variant="ghost"
+                                size="icon"
+                                onClick={() => setDistance(Math.min((distance || 0) + 0.1, 100))}
+                                aria-label="Increase distance"
+                                disabled={(distance || 0) >= 100}
+                            >
+                                +
+                            </Button>
+                        </div>
                         {errors.distance && (
-                            <p className="text-[var(--danger)] text-sm mt-1">{errors.distance}</p>
+                            <p className="text-[var(--danger)] text-xs mt-1">{errors.distance}</p>
                         )}
                     </div>
                 )}

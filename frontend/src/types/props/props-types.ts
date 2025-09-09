@@ -413,6 +413,14 @@ export interface ExerciseInputProps {
     handleExerciseError: (index: number, hasError: boolean) => void;
 }
 
+// EDIT WORKOUT TYPES
+export interface EditWorkoutFormProps {
+    workout: Workout;
+    onSubmit: (formData: any) => Promise<void>;
+    onCancel: (hasChanges: boolean) => void;
+    isUpdating: boolean;
+}
+
 // SESSION TYPES
 export interface ViewSessionItemProps {
     session: WorkoutSession;

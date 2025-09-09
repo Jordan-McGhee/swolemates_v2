@@ -67,7 +67,7 @@ const ViewWorkoutItem: React.FC<ViewWorkoutItemProps> = ({
                         {/* workout options */}
                         {authUser && (
                             <DropdownMenu>
-                                <DropdownMenuTrigger className="p-2 rounded-full hover:bg-[var(--off-bg)] transition">
+                                <DropdownMenuTrigger className="p-2 text-[var(--subhead-text)] hover:cursor-pointer hover:text-[var(--accent)] transition">
                                     <EllipsisVertical size={20} />
                                 </DropdownMenuTrigger>
                                 <DropdownMenuContent align="end" className="w-40">
