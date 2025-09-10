@@ -62,7 +62,13 @@ const ViewSessionItem: React.FC<ViewSessionItemProps> = ({ session, liked, likes
                                         's session
                                     </p>
                                     <p className="text-sm text-[var(--subhead-text)]">
-                                        {formatDate(session.created_at, "relative")}
+                                        {formatDate(session.created_at, "shortTime")}
+                                        {session.updated_at !== session.created_at && (
+                                            <>
+                                                {" | "}
+                                                <span className="italic">Edited {formatDate(session.updated_at, "relative")}</span>
+                                            </>
+                                        )}
                                     </p>
                                 </div>
                             </div>

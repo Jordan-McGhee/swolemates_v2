@@ -61,7 +61,7 @@ const EditWorkoutPage: React.FC = () => {
             // console.log("Initial values set:", initialData);
 
             // initial exercise values
-            const initialExercises = workout.exercises ? workout.exercises.map(ex => ({
+            const initialExercises = workout.exercises ? workout.exercises.map((ex, index) => ({
                 title: ex.title || '',
                 exercise_type: ex.exercise_type || '',
                 measurement_type: ex.measurement_type || 'reps',
@@ -69,6 +69,7 @@ const EditWorkoutPage: React.FC = () => {
                 reps: ex.reps || 0,
                 duration_seconds: ex.duration_seconds || 0,
                 distance_miles: ex.distance_miles || 0,
+                exercise_order: ex.exercise_order || index + 1,
             })) : [];
 
             setInitialExerciseInputs(initialExercises);

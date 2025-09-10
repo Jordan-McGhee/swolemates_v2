@@ -174,7 +174,7 @@ SELECT
         (
             SELECT json_agg(exercise_data ORDER BY exercise_data.order_created_at DESC)
             FROM (
-                SELECT DISTINCT ON (e.exercise_id)
+                SELECT
                     e.exercise_id,
                     e.title,
                     e.exercise_type,
@@ -184,11 +184,12 @@ SELECT
                     we.reps,
                     we.duration_seconds,
                     we.distance_miles,
+                    we.exercise_order,
                     we.created_at AS order_created_at
                 FROM workout_exercises we
                 JOIN exercises e ON we.exercise_id = e.exercise_id
                 WHERE we.workout_id = w.workout_id
-                ORDER BY e.exercise_id, we.created_at DESC  -- Keep most recent entry per exercise
+                ORDER BY we.exercise_order ASC
             ) AS exercise_data
         ), '[]'::json
     ) AS exercises,

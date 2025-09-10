@@ -121,7 +121,10 @@ const ExerciseInput: React.FC<ExerciseInputProps & { initialExerciseData?: Worko
             if (value === "") {
                 setter(undefined);
             } else {
-                const num = Number(value);
+                let num = Number(value);
+                if (num === 0) {
+                    num = 1;
+                }
                 if (max && num > max) {
                     setter(max);
                 } else {
@@ -137,8 +140,11 @@ const ExerciseInput: React.FC<ExerciseInputProps & { initialExerciseData?: Worko
             if (value === "" || value === ".") {
                 setter(undefined);
             } else {
-                const num = Number(value);
+                let num = Number(value);
                 if (!isNaN(num)) {
+                    if (num === 0) {
+                        num = 0.1;
+                    }
                     if (max && num > max) {
                         setter(max);
                     } else {
@@ -282,7 +288,7 @@ const ExerciseInput: React.FC<ExerciseInputProps & { initialExerciseData?: Worko
                                     size="icon"
                                     onClick={() => setSets(Math.max((sets || 0) - 1, 0))}
                                     aria-label="Decrease sets"
-                                    disabled={(sets || 0) <= 0}
+                                    disabled={(sets || 1) <= 1}
                                 >
                                     -
                                 </Button>
@@ -321,7 +327,7 @@ const ExerciseInput: React.FC<ExerciseInputProps & { initialExerciseData?: Worko
                                     size="icon"
                                     onClick={() => setReps(Math.max((reps || 0) - 1, 0))}
                                     aria-label="Decrease reps"
-                                    disabled={(reps || 0) <= 0}
+                                    disabled={(reps || 1) <= 1}
                                 >
                                     -
                                 </Button>
@@ -363,7 +369,7 @@ const ExerciseInput: React.FC<ExerciseInputProps & { initialExerciseData?: Worko
                                 size="icon"
                                 onClick={() => setDuration(Math.max((duration || 0) - 1, 0))}
                                 aria-label="Decrease duration"
-                                disabled={(duration || 0) <= 0}
+                                disabled={(duration || 1) <= 1}
                             >
                                 -
                             </Button>
@@ -404,7 +410,7 @@ const ExerciseInput: React.FC<ExerciseInputProps & { initialExerciseData?: Worko
                                 size="icon"
                                 onClick={() => setDistance(Math.max((distance || 0) - 0.1, 0))}
                                 aria-label="Decrease distance"
-                                disabled={(distance || 0) <= 0}
+                                disabled={(distance || 1) <= 1}
                             >
                                 -
                             </Button>

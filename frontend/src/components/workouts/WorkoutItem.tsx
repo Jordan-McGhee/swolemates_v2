@@ -87,6 +87,9 @@ export const WorkoutItem: React.FC<WorkoutItemProps> = ({ user, workout }) => {
                         <p className="text-sm font-semibold text-[var(--accent)]">{user?.username} <span className="text-[var(--subhead-text)]">created a workout!</span></p>
                         <p className="text-xs text-[var(--subhead-text)]">
                             {formatDate(workout.created_at, "relative")}
+                            {workout.updated_at !== workout.created_at && (
+                                <span className="italic"> (Edited)</span>
+                            )}
                         </p>
                     </div>
                 </div>

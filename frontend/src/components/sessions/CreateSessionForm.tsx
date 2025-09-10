@@ -20,14 +20,9 @@ import { CharacterCounter } from "../ui/character-counter";
 // type imports
 import { Workout, SessionExercise } from "@/types/props/props-types";
 
-// validation imports
-
 // component imports
 import AddWorkoutButton from "../posts/AddWorkoutButton";
 import SessionExerciseInput from "./SessionExerciseInput";
-
-// utils imports
-import { formatDate } from "@/util/general-util";
 
 const CreateSessionForm: React.FC = () => {
 

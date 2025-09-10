@@ -131,7 +131,13 @@ const ViewWorkoutItem: React.FC<ViewWorkoutItemProps> = ({
                                             {workout.username}
                                         </Link>
                                         <p className="text-sm text-[var(--subhead-text)]">
-                                            {formatDate(workout.created_at, "relative")}
+                                            {formatDate(workout.created_at, "shortTime")}
+                                            {workout.updated_at !== workout.created_at && (
+                                                <>
+                                                    {" | "}
+                                                    <span className="italic">Edited {formatDate(workout.updated_at, "relative")}</span>
+                                                </>
+                                            )}
                                         </p>
                                     </div>
                                 </div>

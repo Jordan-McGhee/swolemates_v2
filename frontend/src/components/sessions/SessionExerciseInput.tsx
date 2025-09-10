@@ -3,12 +3,11 @@ import React, { useState, useEffect, useCallback, useRef } from "react";
 // ui imports
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 
 // type imports
-import { SessionExerciseInputProps, ExerciseType, WorkoutExercise, SessionExercise } from "@/types/props/props-types";
+import { SessionExerciseInputProps, SessionExercise } from "@/types/props/props-types";
 
 const SessionExerciseInput: React.FC<SessionExerciseInputProps> = ({
     exerciseIndex,

@@ -21,9 +21,9 @@ export const createWorkout = async (req: Request, res: Response, next: NextFunct
     if (!Array.isArray(exercises) || exercises.length < 1 || exercises.length > 10) {
         return res.status(400).json({ message: "Workout must have between 1 and 10 exercises." });
     }
-    if (workout_type && !["strength", "cardio", "mobility"].includes(workout_type)) {
-        return res.status(400).json({ message: "Invalid workout_type." });
-    }
+    // if (workout_type && !["strength", "cardio", "mobility"].includes(workout_type)) {
+    //     return res.status(400).json({ message: "Invalid workout_type." });
+    // }
 
     const exerciseTitleSet = new Set();
     for (const ex of exercises) {
@@ -61,7 +61,7 @@ export const createWorkout = async (req: Request, res: Response, next: NextFunct
         );
         const workout_id = workoutRes.rows[0].workout_id;
 
-        for (const ex of exercises) {
+        for (const [index, ex] of exercises.entries()) {
             const {
                 title: exTitle,
                 exercise_type,
@@ -69,9 +69,11 @@ export const createWorkout = async (req: Request, res: Response, next: NextFunct
                 sets,
                 reps,
                 duration_seconds,
-                distance_miles
+                distance_miles,
+                exercise_order
             } = ex;
             const lowerTitle = exTitle.trim().toLowerCase();
+            const order = exercise_order ?? (index + 1);
 
             // Check if exercise exists (by title, case-insensitive)
             const checkRes = await client.query(
@@ -99,15 +101,16 @@ export const createWorkout = async (req: Request, res: Response, next: NextFunct
             // Insert into workout_exercises junction table
             await client.query(
                 `INSERT INTO workout_exercises (
-                    workout_id, exercise_id, sets, reps, duration_seconds, distance_miles, created_at
-                ) VALUES ($1, $2, $3, $4, $5, $6, NOW())`,
+                    workout_id, exercise_id, sets, reps, duration_seconds, distance_miles, exercise_order, created_at
+                ) VALUES ($1, $2, $3, $4, $5, $6, $7, NOW())`,
                 [
                     workout_id,
                     exercise_id,
                     sets ?? null,
                     reps ?? null,
                     duration_seconds ?? null,
-                    distance_miles ?? null
+                    distance_miles ?? null,
+                    order
                 ]
             );
         }
@@ -204,7 +207,7 @@ export const editWorkout = async (req: Request, res: Response, next: NextFunctio
         // Update workout main info
         await client.query(
             `UPDATE workouts SET title = $1, description = $2, workout_type = $3, updated_at = NOW() WHERE workout_id = $4`,
-            [workout_title ?? workoutRes.rows[0].title, description ?? workoutRes.rows[0].description, workout_type ?? 'strength', workout_id]
+            [workout_title ?? workoutRes.rows[0].title, description ?? workoutRes.rows[0].description, workout_type ?? workoutRes.rows[0].workout_type, workout_id]
         );
         console.log("[editWorkout] Updated workout info:", { workout_title, description, workout_type });
 
@@ -253,28 +256,32 @@ export const editWorkout = async (req: Request, res: Response, next: NextFunctio
         console.log("[editWorkout] Removed old workout_exercises for workout:", workout_id);
 
         // Insert new workout_exercises
-        for (const ex of exercises) {
+        for (const [index, ex] of exercises.entries()) {
             const {
                 title: exTitle,
                 sets,
                 reps,
                 duration_seconds,
-                distance_miles
+                distance_miles,
+                exercise_order
             } = ex;
             const lowerTitle = exTitle.trim().toLowerCase();
             const exercise_id = titleToId[lowerTitle];
 
+            const order = exercise_order ?? (index + 1);
+
             await client.query(
                 `INSERT INTO workout_exercises (
-                    workout_id, exercise_id, sets, reps, duration_seconds, distance_miles, created_at
-                ) VALUES ($1, $2, $3, $4, $5, $6, NOW())`,
+                    workout_id, exercise_id, sets, reps, duration_seconds, distance_miles, exercise_order, created_at
+                ) VALUES ($1, $2, $3, $4, $5, $6, $7, NOW())`,
                 [
                     workout_id,
                     exercise_id,
                     sets ?? null,
                     reps ?? null,
                     duration_seconds ?? null,
-                    distance_miles ?? null
+                    distance_miles ?? null,
+                    order
                 ]
             );
             console.log("[editWorkout] Added exercise to workout:", exTitle, "ID:", exercise_id);

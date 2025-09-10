@@ -116,6 +116,7 @@ export interface WorkoutExercise {
     reps?: number;
     duration_seconds?: number;
     distance_miles?: number;
+    exercise_order?: number;
     created_at?: Date;
     order_created_at?: Date;
 }
@@ -129,6 +130,7 @@ export interface WorkoutFormExercise {
     reps?: number;
     duration_seconds?: number;
     distance_miles?: number;
+    exercise_order?: number;
 }
 
 export interface ExerciseTarget {
@@ -157,6 +159,7 @@ export interface WorkoutSession {
     comments?: Comment[];
     comments_count?: number;
     created_at: Date;
+    updated_at: Date;
     completed_exercises?: SessionExercise[];
 }
 
@@ -440,4 +443,12 @@ export interface SessionExerciseInputProps {
     // handleExerciseError: (index: number, hasError: boolean) => void;
     onValidationChange: (isValid: boolean) => void;
     handleExerciseChange: (index: number, updatedExercise: SessionExercise) => void;
+}
+
+// EDIT SESSION TYPES
+export interface EditSessionFormProps {
+    session: WorkoutSession;
+    onSubmit?: (formData: any, exerciseInputs: SessionExercise[]) => Promise<void>;
+    onCancel?: () => void;
+    isUpdating: boolean;
 }

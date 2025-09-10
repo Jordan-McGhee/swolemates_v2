@@ -86,6 +86,9 @@ export const SessionItem: React.FC<SessionItemProps> = ({ user, session }) => {
                         <p className="text-sm font-semibold text-[var(--accent)]">{user?.username}</p>
                         <p className="text-xs text-[var(--subhead-text)]">
                             {formatDate(session.created_at, "relative")}
+                            {session.updated_at !== session.created_at && (
+                                <span className="italic"> (Edited)</span>
+                            )}
                         </p>
                     </div>
                 </div>

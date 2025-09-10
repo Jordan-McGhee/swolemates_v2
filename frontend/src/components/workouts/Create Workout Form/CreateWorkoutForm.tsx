@@ -45,7 +45,8 @@ const CreateWorkoutForm: React.FC = () => {
             sets: undefined,
             reps: undefined,
             duration_seconds: undefined,
-            distance_miles: undefined
+            distance_miles: undefined,
+            exercise_order: undefined
         }))
     );
     // input errors

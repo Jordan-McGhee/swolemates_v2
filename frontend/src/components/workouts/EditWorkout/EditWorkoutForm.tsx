@@ -1,11 +1,10 @@
 import React, { useState, useMemo, useEffect } from "react";
-import { Link } from "react-router-dom";
 
 // ui imports
 import { Button } from "@/components/ui/button";
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Dumbbell, Loader2, Image as ImageIcon, User as UserIcon, ArrowLeft, ThumbsUp, MessageCircle } from "lucide-react";
+import { Loader2, ArrowLeft } from "lucide-react";
 import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from '@/components/ui/select';
 import { CharacterCounter } from '@/components/ui/character-counter';
 
